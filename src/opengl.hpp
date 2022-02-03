@@ -15,4 +15,6 @@
 
 #endif
 
+static_assert(sizeof (float) == sizeof (GLfloat));
+
 #endif /* QWY2_HEADER_OPENGL_ */

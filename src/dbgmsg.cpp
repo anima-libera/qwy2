@@ -113,7 +113,7 @@ static void GLAPIENTRY opengl_dbgmsg_callback(
 void enable_opengl_dbgmsg()
 {
 	glEnable(GL_DEBUG_OUTPUT);
-	glDebugMessageCallback(opengl_dbgmsg_callback, NULL);
+	glDebugMessageCallback(opengl_dbgmsg_callback, nullptr);
 }
 
 void disable_opengl_dbgmsg()

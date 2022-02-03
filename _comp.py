@@ -111,6 +111,58 @@ if option_help:
 	print(__doc__.strip().format(this_script = python + sys.argv[0]))
 	sys.exit(0)
 
+## Embed content
+
+embedded_header_file_name = "embedded.hpp" # See this file for some explanations
+embedded_source_file_name = "embedded.cpp" # This one will be overwritten
+embedded_re = r"EMBEDDED\s*\(\s*\"([^\"]+)\"\s*,\s*(TEXT|BINARY|SIZE)\s*\)\s*([^\s][^;]+[^\s])\s*;"
+
+def escape_file_content(filepath, escape_mode):
+	if option_debug:
+		print(f"Embed file \"{filepath}\" escaped as {escape_mode}")
+	try:
+		def escape_as_string(string):
+			return "\"" + string.translate({
+				ord("\""): "\\\"", ord("\\"): "\\\\",
+				ord("\n"): "\\n", ord("\t"): "\\t"}) + "\""
+		opening_mode, escape_function = {
+			"TEXT": ("rt", escape_as_string),
+			"BINARY": ("rb", lambda bytes: "{" + ", ".join([hex(b) for b in bytes]) + "}"),
+			"SIZE": ("rb", lambda bytes: str(len(bytes))),
+		}[escape_mode]
+		with open(filepath, opening_mode) as file:
+			return escape_function(file.read())
+	except FileNotFoundError as error:
+		print("\x1b[31mEmbedded file error:\x1b[39m " +
+			"The embedded content generator couldn't find the file " +
+			f"\"{filepath}\" used in an EMBEDDED macro in the " +
+			f"\"{embedded_header_file_name}\" header file.")
+		raise error
+
+generated_cpp = []
+generated_cpp.append("")
+generated_cpp.append("/* This file is overwritten at each compilation.")
+generated_cpp.append(f" * Do not modify, see \"{embedded_header_file_name}\" " +
+	"or \"_comp.py\" instead. */")
+generated_cpp.append("")
+
+embedded_header_path = os.path.join(src_dir_name, embedded_header_file_name)
+with open(embedded_header_path, "r") as embedded_header_file:
+	for match in re.finditer(embedded_re, embedded_header_file.read()):
+		partial_file_path = match.group(1)
+		file_path = os.path.join(src_dir_name, partial_file_path)
+		escape_mode = match.group(2)
+		escaped_content = escape_file_content(file_path, escape_mode)
+		variable_declaration = match.group(3)
+		what = "Size in bytes" if escape_mode == "SIZE" else "Content"
+		generated_cpp.append("")
+		generated_cpp.append(f"/* {what} of \"{partial_file_path}\". */")
+		generated_cpp.append(f"extern {variable_declaration} = {escaped_content};")
+
+embedded_source_path = os.path.join(src_dir_name, embedded_source_file_name)
+with open(embedded_source_path, "w") as embedded_source_file:
+	embedded_source_file.write("\n".join(generated_cpp) + "\n")
+
 ## Compile
 
 # List src files

@@ -4,6 +4,8 @@
 
 namespace qwy2 {
 
+#define TAU 6.28318530717
+
 enum class ErrorCode
 {
 	OK,
