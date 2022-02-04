@@ -105,7 +105,7 @@ static void GLAPIENTRY opengl_dbgmsg_callback(
 	(type == GL_DEBUG_TYPE_ERROR ? std::cerr : std::cout) <<
 		"OpenGL dbgmsg (" << opengl_dbgmsg_severity_name(severity) << " severity) " <<
 		opengl_dbgmsg_source_name(source) << ":" << opengl_dbgmsg_type_name(type) <<
-		"(" << id << ")" <<
+		"(" << id << ") " <<
 		(type == GL_DEBUG_TYPE_ERROR ? "\x1b[31m" : "\x1b[34m") << message << "\x1b[39m" <<
 		std::endl;
 }

@@ -17,10 +17,10 @@ void ShaderProgramBlocks::update_uniforms(UniformValues const& uniform_values)
 {
 	glUseProgram(this->openglid);
 	glUniformMatrix4fv(0, 1, GL_FALSE,
-		reinterpret_cast<const GLfloat *>(&uniform_values.camera_matrix[0][0]));
+		reinterpret_cast<const GLfloat*>(&uniform_values.camera_matrix[0][0]));
 }
 
-void ShaderProgramBlocks::draw(GLuint triangle_buffer_openglid)
+void ShaderProgramBlocks::draw(GLuint triangle_buffer_openglid, unsigned int vertex_count)
 {
 	glUseProgram(this->openglid);
 	glEnableVertexAttribArray(0);
@@ -32,8 +32,7 @@ void ShaderProgramBlocks::draw(GLuint triangle_buffer_openglid)
 	glVertexAttribPointer(1, 3, GL_FLOAT,
 		GL_FALSE, sizeof (float) * 6, reinterpret_cast<void*>(sizeof (float) * 3));
 
-	int count_uwu = 3;
-	glDrawArrays(GL_TRIANGLES, 0, count_uwu);
+	glDrawArrays(GL_TRIANGLES, 0, vertex_count);
 	
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);

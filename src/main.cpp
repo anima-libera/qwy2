@@ -3,6 +3,7 @@
 #include "shaders/shader.hpp"
 #include "shaders/blocks/blocks.hpp"
 #include "camera.hpp"
+#include "chunk.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
@@ -11,6 +12,7 @@
 #include <iostream>
 #include <chrono>
 #include <cmath>
+#include <vector>
 
 int main()
 {
@@ -36,16 +38,23 @@ int main()
 	shader_program_blocks.update_uniforms(uniform_values);
 
 
-	float triangles[] = {
-		0.0f, 0.0f, 2.0f, 1.0f, 0.0f, 0.0f,
-		0.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-		0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-	};
-
-	GLuint triangle_buffer_openglid;
-	glGenBuffers(1, &triangle_buffer_openglid);
-	glBindBuffer(GL_ARRAY_BUFFER, triangle_buffer_openglid);
-	glBufferData(GL_ARRAY_BUFFER, sizeof triangles, triangles, GL_DYNAMIC_DRAW);
+	Chunk chunk(RectInt(CoordsInt(-5, -5, -5), CoordsInt(5, 5, 5)));
+	{
+		Block& block = chunk.block(CoordsInt(-2, 4, 0));
+		block.is_air = false;
+		block.color = glm::vec3(0.3f, 0.95f, 0.1f);
+	}
+	{
+		Block& block = chunk.block(CoordsInt(3, -1, 1));
+		block.is_air = false;
+		block.color = glm::vec3(0.7f, 0.4f, 0.1f);
+	}
+	{
+		Block& block = chunk.block(CoordsInt(1, 3, -1));
+		block.is_air = false;
+		block.color = glm::vec3(0.0f, 0.6f, 0.8f);
+	}
+	chunk.recompute_mesh();
 
 
 	using clock = std::chrono::high_resolution_clock;
@@ -66,8 +75,10 @@ int main()
 
 	glm::vec3 player_motion{0.0f, 0.0f, 0.0f};
 	bool flying = false;
+	bool flying_initial = false;
 	const float flying_factor = 0.003f;
-	const float falling_factor = 0.006f;
+	const float flying_initial_value = 0.1f;
+	const float falling_factor = 0.012f;
 
 	SDL_SetRelativeMouseMode(SDL_TRUE);
 	const float moving_angle_factor = 0.005f;
@@ -80,6 +91,7 @@ int main()
 
 		float horizontal_angle_motion = 0.0f;
 		float vertical_angle_motion = 0.0f;
+		flying_initial = false;
 
 		while (SDL_PollEvent(&event))
 		{
@@ -119,6 +131,7 @@ int main()
 					if (event.button.button == SDL_BUTTON_RIGHT)
 					{
 						flying = event.type == SDL_MOUSEBUTTONDOWN;
+						flying_initial = event.type == SDL_MOUSEBUTTONDOWN;
 					}
 				break;
 
@@ -155,7 +168,14 @@ int main()
 
 		if (flying)
 		{
-			player_motion.z += flying_factor;
+			if (flying_initial)
+			{
+				player_motion.z = flying_initial_value;
+			}
+			else
+			{
+				player_motion.z += flying_factor;
+			}
 		}
 		else if (player_position.z > 0.0001f)
 		{
@@ -184,7 +204,7 @@ int main()
 		glClearColor(v2 * 0.2f, 0.0f, (1.0f - v2) * 0.2f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		shader_program_blocks.draw(triangle_buffer_openglid);
+		shader_program_blocks.draw(chunk.mesh_openglid, chunk.mesh_vertex_count());
 
 		SDL_GL_SwapWindow(g_window);
 	}
