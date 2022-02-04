@@ -3,6 +3,7 @@
 #include "opengl.hpp"
 #include "utils.hpp"
 #include <SDL2/SDL.h>
+#include <tuple>
 
 namespace qwy2 {
 
@@ -78,6 +79,13 @@ void cleanup_window_graphics()
 	SDL_DestroyWindow(g_window);
 	g_window = nullptr;
 	SDL_Quit();
+}
+
+std::tuple<int, int> window_width_height()
+{
+	int width, height;
+	SDL_GetWindowSize(g_window, &width, &height);
+	return std::make_tuple(width, height);
 }
 
 } /* qwy2 */

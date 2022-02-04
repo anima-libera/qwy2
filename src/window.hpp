@@ -9,6 +9,7 @@
 #include "opengl.hpp"
 #include "utils.hpp"
 #include <SDL2/SDL.h>
+#include <tuple>
 
 namespace qwy2 {
 
@@ -31,6 +32,8 @@ ErrorCode init_window_graphics();
 
 /* Cleans up and destroys what is initialized and created by init_window_graphics. */
 void cleanup_window_graphics();
+
+std::tuple<int, int> window_width_height();
 
 } /* qwy2 */
 

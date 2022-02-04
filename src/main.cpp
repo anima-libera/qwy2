@@ -2,14 +2,15 @@
 #include "window.hpp"
 #include "shaders/shader.hpp"
 #include "shaders/blocks/blocks.hpp"
+#include "camera.hpp"
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/glm.hpp>
+#include <glm/gtx/transform.hpp>
+#include <glm/gtx/rotate_vector.hpp>
 #include <cstdlib>
 #include <iostream>
 #include <chrono>
 #include <cmath>
-
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/glm.hpp>
-#include <glm/gtx/transform.hpp>
 
 int main()
 {
@@ -21,24 +22,10 @@ int main()
 	}
 
 
-
-	int width, height;
-	SDL_GetWindowSize(g_window, &width, &height);
-	const float aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
-	
-	const float fovy = TAU / 8.0f;
-	const float near = 0.1f;
-	const float far = 100.0f;
-	const glm::mat4 projection = glm::perspective(fovy, aspect_ratio, near, far);
-
-	glm::mat4 view = glm::lookAt(
-		glm::vec3(1.0f, 3.0f, -5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-	glm::mat4 camera = projection * view;
+	Camera camera;
 
 	UniformValues uniform_values;
-	uniform_values.camera_matrix = camera;
-
+	uniform_values.camera_matrix = camera.matrix;
 
 	ShaderProgramBlocks shader_program_blocks;
 	if (shader_program_blocks.init() == ErrorCode::ERROR)
@@ -46,14 +33,13 @@ int main()
 		std::cerr << "ono" << std::endl;
 		return EXIT_FAILURE;
 	}
-	std::cout << shader_program_blocks.openglid << std::endl;
 	shader_program_blocks.update_uniforms(uniform_values);
 
 
 	float triangles[] = {
-		0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-		1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-		0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+		0.0f, 0.0f, 2.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+		0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
 	};
 
 	GLuint triangle_buffer_openglid;
@@ -62,16 +48,32 @@ int main()
 	glBufferData(GL_ARRAY_BUFFER, sizeof triangles, triangles, GL_DYNAMIC_DRAW);
 
 
-
 	using clock = std::chrono::high_resolution_clock;
-
 	const auto clock_time_beginning = clock::now();
 	float time = 0.0f; /* Time in seconds. */
+
+	SDL_Event event;
+	bool moving_forward = false;
+	bool moving_backward = false;
+	bool moving_leftward = false;
+	bool moving_rightward = false;
+	const float moving_factor = 0.05f;
+
+	SDL_SetRelativeMouseMode(SDL_TRUE);
+	const float moving_angle_factor = 0.005f;
+
+	glm::vec3 player_position{-3.0f, 0.0f, 0.0f};
+	float player_horizontal_angle = 0.0f;
+	float player_vertical_angle = 0.0f;
 
 	bool running = true;
 	while (running)
 	{
-		SDL_Event event;
+		time = std::chrono::duration<float>(clock::now() - clock_time_beginning).count();
+
+		float horizontal_angle_motion = 0.0f;
+		float vertical_angle_motion = 0.0f;
+
 		while (SDL_PollEvent(&event))
 		{
 			switch (event.type)
@@ -81,17 +83,62 @@ int main()
 				break;
 
 				case SDL_KEYDOWN:
+				case SDL_KEYUP:
 					switch (event.key.keysym.sym)
 					{
 						case SDLK_ESCAPE:
-							running = false;
+							if (event.type == SDL_KEYDOWN)
+							{
+								running = false;
+							}
+						break;
+						case SDLK_z:
+							moving_forward = event.type == SDL_KEYDOWN;
+						break;
+						case SDLK_s:
+							moving_backward = event.type == SDL_KEYDOWN;
+						break;
+						case SDLK_q:
+							moving_leftward = event.type == SDL_KEYDOWN;
+						break;
+						case SDLK_d:
+							moving_rightward = event.type == SDL_KEYDOWN;
 						break;
 					}
+				break;
+
+				case SDL_MOUSEMOTION:
+					horizontal_angle_motion += -event.motion.xrel * moving_angle_factor;
+					vertical_angle_motion += -event.motion.yrel * moving_angle_factor;
 				break;
 			}
 		}
 
-		time = std::chrono::duration<float>(clock::now() - clock_time_beginning).count();
+		player_horizontal_angle += horizontal_angle_motion;
+		player_vertical_angle += vertical_angle_motion;
+		glm::vec3 player_horizontal_direction{
+			std::cos(player_horizontal_angle),
+			std::sin(player_horizontal_angle),
+			0.0f};
+		glm::vec3 player_horizontal_right{
+			std::cos(player_horizontal_angle - TAU / 4.0f),
+			std::sin(player_horizontal_angle - TAU / 4.0f),
+			0.0f};
+		float forward_motion = moving_factor *
+			((moving_forward ? 1.0f : 0.0f) - (moving_backward ? 1.0f : 0.0f));
+		float rightward_motion = moving_factor *
+			((moving_rightward ? 1.0f : 0.0f) - (moving_leftward ? 1.0f : 0.0f));
+		player_position +=
+			player_horizontal_direction * forward_motion +
+			player_horizontal_right * rightward_motion;
+
+		glm::vec3 player_direction = glm::rotate(player_horizontal_direction,
+			player_vertical_angle, player_horizontal_right);
+
+		camera.set_position(player_position + glm::vec3(0.0f, 0.0f, 2.0f));
+		camera.set_direction(player_direction);
+		uniform_values.camera_matrix = camera.matrix;
+		shader_program_blocks.update_uniforms(uniform_values);
 		
 		const float v1 = time / 10.0f;
 		const float v2 = v1 - std::floor(v1);
