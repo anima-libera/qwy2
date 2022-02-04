@@ -117,31 +117,38 @@ void Block::generate_face(CoordsInt coords, Axis axis, bool negativeward,
 		glm::vec2 atlas_coords;
 	};
 
+
+	glm::vec3 coords_nn = coords.to_float_coords() - glm::vec3(0.5f, 0.5f, 0.5f);
+	coords_nn[index_axis] += negativeward ? 0.0f : 1.0f;
+
 	VertexData nn;
-	nn.coords = coords.to_float_coords() - glm::vec3(0.5f, 0.5f, 0.5f);
-	nn.atlas_coords = atlas_rect.atlas_coords_min;
-	nn.coords[index_axis] += negativeward ? 0.0f : 1.0f;
+	nn.coords = coords_nn;
+	nn.coords[index_a] += 0.0f;
+	nn.coords[index_b] += 0.0f;
+	nn.atlas_coords.x = atlas_rect.atlas_coords_min.x;
+	nn.atlas_coords.y = atlas_rect.atlas_coords_min.y;
 	VertexData np;
-	np.coords = nn.coords;
-	np.atlas_coords = atlas_rect.atlas_coords_min;
+	np.coords = coords_nn;
+	np.coords[index_a] += 0.0f;
 	np.coords[index_b] += 1.0f;
+	np.atlas_coords.x = atlas_rect.atlas_coords_min.x;
 	np.atlas_coords.y = atlas_rect.atlas_coords_max.y;
 	VertexData pn;
-	pn.coords = nn.coords;
-	pn.atlas_coords = atlas_rect.atlas_coords_min;
+	pn.coords = coords_nn;
 	pn.coords[index_a] += 1.0f;
+	pn.coords[index_b] += 0.0f;
 	pn.atlas_coords.x = atlas_rect.atlas_coords_max.x;
+	pn.atlas_coords.y = atlas_rect.atlas_coords_min.y;
 	VertexData pp;
-	pp.coords = nn.coords;
-	pp.atlas_coords = atlas_rect.atlas_coords_min;
+	pp.coords = coords_nn;
 	pp.coords[index_a] += 1.0f;
 	pp.coords[index_b] += 1.0f;
 	pp.atlas_coords.x = atlas_rect.atlas_coords_max.x;
 	pp.atlas_coords.y = atlas_rect.atlas_coords_max.y;
 
-	std::array<VertexData, 6> vertex_data_sequence{nn, pp, np, nn, pp, pn};
+	std::array<VertexData, 6> vertex_data_sequence{nn, pn, pp, nn, pp, np};
 
-	dst.reserve(dst.size() + 6 * 5);
+	dst.reserve(dst.size() + vertex_data_sequence.size() * 5);
 	for (VertexData& vertex_data : vertex_data_sequence)
 	{
 		dst.push_back(vertex_data.coords.x);
@@ -149,6 +156,11 @@ void Block::generate_face(CoordsInt coords, Axis axis, bool negativeward,
 		dst.push_back(vertex_data.coords.z);
 		dst.push_back(vertex_data.atlas_coords.x);
 		dst.push_back(vertex_data.atlas_coords.y);
+
+		std::cout << "vertex coords " <<
+			dst[dst.size()-5+0] << ", " << dst[dst.size()-5+1] << ", " << dst[dst.size()-5+2] <<
+			" atlas coords " <<
+			dst[dst.size()-5+3] << ", " << dst[dst.size()-5+4] << std::endl;
 	}
 }
 
@@ -188,10 +200,10 @@ void Chunk::recompute_mesh()
 				if (not this->rect.contains(neighbor) ||
 					this->block(neighbor).is_air)
 				{
+					std::cout << "generate face " <<
+						walker.x << ", " << walker.y << ", " << walker.z << " -> " <<
+						neighbor.x << ", " << neighbor.y << ", " << neighbor.z << std::endl;
 					this->block(walker).generate_face(walker, axis, negativeward, mesh_data);
-					//std::cout << "generate face " <<
-					//	walker.x << ", " << walker.y << ", " << walker.z << " -> " <<
-					//	neighbor.x << ", " << neighbor.y << ", " << neighbor.z << std::endl;
 				}
 			}
 		}
@@ -205,7 +217,7 @@ void Chunk::recompute_mesh()
 
 unsigned int Chunk::mesh_vertex_count() const
 {
-	return mesh_data.size() / 6;
+	return mesh_data.size() / 5;
 }
 
 } /* Qwy2 */

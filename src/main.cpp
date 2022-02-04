@@ -24,6 +24,8 @@ int main()
 		return EXIT_FAILURE;
 	}
 
+	glEnable(GL_DEPTH_TEST);
+
 
 	unsigned int atlas_side = 1024;
 	std::uint8_t* atlas_data = new std::uint8_t[atlas_side * atlas_side * 4];
@@ -48,9 +50,18 @@ int main()
 	rect_a.atlas_coords_max = glm::vec2(
 		static_cast<float>(0 + 16) / static_cast<float>(atlas_side),
 		static_cast<float>(0 + 16) / static_cast<float>(atlas_side));
-
 	Block::type_table.push_back(BlockType(rect_a, rect_a, rect_a));
 	unsigned int type_index_a = Block::type_table.size() - 1;
+
+	AtlasRect rect_b;
+	rect_b.atlas_coords_min = glm::vec2(
+		static_cast<float>(200) / static_cast<float>(atlas_side),
+		static_cast<float>(200) / static_cast<float>(atlas_side));
+	rect_b.atlas_coords_max = glm::vec2(
+		static_cast<float>(200 + 16) / static_cast<float>(atlas_side),
+		static_cast<float>(200 + 16) / static_cast<float>(atlas_side));
+	Block::type_table.push_back(BlockType(rect_b, rect_b, rect_b));
+	unsigned int type_index_b = Block::type_table.size() - 1;
 	
 	
 	GLint max_atlas_side;
@@ -100,6 +111,21 @@ int main()
 		Block& block = chunk.block(CoordsInt(1, 3, -1));
 		block.is_air = false;
 		block.type_index = type_index_a;
+	}
+	{
+		Block& block = chunk.block(CoordsInt(4, -1, 1));
+		block.is_air = false;
+		block.type_index = type_index_b;
+	}
+	{
+		Block& block = chunk.block(CoordsInt(4, -2, 1));
+		block.is_air = false;
+		block.type_index = type_index_b;
+	}
+	{
+		Block& block = chunk.block(CoordsInt(4, -2, 2));
+		block.is_air = false;
+		block.type_index = type_index_b;
 	}
 	chunk.recompute_mesh();
 
@@ -251,7 +277,7 @@ int main()
 		const float v1 = time / 10.0f;
 		const float v2 = (std::cos(v1) + 1.0f) / 2.0f;
 		glClearColor(v2 * 0.2f, 0.0f, (1.0f - v2) * 0.2f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		shader_program_blocks.draw(chunk.mesh_openglid, chunk.mesh_vertex_count());
 
