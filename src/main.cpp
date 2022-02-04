@@ -4,6 +4,7 @@
 #include "shaders/blocks/blocks.hpp"
 #include "camera.hpp"
 #include "chunk.hpp"
+#include "nature.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
@@ -43,6 +44,8 @@ int main()
 		a = 255;
 	}
 
+	Nature nature;
+
 	AtlasRect rect_a;
 	rect_a.atlas_coords_min = glm::vec2(
 		static_cast<float>(0) / static_cast<float>(atlas_side),
@@ -50,8 +53,8 @@ int main()
 	rect_a.atlas_coords_max = glm::vec2(
 		static_cast<float>(0 + 16) / static_cast<float>(atlas_side),
 		static_cast<float>(0 + 16) / static_cast<float>(atlas_side));
-	Block::type_table.push_back(BlockType(rect_a, rect_a, rect_a));
-	unsigned int type_index_a = Block::type_table.size() - 1;
+	nature.block_type_table.push_back(BlockType(rect_a, rect_a, rect_a));
+	unsigned int type_index_a = nature.block_type_table.size() - 1;
 
 	AtlasRect rect_b;
 	rect_b.atlas_coords_min = glm::vec2(
@@ -60,8 +63,8 @@ int main()
 	rect_b.atlas_coords_max = glm::vec2(
 		static_cast<float>(200 + 16) / static_cast<float>(atlas_side),
 		static_cast<float>(200 + 16) / static_cast<float>(atlas_side));
-	Block::type_table.push_back(BlockType(rect_b, rect_b, rect_b));
-	unsigned int type_index_b = Block::type_table.size() - 1;
+	nature.block_type_table.push_back(BlockType(rect_b, rect_b, rect_b));
+	unsigned int type_index_b = nature.block_type_table.size() - 1;
 	
 	
 	GLint max_atlas_side;
@@ -96,7 +99,7 @@ int main()
 	}
 
 
-	Chunk chunk(RectInt(CoordsInt(-5, -5, -5), CoordsInt(5, 5, 5)));
+	Chunk chunk(nature, RectInt(CoordsInt(-5, -5, -5), CoordsInt(5, 5, 5)));
 	{
 		Block& block = chunk.block(CoordsInt(-2, 4, 0));
 		block.is_air = false;
@@ -127,7 +130,7 @@ int main()
 		block.is_air = false;
 		block.type_index = type_index_b;
 	}
-	chunk.recompute_mesh();
+	chunk.recompute_mesh(nature);
 
 
 	Camera camera;

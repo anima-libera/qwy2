@@ -1,5 +1,6 @@
 
 #include "chunk.hpp"
+#include "nature.hpp"
 #include <iostream>
 
 namespace qwy2 {
@@ -81,42 +82,34 @@ bool RectInt::walker_iterate(CoordsInt& walker) const
 	return false;
 }
 
-BlockType::BlockType(
-	AtlasRect fase_top_rect, AtlasRect fase_vertical_rect, AtlasRect fase_bottom_rect
-):
-	fase_top_rect(fase_top_rect),
-	fase_vertical_rect(fase_vertical_rect),
-	fase_bottom_rect(fase_bottom_rect)
-{
-	;
-}
-
-std::vector<BlockType> Block::type_table{};
-
 Block::Block():
 	is_air(true)
 {
 	;
 }
 
-void Block::generate_face(CoordsInt coords, Axis axis, bool negativeward,
+void Block::generate_face(Nature const& nature,
+	CoordsInt coords, Axis axis, bool negativeward,
 	std::vector<float>& dst) const
 {
 	int index_axis = static_cast<int>(axis);
 	int index_a = index_axis == 0 ? 1 : 0;
 	int index_b = index_axis == 2 ? 1 : 2;
 
-	BlockType const& type = Block::type_table[this->type_index];
-	qwy2::AtlasRect atlas_rect = axis == Axis::Z ?
+	BlockType const& type = nature.block_type_table[this->type_index];
+	AtlasRect atlas_rect = axis == Axis::Z ?
 		(negativeward ? type.fase_bottom_rect : type.fase_top_rect) :
 		type.fase_vertical_rect;
+	if ((axis == Axis::Y && negativeward) || (axis == Axis::X && not negativeward))
+	{
+		std::swap(atlas_rect.atlas_coords_min.x, atlas_rect.atlas_coords_max.x);
+	}
 
 	struct VertexData
 	{
 		glm::vec3 coords;
 		glm::vec2 atlas_coords;
 	};
-
 
 	glm::vec3 coords_nn = coords.to_float_coords() - glm::vec3(0.5f, 0.5f, 0.5f);
 	coords_nn[index_axis] += negativeward ? 0.0f : 1.0f;
@@ -156,21 +149,20 @@ void Block::generate_face(CoordsInt coords, Axis axis, bool negativeward,
 		dst.push_back(vertex_data.coords.z);
 		dst.push_back(vertex_data.atlas_coords.x);
 		dst.push_back(vertex_data.atlas_coords.y);
-
-		std::cout << "vertex coords " <<
-			dst[dst.size()-5+0] << ", " << dst[dst.size()-5+1] << ", " << dst[dst.size()-5+2] <<
-			" atlas coords " <<
-			dst[dst.size()-5+3] << ", " << dst[dst.size()-5+4] << std::endl;
+		//std::cout << "vertex coords " <<
+		//	dst[dst.size()-5+0] << ", " << dst[dst.size()-5+1] << ", " << dst[dst.size()-5+2] <<
+		//	" atlas coords " <<
+		//	dst[dst.size()-5+3] << ", " << dst[dst.size()-5+4] << std::endl;
 	}
 }
 
-Chunk::Chunk(RectInt rect):
+Chunk::Chunk(Nature const& nature, RectInt rect):
 	rect(rect)
 {
 	this->block_grid.resize(rect.volume());
 
 	glGenBuffers(1, &this->mesh_openglid);
-	this->recompute_mesh();
+	this->recompute_mesh(nature);
 }
 
 Block& Chunk::block(CoordsInt const& coords)
@@ -178,7 +170,7 @@ Block& Chunk::block(CoordsInt const& coords)
 	return this->block_grid[this->rect.to_index(coords)];
 }
 
-void Chunk::recompute_mesh()
+void Chunk::recompute_mesh(Nature const& nature)
 {
 	mesh_data.clear();
 
@@ -200,10 +192,11 @@ void Chunk::recompute_mesh()
 				if (not this->rect.contains(neighbor) ||
 					this->block(neighbor).is_air)
 				{
-					std::cout << "generate face " <<
-						walker.x << ", " << walker.y << ", " << walker.z << " -> " <<
-						neighbor.x << ", " << neighbor.y << ", " << neighbor.z << std::endl;
-					this->block(walker).generate_face(walker, axis, negativeward, mesh_data);
+					//std::cout << "generate face " <<
+					//	walker.x << ", " << walker.y << ", " << walker.z << " -> " <<
+					//	neighbor.x << ", " << neighbor.y << ", " << neighbor.z << std::endl;
+					this->block(walker).generate_face(nature,
+						walker, axis, negativeward, mesh_data);
 				}
 			}
 		}

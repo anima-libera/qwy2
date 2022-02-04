@@ -3,10 +3,10 @@
 #define QWY2_HEADER_CHUNK_
 
 #include "opengl.hpp"
+#include "nature.hpp"
 #include <glm/glm.hpp>
 #include <vector>
 #include <array>
-#include <iterator>
 
 namespace qwy2 {
 
@@ -70,38 +70,16 @@ public:
 	bool walker_iterate(CoordsInt& walker) const;
 };
 
-class AtlasRect
-{
-public:
-	glm::vec2 atlas_coords_min;
-	glm::vec2 atlas_coords_max;
-};
-
-class BlockType
-{
-public:
-	AtlasRect fase_top_rect;
-	AtlasRect fase_vertical_rect;
-	AtlasRect fase_bottom_rect;
-
-public:
-	BlockType(
-		AtlasRect fase_top_rect, AtlasRect fase_vertical_rect, AtlasRect fase_bottom_rect);
-};
-
 class Block
 {
-public:
-	/* TODO: Move it somewhere else, this does not belong here. */
-	static std::vector<BlockType> type_table;
-
 public:
 	bool is_air;
 	unsigned int type_index;
 
 public:
 	Block();
-	void generate_face(CoordsInt coords, Axis axis, bool negativeward,
+	void generate_face(Nature const& nature,
+		CoordsInt coords, Axis axis, bool negativeward,
 		std::vector<float>& dst) const;
 };
 
@@ -115,9 +93,9 @@ private:
 	std::vector<Block> block_grid;
 
 public:
-	Chunk(RectInt rect);
+	Chunk(Nature const& nature, RectInt rect);
 	Block& block(CoordsInt const& coords);
-	void recompute_mesh();
+	void recompute_mesh(Nature const& nature);
 	unsigned int mesh_vertex_count() const;
 };
 
