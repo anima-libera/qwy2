@@ -52,19 +52,26 @@ int main()
 	const auto clock_time_beginning = clock::now();
 	float time = 0.0f; /* Time in seconds. */
 
+	glm::vec3 player_position{-3.0f, 0.0f, 0.0f};
+	float player_horizontal_angle = 0.0f;
+	float player_vertical_angle = 0.0f;
+
 	SDL_Event event;
+
 	bool moving_forward = false;
 	bool moving_backward = false;
 	bool moving_leftward = false;
 	bool moving_rightward = false;
 	const float moving_factor = 0.05f;
 
+	glm::vec3 player_motion{0.0f, 0.0f, 0.0f};
+	bool flying = false;
+	const float flying_factor = 0.003f;
+	const float falling_factor = 0.006f;
+
 	SDL_SetRelativeMouseMode(SDL_TRUE);
 	const float moving_angle_factor = 0.005f;
 
-	glm::vec3 player_position{-3.0f, 0.0f, 0.0f};
-	float player_horizontal_angle = 0.0f;
-	float player_vertical_angle = 0.0f;
 
 	bool running = true;
 	while (running)
@@ -107,6 +114,14 @@ int main()
 					}
 				break;
 
+				case SDL_MOUSEBUTTONDOWN:
+				case SDL_MOUSEBUTTONUP:
+					if (event.button.button == SDL_BUTTON_RIGHT)
+					{
+						flying = event.type == SDL_MOUSEBUTTONDOWN;
+					}
+				break;
+
 				case SDL_MOUSEMOTION:
 					horizontal_angle_motion += -event.motion.xrel * moving_angle_factor;
 					vertical_angle_motion += -event.motion.yrel * moving_angle_factor;
@@ -116,6 +131,15 @@ int main()
 
 		player_horizontal_angle += horizontal_angle_motion;
 		player_vertical_angle += vertical_angle_motion;
+		if (player_vertical_angle < -TAU / 4.0f + 0.0001f)
+		{
+			player_vertical_angle = -TAU / 4.0f + 0.0001f;
+		}
+		else if (player_vertical_angle > TAU / 4.0f - 0.0001f)
+		{
+			player_vertical_angle = TAU / 4.0f - 0.0001f;
+		}
+
 		glm::vec3 player_horizontal_direction{
 			std::cos(player_horizontal_angle),
 			std::sin(player_horizontal_angle),
@@ -128,9 +152,24 @@ int main()
 			((moving_forward ? 1.0f : 0.0f) - (moving_backward ? 1.0f : 0.0f));
 		float rightward_motion = moving_factor *
 			((moving_rightward ? 1.0f : 0.0f) - (moving_leftward ? 1.0f : 0.0f));
+
+		if (flying)
+		{
+			player_motion.z += flying_factor;
+		}
+		else if (player_position.z > 0.0001f)
+		{
+			player_motion.z -= falling_factor;
+		}
+		else
+		{
+			player_motion.z = 0.0f;
+			player_position.z = 0.0f;
+		}
 		player_position +=
 			player_horizontal_direction * forward_motion +
-			player_horizontal_right * rightward_motion;
+			player_horizontal_right * rightward_motion +
+			player_motion;
 
 		glm::vec3 player_direction = glm::rotate(player_horizontal_direction,
 			player_vertical_angle, player_horizontal_right);
