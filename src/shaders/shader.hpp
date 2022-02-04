@@ -12,6 +12,7 @@ class UniformValues
 {
 public:
 	glm::mat4 camera_matrix;
+	unsigned int atlas_opengltextureid;
 };
 
 class ShaderProgram

@@ -81,6 +81,18 @@ bool RectInt::walker_iterate(CoordsInt& walker) const
 	return false;
 }
 
+BlockType::BlockType(
+	AtlasRect fase_top_rect, AtlasRect fase_vertical_rect, AtlasRect fase_bottom_rect
+):
+	fase_top_rect(fase_top_rect),
+	fase_vertical_rect(fase_vertical_rect),
+	fase_bottom_rect(fase_bottom_rect)
+{
+	;
+}
+
+std::vector<BlockType> Block::type_table{};
+
 Block::Block():
 	is_air(true)
 {
@@ -94,29 +106,49 @@ void Block::generate_face(CoordsInt coords, Axis axis, bool negativeward,
 	int index_a = index_axis == 0 ? 1 : 0;
 	int index_b = index_axis == 2 ? 1 : 2;
 
-	glm::vec3 coords_nn = coords.to_float_coords() - glm::vec3(0.5f, 0.5f, 0.5f);
-	coords_nn[index_axis] += negativeward ? 0.0f : 1.0f;
-	glm::vec3 coords_np = coords_nn;
-	coords_np[index_b] += 1.0f;
-	glm::vec3 coords_pn = coords_nn;
-	coords_pn[index_a] += 1.0f;
-	glm::vec3 coords_pp = coords_nn;
-	coords_pp[index_a] += 1.0f;
-	coords_pp[index_b] += 1.0f;
+	BlockType const& type = Block::type_table[this->type_index];
+	qwy2::AtlasRect atlas_rect = axis == Axis::Z ?
+		(negativeward ? type.fase_bottom_rect : type.fase_top_rect) :
+		type.fase_vertical_rect;
 
-	std::array<glm::vec3, 6> coords_sequence{
-		coords_nn, coords_pp, coords_np, coords_nn, coords_pp, coords_pn};
-
-	dst.reserve(dst.size() + 6 * 6);
-	for (unsigned int i = 0; i < 6; i++)
+	struct VertexData
 	{
-		glm::vec3& coords = coords_sequence[i];
-		dst.push_back(coords.x);
-		dst.push_back(coords.y);
-		dst.push_back(coords.z);
-		dst.push_back(this->color.r);
-		dst.push_back(this->color.g);
-		dst.push_back(this->color.b);
+		glm::vec3 coords;
+		glm::vec2 atlas_coords;
+	};
+
+	VertexData nn;
+	nn.coords = coords.to_float_coords() - glm::vec3(0.5f, 0.5f, 0.5f);
+	nn.atlas_coords = atlas_rect.atlas_coords_min;
+	nn.coords[index_axis] += negativeward ? 0.0f : 1.0f;
+	VertexData np;
+	np.coords = nn.coords;
+	np.atlas_coords = atlas_rect.atlas_coords_min;
+	np.coords[index_b] += 1.0f;
+	np.atlas_coords.y = atlas_rect.atlas_coords_max.y;
+	VertexData pn;
+	pn.coords = nn.coords;
+	pn.atlas_coords = atlas_rect.atlas_coords_min;
+	pn.coords[index_a] += 1.0f;
+	pn.atlas_coords.x = atlas_rect.atlas_coords_max.x;
+	VertexData pp;
+	pp.coords = nn.coords;
+	pp.atlas_coords = atlas_rect.atlas_coords_min;
+	pp.coords[index_a] += 1.0f;
+	pp.coords[index_b] += 1.0f;
+	pp.atlas_coords.x = atlas_rect.atlas_coords_max.x;
+	pp.atlas_coords.y = atlas_rect.atlas_coords_max.y;
+
+	std::array<VertexData, 6> vertex_data_sequence{nn, pp, np, nn, pp, pn};
+
+	dst.reserve(dst.size() + 6 * 5);
+	for (VertexData& vertex_data : vertex_data_sequence)
+	{
+		dst.push_back(vertex_data.coords.x);
+		dst.push_back(vertex_data.coords.y);
+		dst.push_back(vertex_data.coords.z);
+		dst.push_back(vertex_data.atlas_coords.x);
+		dst.push_back(vertex_data.atlas_coords.y);
 	}
 }
 

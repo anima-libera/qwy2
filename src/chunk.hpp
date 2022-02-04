@@ -22,21 +22,25 @@ class CoordsInt
 public:
 	union
 	{
+		std::array<int, 3> arr;
+		
+		/* Here are some compiler-specific (ugh) pragmas to allow
+		 * for an anonymous struct to exist, for aesthetic purposes.
+		 * Inspired from the GLM source code. */
 		#if defined(__clang__)
-		#pragma clang diagnostic push
-		#pragma clang diagnostic ignored "-Wgnu-anonymous-struct"
-		#pragma clang diagnostic ignored "-Wnested-anon-types"		
+			#pragma clang diagnostic push
+			#pragma clang diagnostic ignored "-Wgnu-anonymous-struct"
+			#pragma clang diagnostic ignored "-Wnested-anon-types"		
 		#elif defined(__GNUG__)
-		#pragma GCC diagnostic push
-		#pragma GCC diagnostic ignored "-Wpedantic"
+			#pragma GCC diagnostic push
+			#pragma GCC diagnostic ignored "-Wpedantic"
 		#endif
 		struct { int x, y, z; };
 		#if defined(__clang__)
-		#pragma clang diagnostic pop
+			#pragma clang diagnostic pop
 		#elif defined(__GNUG__)
-		#pragma GCC diagnostic pop
+			#pragma GCC diagnostic pop
 		#endif
-		std::array<int, 3> arr;
 	};
 
 public:
@@ -66,11 +70,34 @@ public:
 	bool walker_iterate(CoordsInt& walker) const;
 };
 
+class AtlasRect
+{
+public:
+	glm::vec2 atlas_coords_min;
+	glm::vec2 atlas_coords_max;
+};
+
+class BlockType
+{
+public:
+	AtlasRect fase_top_rect;
+	AtlasRect fase_vertical_rect;
+	AtlasRect fase_bottom_rect;
+
+public:
+	BlockType(
+		AtlasRect fase_top_rect, AtlasRect fase_vertical_rect, AtlasRect fase_bottom_rect);
+};
+
 class Block
 {
 public:
+	/* TODO: Move it somewhere else, this does not belong here. */
+	static std::vector<BlockType> type_table;
+
+public:
 	bool is_air;
-	glm::vec3 color;
+	unsigned int type_index;
 
 public:
 	Block();

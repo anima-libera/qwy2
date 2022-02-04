@@ -1,11 +1,17 @@
 
 #version 430 core
 
-in vec3 v_color;
+in vec2 v_atlas_coords;
+
+layout(location = 1) uniform sampler2D u_atlas;
 
 out vec4 out_color;
 
 void main()
 {
-	out_color = vec4(v_color, 1.0);
+	out_color = vec4(texture(u_atlas, v_atlas_coords));
+	if (out_color.a < 0.001)
+	{
+		discard;
+	}
 }

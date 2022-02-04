@@ -13,6 +13,7 @@
 #include <chrono>
 #include <cmath>
 #include <vector>
+#include <cstdint>
 
 int main()
 {
@@ -24,42 +25,86 @@ int main()
 	}
 
 
-	Camera camera;
+	unsigned int atlas_side = 1024;
+	std::uint8_t* atlas_data = new std::uint8_t[atlas_side * atlas_side * 4];
+	for (unsigned int y = 0; y < atlas_side; y++)
+	for (unsigned int x = 0; x < atlas_side; x++)
+	{
+		std::uint8_t& r = atlas_data[y * atlas_side * 4 + x * 4 + 0];
+		std::uint8_t& g = atlas_data[y * atlas_side * 4 + x * 4 + 1];
+		std::uint8_t& b = atlas_data[y * atlas_side * 4 + x * 4 + 2];
+		std::uint8_t& a = atlas_data[y * atlas_side * 4 + x * 4 + 3];
+
+		r = (std::cos(static_cast<float>(x) * 0.1f) + 1.0f) / 2.0f * 255.0f;
+		g = (std::cos(static_cast<float>(x + y) * 0.27f) + 1.0f) / 2.0f * 255.0f;
+		b = (std::cos(static_cast<float>(y) * 0.31f) + 1.0f) / 2.0f * 255.0f;
+		a = 255;
+	}
+
+	AtlasRect rect_a;
+	rect_a.atlas_coords_min = glm::vec2(
+		static_cast<float>(0) / static_cast<float>(atlas_side),
+		static_cast<float>(0) / static_cast<float>(atlas_side));
+	rect_a.atlas_coords_max = glm::vec2(
+		static_cast<float>(0 + 16) / static_cast<float>(atlas_side),
+		static_cast<float>(0 + 16) / static_cast<float>(atlas_side));
+
+	Block::type_table.push_back(BlockType(rect_a, rect_a, rect_a));
+	unsigned int type_index_a = Block::type_table.size() - 1;
+	
+	
+	GLint max_atlas_side;
+	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_atlas_side);
+	if (static_cast<unsigned int>(max_atlas_side) < atlas_side)
+	{
+		std::cerr << "GL_MAX_TEXTURE_SIZE is " << max_atlas_side <<
+			" which is considered as too small for the atlas" << std::endl;
+	}
+	GLuint atlas_openglid;
+	glGenTextures(1, &atlas_openglid);
+	glBindTexture(GL_TEXTURE_2D, atlas_openglid);
+	glTexImage2D(GL_TEXTURE_2D,
+		0, GL_RGBA, atlas_side, atlas_side, 0,
+		GL_RGBA, GL_UNSIGNED_BYTE, atlas_data);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	unsigned int atlas_opengltextureid = 0;
+	glActiveTexture(GL_TEXTURE0 + atlas_opengltextureid);
+	glBindTexture(GL_TEXTURE_2D, atlas_openglid);
+
 
 	UniformValues uniform_values;
-	uniform_values.camera_matrix = camera.matrix;
+	uniform_values.atlas_opengltextureid = atlas_opengltextureid;
 
 	ShaderProgramBlocks shader_program_blocks;
 	if (shader_program_blocks.init() == ErrorCode::ERROR)
 	{
-		std::cerr << "ono" << std::endl;
+		std::cerr << "Error occured during shader compilation" << std::endl;
 		return EXIT_FAILURE;
 	}
-	shader_program_blocks.update_uniforms(uniform_values);
 
 
 	Chunk chunk(RectInt(CoordsInt(-5, -5, -5), CoordsInt(5, 5, 5)));
 	{
 		Block& block = chunk.block(CoordsInt(-2, 4, 0));
 		block.is_air = false;
-		block.color = glm::vec3(0.3f, 0.95f, 0.1f);
+		block.type_index = type_index_a;
 	}
 	{
 		Block& block = chunk.block(CoordsInt(3, -1, 1));
 		block.is_air = false;
-		block.color = glm::vec3(0.7f, 0.4f, 0.1f);
+		block.type_index = type_index_a;
 	}
 	{
 		Block& block = chunk.block(CoordsInt(1, 3, -1));
 		block.is_air = false;
-		block.color = glm::vec3(0.0f, 0.6f, 0.8f);
+		block.type_index = type_index_a;
 	}
 	chunk.recompute_mesh();
 
 
-	using clock = std::chrono::high_resolution_clock;
-	const auto clock_time_beginning = clock::now();
-	float time = 0.0f; /* Time in seconds. */
+	Camera camera;
 
 	glm::vec3 player_position{-3.0f, 0.0f, 0.0f};
 	float player_horizontal_angle = 0.0f;
@@ -83,6 +128,10 @@ int main()
 	SDL_SetRelativeMouseMode(SDL_TRUE);
 	const float moving_angle_factor = 0.005f;
 
+
+	using clock = std::chrono::high_resolution_clock;
+	const auto clock_time_beginning = clock::now();
+	float time = 0.0f; /* Time in seconds. */
 
 	bool running = true;
 	while (running)
@@ -200,7 +249,7 @@ int main()
 		shader_program_blocks.update_uniforms(uniform_values);
 		
 		const float v1 = time / 10.0f;
-		const float v2 = v1 - std::floor(v1);
+		const float v2 = (std::cos(v1) + 1.0f) / 2.0f;
 		glClearColor(v2 * 0.2f, 0.0f, (1.0f - v2) * 0.2f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
