@@ -99,43 +99,68 @@ int main()
 	}
 
 
-	Chunk chunk(nature, RectInt(CoordsInt(-5, -5, -5), CoordsInt(5, 5, 5)));
+	#if 0
+	Chunk* chunk = new Chunk(nature, RectInt(CoordsInt(-5, -5, -5), CoordsInt(5, 5, 5)));
 	{
-		Block& block = chunk.block(CoordsInt(-2, 4, 0));
+		Block& block = chunk->block(CoordsInt(-2, 4, 0));
 		block.is_air = false;
 		block.type_index = type_index_a;
 	}
 	{
-		Block& block = chunk.block(CoordsInt(3, -1, 1));
+		Block& block = chunk->block(CoordsInt(3, -1, 1));
 		block.is_air = false;
 		block.type_index = type_index_a;
 	}
 	{
-		Block& block = chunk.block(CoordsInt(1, 3, -1));
+		Block& block = chunk->block(CoordsInt(1, 3, -1));
 		block.is_air = false;
 		block.type_index = type_index_a;
 	}
 	{
-		Block& block = chunk.block(CoordsInt(4, -1, 1));
+		Block& block = chunk->block(CoordsInt(4, -1, 1));
 		block.is_air = false;
 		block.type_index = type_index_b;
 	}
 	{
-		Block& block = chunk.block(CoordsInt(4, -2, 1));
+		Block& block = chunk->block(CoordsInt(4, -2, 1));
 		block.is_air = false;
 		block.type_index = type_index_b;
 	}
 	{
-		Block& block = chunk.block(CoordsInt(4, -2, 2));
+		Block& block = chunk->block(CoordsInt(4, -2, 2));
 		block.is_air = false;
 		block.type_index = type_index_b;
 	}
-	chunk.recompute_mesh(nature);
+	{
+		Block& block = chunk->block(CoordsInt(0, 0, -1));
+		block.is_air = false;
+		block.type_index = type_index_b;
+	}
+	chunk->recompute_mesh(nature);
+
+	assert(chunk->rect.length<Axis::X>() == chunk->rect.length<Axis::Y>());
+	assert(chunk->rect.length<Axis::X>() == chunk->rect.length<Axis::Z>());
+
+	ChunkGrid chunk_grid;
+	chunk_grid.chunk_side = chunk->rect.length<Axis::X>();
+	CoordsInt center = chunk_grid.center_coords(CoordsInt(0.0f, 0.0f, 0.0f));
+	chunk_grid.table[center] = chunk;
+	#endif
+
+	ChunkGrid chunk_grid(9);
+	const ChunkRect generated_chunk_rect =
+		ChunkRect(ChunkCoords(-5, -5, -5), ChunkCoords(5, 5, 5));
+	ChunkCoords walker = generated_chunk_rect.walker_start();
+	do
+	{
+		chunk_grid.generate_chunk(nature, walker);
+	}
+	while (generated_chunk_rect.walker_iterate(walker));
 
 
 	Camera camera;
 
-	glm::vec3 player_position{-3.0f, 0.0f, 0.0f};
+	glm::vec3 player_position{0.0f, 0.0f, 0.0f};
 	float player_horizontal_angle = 0.0f;
 	float player_vertical_angle = 0.0f;
 
@@ -145,7 +170,8 @@ int main()
 	bool moving_backward = false;
 	bool moving_leftward = false;
 	bool moving_rightward = false;
-	const float moving_factor = 0.05f;
+	const float moving_factor = 0.1f;
+	const float flying_moving_factor = 0.3f;
 
 	glm::vec3 player_motion{0.0f, 0.0f, 0.0f};
 	bool flying = false;
@@ -189,6 +215,7 @@ int main()
 								running = false;
 							}
 						break;
+
 						case SDLK_z:
 							moving_forward = event.type == SDL_KEYDOWN;
 						break;
@@ -200,6 +227,13 @@ int main()
 						break;
 						case SDLK_d:
 							moving_rightward = event.type == SDL_KEYDOWN;
+						break;
+
+						case SDLK_p:
+							for (auto const& [chunk_coords, chunk] : chunk_grid.table)
+							{
+								chunk->recompute_mesh(nature);
+							}
 						break;
 					}
 				break;
@@ -239,10 +273,24 @@ int main()
 			std::cos(player_horizontal_angle - TAU / 4.0f),
 			std::sin(player_horizontal_angle - TAU / 4.0f),
 			0.0f};
-		float forward_motion = moving_factor *
+		float current_moving_factor =
+			flying ? flying_moving_factor : moving_factor;
+		float forward_motion = current_moving_factor *
 			((moving_forward ? 1.0f : 0.0f) - (moving_backward ? 1.0f : 0.0f));
-		float rightward_motion = moving_factor *
+		float rightward_motion = current_moving_factor *
 			((moving_rightward ? 1.0f : 0.0f) - (moving_leftward ? 1.0f : 0.0f));
+
+		Chunk* player_chunk = chunk_grid.containing_chunk(player_position);
+		if (player_chunk == nullptr)
+		{
+			std::cerr << "h" << std::endl;
+			return 0;
+		}
+		BlockCoords player_coords_int{
+			static_cast<int>(std::round(player_position.x)),
+			static_cast<int>(std::round(player_position.y)),
+			static_cast<int>(std::round(player_position.z))};
+		bool is_in_block = not player_chunk->block(player_coords_int).is_air;
 
 		if (flying)
 		{
@@ -255,14 +303,14 @@ int main()
 				player_motion.z += flying_factor;
 			}
 		}
-		else if (player_position.z > 0.0001f)
+		else if (not is_in_block)
 		{
 			player_motion.z -= falling_factor;
 		}
 		else
 		{
 			player_motion.z = 0.0f;
-			player_position.z = 0.0f;
+			player_position.z = std::round(player_position.z) + 0.5f;
 		}
 		player_position +=
 			player_horizontal_direction * forward_motion +
@@ -282,7 +330,10 @@ int main()
 		glClearColor(v2 * 0.2f, 0.0f, (1.0f - v2) * 0.2f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		shader_program_blocks.draw(chunk.mesh_openglid, chunk.mesh_vertex_count());
+		for (auto const& [chunk_coords, chunk] : chunk_grid.table)
+		{
+			shader_program_blocks.draw(chunk->mesh_openglid, chunk->mesh_vertex_count());
+		}
 
 		SDL_GL_SwapWindow(g_window);
 	}

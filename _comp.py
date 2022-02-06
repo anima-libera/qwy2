@@ -15,7 +15,7 @@ Options:
   --opengl-notifs   Enables OpenGL notifications.
 
 Example usage for debug:
-  {this_script} -d --compiler=gcc -l
+  {this_script} -d --compiler=g++ -l
 """
 
 import sys
@@ -183,7 +183,7 @@ for src_file_name in src_file_names:
 build_command_args.append("-o")
 build_command_args.append(os.path.join(bin_dir_name, bin_name))
 build_command_args.append("-I" + src_dir_name)
-build_command_args.append("-std=c++17")
+build_command_args.append("-std=c++20")
 build_command_args.append("-Wall")
 build_command_args.append("-Wextra")
 build_command_args.append("-pedantic")

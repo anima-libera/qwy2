@@ -7,6 +7,10 @@
 #include <glm/glm.hpp>
 #include <vector>
 #include <array>
+#include <unordered_map>
+#include <functional>
+#include <type_traits>
+#include <ostream>
 
 namespace qwy2 {
 
@@ -17,8 +21,18 @@ enum class Axis
 	Z = 2,
 };
 
+class BlockCoordsLevel {};
+class ChunkCoordsLevel {};
+
+template<typename T>
+inline constexpr bool is_coords_level =
+	std::is_same_v<T, BlockCoordsLevel> || std::is_same_v<T, ChunkCoordsLevel>;
+
+template<typename L>
 class CoordsInt
 {
+	static_assert(is_coords_level<L>);
+
 public:
 	union
 	{
@@ -47,28 +61,45 @@ public:
 	CoordsInt(int x, int y, int z);
 	glm::vec3 to_float_coords() const;	
 	bool operator==(CoordsInt const& other) const;
-};
-
-class RectInt
-{
-private:
-	CoordsInt coords_min; /* Included. */
-	CoordsInt coords_max; /* Included. */
 
 public:
-	RectInt(CoordsInt coords_min, CoordsInt coords_max);
+	class Hash
+	{
+	public:
+		std::size_t operator()(CoordsInt const& coords) const noexcept;
+	};
+};
+
+template<typename L>
+std::ostream& operator<<(std::ostream& out_stream, CoordsInt<L> const& coords);
+
+template<typename L>
+class RectInt
+{
+	static_assert(is_coords_level<L>);
+
+public:
+	CoordsInt<L> coords_min; /* Included. */
+	CoordsInt<L> coords_max; /* Included. */
+
+public:
+	RectInt(CoordsInt<L> coords_min, CoordsInt<L> coords_max);
 
 	template<Axis A>
 	unsigned int length() const;
+
 	unsigned int volume() const;
 
-	bool contains(CoordsInt const& coords) const;
+	bool contains(CoordsInt<L> const& coords) const;
 
-	unsigned int to_index(CoordsInt const& coords) const;
+	unsigned int to_index(CoordsInt<L> const& coords) const;
 
-	CoordsInt walker_start() const;
-	bool walker_iterate(CoordsInt& walker) const;
+	CoordsInt<L> walker_start() const;
+	bool walker_iterate(CoordsInt<L>& walker) const;
 };
+
+using BlockCoords = CoordsInt<BlockCoordsLevel>;
+using BlockRect = RectInt<BlockCoordsLevel>;
 
 class Block
 {
@@ -79,7 +110,7 @@ public:
 public:
 	Block();
 	void generate_face(Nature const& nature,
-		CoordsInt coords, Axis axis, bool negativeward,
+		BlockCoords coords, Axis axis, bool negativeward,
 		std::vector<float>& dst) const;
 };
 
@@ -88,15 +119,42 @@ class Chunk
 public:
 	std::vector<float> mesh_data;
 	GLuint mesh_openglid;
-	RectInt rect;
+	BlockRect rect;
 private:
 	std::vector<Block> block_grid;
 
 public:
-	Chunk(Nature const& nature, RectInt rect);
-	Block& block(CoordsInt const& coords);
+	Chunk(Nature const& nature, BlockRect rect);
+	Block& block(BlockCoords const& coords);
 	void recompute_mesh(Nature const& nature);
 	unsigned int mesh_vertex_count() const;
+
+	//friend class Generator;
+};
+
+using ChunkCoords = CoordsInt<ChunkCoordsLevel>;
+using ChunkRect = RectInt<ChunkCoordsLevel>;
+
+class ChunkGrid
+{
+public:
+	int chunk_side; /* Should stay signed, and must be odd. */
+	std::unordered_map<ChunkCoords, Chunk*, ChunkCoords::Hash> table; /* Center to chunk. */
+
+public:
+	ChunkGrid(int chunk_side);
+
+	ChunkCoords containing_chunk_coords(BlockCoords coords) const;
+	BlockRect chunk_rect(ChunkCoords chunk_coords) const;
+
+	BlockCoords containing_chunk_center_coords(BlockCoords coords) const;
+	BlockRect containing_chunk_rect(BlockCoords coords) const;
+	BlockRect containing_chunk_rect(glm::vec3 coords) const;
+
+	Chunk* containing_chunk(BlockCoords coords);
+	Chunk* containing_chunk(glm::vec3 coords);
+
+	Chunk* generate_chunk(Nature const& nature, ChunkCoords chunk_coords);
 };
 
 } /* qwy2 */

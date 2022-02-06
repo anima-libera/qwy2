@@ -5,36 +5,70 @@
 
 namespace qwy2 {
 
-CoordsInt::CoordsInt(int x, int y, int z):
+template<typename L>
+CoordsInt<L>::CoordsInt(int x, int y, int z):
 	x(x), y(y), z(z)
 {
 	;
 }
 
-glm::vec3 CoordsInt::to_float_coords() const
+template<typename L>
+glm::vec3 CoordsInt<L>::to_float_coords() const
 {
 	return glm::vec3(this->x, this->y, this->z);
 }
 
-bool CoordsInt::operator==(CoordsInt const& other) const
+template<typename L>
+bool CoordsInt<L>::operator==(CoordsInt const& other) const
 {
 	return this->arr == other.arr;
 }
 
-RectInt::RectInt(CoordsInt coords_min, CoordsInt coords_max):
+template<typename L>
+std::size_t CoordsInt<L>::Hash::operator()(CoordsInt const& coords) const noexcept
+{
+	return
+		std::hash<int>()(coords.x) ^
+		std::hash<int>()(coords.y) ^
+		std::hash<int>()(coords.z);
+}
+
+template class CoordsInt<BlockCoordsLevel>;
+template class CoordsInt<ChunkCoordsLevel>;
+
+template<typename L>
+std::ostream& operator<<(std::ostream& out_stream, CoordsInt<L> const& coords)
+{
+	out_stream << "(" << coords.x << ", " << coords.y << ", " << coords.z << ")";
+	return out_stream;
+}
+
+template std::ostream& operator<<(std::ostream& out_stream,
+	CoordsInt<BlockCoordsLevel> const& coords);
+template std::ostream& operator<<(std::ostream& out_stream,
+	CoordsInt<ChunkCoordsLevel> const& coords);
+
+template<typename L>
+RectInt<L>::RectInt(CoordsInt<L> coords_min, CoordsInt<L> coords_max):
 	coords_min(coords_min), coords_max(coords_max)
 {
 	;
 }
 
+template<typename L>
 template<Axis A>
-unsigned int RectInt::length() const
+unsigned int RectInt<L>::length() const
 {
 	const int axis = static_cast<int>(A);
 	return this->coords_max.arr[axis] - this->coords_min.arr[axis] + 1;
 }
 
-unsigned int RectInt::volume() const
+//template unsigned int RectInt::length<Axis::X>() const;
+//template unsigned int RectInt::length<Axis::Y>() const;
+//template unsigned int RectInt::length<Axis::Z>() const;
+
+template<typename L>
+unsigned int RectInt<L>::volume() const
 {
 	return
 		this->length<Axis::X>() *
@@ -42,7 +76,8 @@ unsigned int RectInt::volume() const
 		this->length<Axis::Z>();
 }
 
-bool RectInt::contains(CoordsInt const& coords) const
+template<typename L>
+bool RectInt<L>::contains(CoordsInt<L> const& coords) const
 {
 	return
 		this->coords_min.x <= coords.x && coords.x <= this->coords_max.x &&
@@ -50,20 +85,24 @@ bool RectInt::contains(CoordsInt const& coords) const
 		this->coords_min.z <= coords.z && coords.z <= this->coords_max.z;
 }
 
-unsigned int RectInt::to_index(CoordsInt const& coords) const
+template<typename L>
+unsigned int RectInt<L>::to_index(CoordsInt<L> const& coords) const
 {
+	assert(this->contains(coords));
 	return
 		(coords.x - this->coords_min.x) +
 		(coords.y - this->coords_min.y) * this->length<Axis::X>() +
 		(coords.z - this->coords_min.z) * this->length<Axis::X>() * this->length<Axis::Y>();
 }
 
-CoordsInt RectInt::walker_start() const
+template<typename L>
+CoordsInt<L> RectInt<L>::walker_start() const
 {
 	return this->coords_min;
 }
 
-bool RectInt::walker_iterate(CoordsInt& walker) const
+template<typename L>
+bool RectInt<L>::walker_iterate(CoordsInt<L>& walker) const
 {
 	int axis = static_cast<int>(Axis::X);
 	while (axis <= static_cast<int>(Axis::Z))
@@ -82,6 +121,9 @@ bool RectInt::walker_iterate(CoordsInt& walker) const
 	return false;
 }
 
+template class RectInt<BlockCoordsLevel>;
+template class RectInt<ChunkCoordsLevel>;
+
 Block::Block():
 	is_air(true)
 {
@@ -89,12 +131,12 @@ Block::Block():
 }
 
 void Block::generate_face(Nature const& nature,
-	CoordsInt coords, Axis axis, bool negativeward,
+	BlockCoords coords, Axis axis, bool negativeward,
 	std::vector<float>& dst) const
 {
-	int index_axis = static_cast<int>(axis);
-	int index_a = index_axis == 0 ? 1 : 0;
-	int index_b = index_axis == 2 ? 1 : 2;
+	const unsigned int index_axis = static_cast<int>(axis);
+	const unsigned int index_a = index_axis == 0 ? 1 : 0;
+	const unsigned int index_b = index_axis == 2 ? 1 : 2;
 
 	BlockType const& type = nature.block_type_table[this->type_index];
 	AtlasRect atlas_rect = axis == Axis::Z ?
@@ -139,34 +181,32 @@ void Block::generate_face(Nature const& nature,
 	pp.atlas_coords.x = atlas_rect.atlas_coords_max.x;
 	pp.atlas_coords.y = atlas_rect.atlas_coords_max.y;
 
-	std::array<VertexData, 6> vertex_data_sequence{nn, pn, pp, nn, pp, np};
+	const std::array<VertexData, 6> vertex_data_sequence{nn, pn, pp, nn, pp, np};
 
 	dst.reserve(dst.size() + vertex_data_sequence.size() * 5);
-	for (VertexData& vertex_data : vertex_data_sequence)
+	for (VertexData const& vertex_data : vertex_data_sequence)
 	{
 		dst.push_back(vertex_data.coords.x);
 		dst.push_back(vertex_data.coords.y);
 		dst.push_back(vertex_data.coords.z);
 		dst.push_back(vertex_data.atlas_coords.x);
 		dst.push_back(vertex_data.atlas_coords.y);
-		//std::cout << "vertex coords " <<
-		//	dst[dst.size()-5+0] << ", " << dst[dst.size()-5+1] << ", " << dst[dst.size()-5+2] <<
-		//	" atlas coords " <<
-		//	dst[dst.size()-5+3] << ", " << dst[dst.size()-5+4] << std::endl;
 	}
 }
 
-Chunk::Chunk(Nature const& nature, RectInt rect):
+Chunk::Chunk(Nature const& nature, BlockRect rect):
 	rect(rect)
 {
 	this->block_grid.resize(rect.volume());
+	nature.generator.generate_chunk_content(nature, *this);
 
 	glGenBuffers(1, &this->mesh_openglid);
 	this->recompute_mesh(nature);
 }
 
-Block& Chunk::block(CoordsInt const& coords)
+Block& Chunk::block(BlockCoords const& coords)
 {
+	assert(this->rect.contains(coords));
 	return this->block_grid[this->rect.to_index(coords)];
 }
 
@@ -174,27 +214,19 @@ void Chunk::recompute_mesh(Nature const& nature)
 {
 	mesh_data.clear();
 
-	CoordsInt walker = this->rect.walker_start();
+	BlockCoords walker = this->rect.walker_start();
 	do
 	{
-		//std::cout << "block " <<
-		//	walker.x << ", " << walker.y << ", " << walker.z << std::endl;
 		if (not this->block(walker).is_air)
 		{
-			//std::cout << "not air at " <<
-			//	walker.x << ", " << walker.y << ", " << walker.z << std::endl;
 			for (Axis axis : {Axis::X, Axis::Y, Axis::Z})
 			for (bool negativeward : {false, true})
 			{
-				int index_axis = static_cast<int>(axis);
-				CoordsInt neighbor = walker;
-				neighbor.arr[index_axis] += negativeward ? -1 : 1;
+				BlockCoords neighbor = walker;
+				neighbor.arr[static_cast<int>(axis)] += negativeward ? -1 : 1;
 				if (not this->rect.contains(neighbor) ||
 					this->block(neighbor).is_air)
 				{
-					//std::cout << "generate face " <<
-					//	walker.x << ", " << walker.y << ", " << walker.z << " -> " <<
-					//	neighbor.x << ", " << neighbor.y << ", " << neighbor.z << std::endl;
 					this->block(walker).generate_face(nature,
 						walker, axis, negativeward, mesh_data);
 				}
@@ -210,7 +242,85 @@ void Chunk::recompute_mesh(Nature const& nature)
 
 unsigned int Chunk::mesh_vertex_count() const
 {
-	return mesh_data.size() / 5;
+	return this->mesh_data.size() / 5;
+}
+
+ChunkGrid::ChunkGrid(int chunk_side):
+	chunk_side(chunk_side)
+{
+	assert(1 < chunk_side && chunk_side % 2 == 1);
+}
+
+ChunkCoords ChunkGrid::containing_chunk_coords(BlockCoords coords) const
+{
+	return ChunkCoords(
+		(coords.x + (coords.x < 0 ? -1 : 1) * this->chunk_side / 2) / this->chunk_side,
+		(coords.y + (coords.y < 0 ? -1 : 1) * this->chunk_side / 2) / this->chunk_side,
+		(coords.z + (coords.z < 0 ? -1 : 1) * this->chunk_side / 2) / this->chunk_side);
+}
+
+BlockRect ChunkGrid::chunk_rect(ChunkCoords chunk_coords) const
+{
+	const BlockCoords center{
+		chunk_coords.x * this->chunk_side,
+		chunk_coords.y * this->chunk_side,
+		chunk_coords.z * this->chunk_side};
+	const int margin = this->chunk_side / 2;
+	return BlockRect(
+		BlockCoords(center.x - margin, center.y - margin, center.z - margin),
+		BlockCoords(center.x + margin, center.y + margin, center.z + margin));
+}
+
+BlockCoords ChunkGrid::containing_chunk_center_coords(BlockCoords coords) const
+{
+	return BlockCoords(
+		(coords.x / this->chunk_side) * this->chunk_side,
+		(coords.y / this->chunk_side) * this->chunk_side,
+		(coords.z / this->chunk_side) * this->chunk_side);
+}
+
+BlockRect ChunkGrid::containing_chunk_rect(BlockCoords coords) const
+{
+	return this->chunk_rect(this->containing_chunk_coords(coords));
+}
+
+BlockRect ChunkGrid::containing_chunk_rect(glm::vec3 coords) const
+{
+	const BlockCoords coords_int{
+		static_cast<int>(std::round(coords.x)),
+		static_cast<int>(std::round(coords.y)),
+		static_cast<int>(std::round(coords.z))};
+	return this->containing_chunk_rect(coords_int);
+}
+
+Chunk* ChunkGrid::containing_chunk(BlockCoords coords)
+{
+	const ChunkCoords chunk_coords = this->containing_chunk_coords(coords);
+	auto chunk_maybe = this->table.find(chunk_coords);
+	if (chunk_maybe == this->table.end())
+	{
+		return nullptr;
+	}
+	else
+	{
+		Chunk* chunk = chunk_maybe->second;
+		assert(chunk->rect.contains(coords));
+		return chunk;
+	}
+}
+
+Chunk* ChunkGrid::containing_chunk(glm::vec3 coords)
+{
+	const BlockCoords coords_int{
+		static_cast<int>(std::round(coords.x)),
+		static_cast<int>(std::round(coords.y)),
+		static_cast<int>(std::round(coords.z))};
+	return this->containing_chunk(coords_int);
+}
+
+Chunk* ChunkGrid::generate_chunk(Nature const& nature, ChunkCoords chunk_coords)
+{
+	return this->table[chunk_coords] = new Chunk(nature, this->chunk_rect(chunk_coords));
 }
 
 } /* Qwy2 */

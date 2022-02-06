@@ -26,10 +26,21 @@ public:
 		AtlasRect fase_top_rect, AtlasRect fase_vertical_rect, AtlasRect fase_bottom_rect);
 };
 
+class Chunk;
+class Nature;
+
+class Generator
+{
+public:
+	void generate_chunk_content(Nature const& nature, Chunk& chunk) const;
+};
+
+/* Describes the laws of physics of a game of Qwy2. */
 class Nature
 {
 public:
 	std::vector<BlockType> block_type_table;
+	Generator generator;
 };
 
 } /* qwy2 */
