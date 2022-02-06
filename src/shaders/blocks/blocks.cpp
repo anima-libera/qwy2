@@ -1,6 +1,7 @@
 
 #include "blocks.hpp"
 #include "embedded.hpp"
+#include <cstddef>
 
 namespace qwy2 {
 
@@ -28,10 +29,10 @@ void ShaderProgramBlocks::draw(GLuint triangle_buffer_openglid, unsigned int ver
 	glEnableVertexAttribArray(1);
 	
 	glBindBuffer(GL_ARRAY_BUFFER, triangle_buffer_openglid);
-	glVertexAttribPointer(0, 3, GL_FLOAT,
-		GL_FALSE, sizeof (float) * 5, reinterpret_cast<void*>(sizeof (float) * 0));
-	glVertexAttribPointer(1, 2, GL_FLOAT,
-		GL_FALSE, sizeof (float) * 5, reinterpret_cast<void*>(sizeof (float) * 3));
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof (BlockVertexData),
+		reinterpret_cast<void*>(offsetof(BlockVertexData, coords)));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof (BlockVertexData),
+		reinterpret_cast<void*>(offsetof(BlockVertexData, atlas_coords)));
 
 	glDrawArrays(GL_TRIANGLES, 0, vertex_count);
 	

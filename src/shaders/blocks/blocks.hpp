@@ -6,6 +6,13 @@
 
 namespace qwy2 {
 
+class BlockVertexData
+{
+public:
+	glm::vec3 coords;
+	glm::vec2 atlas_coords;
+};
+
 class ShaderProgramBlocks: public ShaderProgram
 {
 public:

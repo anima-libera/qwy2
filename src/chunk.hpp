@@ -4,6 +4,7 @@
 
 #include "opengl.hpp"
 #include "nature.hpp"
+#include "shaders/blocks/blocks.hpp"
 #include <glm/glm.hpp>
 #include <vector>
 #include <array>
@@ -111,14 +112,29 @@ public:
 	Block();
 	void generate_face(Nature const& nature,
 		BlockCoords coords, Axis axis, bool negativeward,
-		std::vector<float>& dst) const;
+		std::vector<BlockVertexData>& dst) const;
+};
+
+template<typename VertexDataType>
+class Mesh
+{
+public:
+	std::vector<VertexDataType> vertex_data;
+	GLenum opengl_buffer_usage;
+	GLuint openglid;
+
+public:
+	Mesh();
+	Mesh(GLenum opengl_buffer_usage);
+	~Mesh();
+
+	void update_opengl_data();
 };
 
 class Chunk
 {
 public:
-	std::vector<float> mesh_data;
-	GLuint mesh_openglid;
+	Mesh<BlockVertexData> mesh;
 	BlockRect rect;
 private:
 	std::vector<Block> block_grid;
@@ -127,7 +143,6 @@ public:
 	Chunk(Nature const& nature, BlockRect rect);
 	Block& block(BlockCoords const& coords);
 	void recompute_mesh(Nature const& nature);
-	unsigned int mesh_vertex_count() const;
 
 	//friend class Generator;
 };

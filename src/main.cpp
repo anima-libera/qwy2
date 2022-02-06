@@ -28,68 +28,12 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 
 
-	unsigned int atlas_side = 1024;
-	std::uint8_t* atlas_data = new std::uint8_t[atlas_side * atlas_side * 4];
-	for (unsigned int y = 0; y < atlas_side; y++)
-	for (unsigned int x = 0; x < atlas_side; x++)
-	{
-		std::uint8_t& r = atlas_data[y * atlas_side * 4 + x * 4 + 0];
-		std::uint8_t& g = atlas_data[y * atlas_side * 4 + x * 4 + 1];
-		std::uint8_t& b = atlas_data[y * atlas_side * 4 + x * 4 + 2];
-		std::uint8_t& a = atlas_data[y * atlas_side * 4 + x * 4 + 3];
-
-		r = (std::cos(static_cast<float>(x) * 0.1f) + 1.0f) / 2.0f * 255.0f;
-		g = (std::cos(static_cast<float>(x + y) * 0.27f) + 1.0f) / 2.0f * 255.0f;
-		b = (std::cos(static_cast<float>(y) * 0.31f) + 1.0f) / 2.0f * 255.0f;
-		a = 255;
-	}
-
 	Nature nature;
-
-	AtlasRect rect_a;
-	rect_a.atlas_coords_min = glm::vec2(
-		static_cast<float>(0) / static_cast<float>(atlas_side),
-		static_cast<float>(0) / static_cast<float>(atlas_side));
-	rect_a.atlas_coords_max = glm::vec2(
-		static_cast<float>(0 + 16) / static_cast<float>(atlas_side),
-		static_cast<float>(0 + 16) / static_cast<float>(atlas_side));
-	nature.block_type_table.push_back(BlockType(rect_a, rect_a, rect_a));
-	unsigned int type_index_a = nature.block_type_table.size() - 1;
-
-	AtlasRect rect_b;
-	rect_b.atlas_coords_min = glm::vec2(
-		static_cast<float>(200) / static_cast<float>(atlas_side),
-		static_cast<float>(200) / static_cast<float>(atlas_side));
-	rect_b.atlas_coords_max = glm::vec2(
-		static_cast<float>(200 + 16) / static_cast<float>(atlas_side),
-		static_cast<float>(200 + 16) / static_cast<float>(atlas_side));
-	nature.block_type_table.push_back(BlockType(rect_b, rect_b, rect_b));
-	unsigned int type_index_b = nature.block_type_table.size() - 1;
-	
-	
-	GLint max_atlas_side;
-	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_atlas_side);
-	if (static_cast<unsigned int>(max_atlas_side) < atlas_side)
-	{
-		std::cerr << "GL_MAX_TEXTURE_SIZE is " << max_atlas_side <<
-			" which is considered as too small for the atlas" << std::endl;
-	}
-	GLuint atlas_openglid;
-	glGenTextures(1, &atlas_openglid);
-	glBindTexture(GL_TEXTURE_2D, atlas_openglid);
-	glTexImage2D(GL_TEXTURE_2D,
-		0, GL_RGBA, atlas_side, atlas_side, 0,
-		GL_RGBA, GL_UNSIGNED_BYTE, atlas_data);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-	unsigned int atlas_opengltextureid = 0;
-	glActiveTexture(GL_TEXTURE0 + atlas_opengltextureid);
-	glBindTexture(GL_TEXTURE_2D, atlas_openglid);
-
+	nature.world_generator.primary_block_type =
+		nature.nature_generator.generate_block_type(nature);
 
 	UniformValues uniform_values;
-	uniform_values.atlas_opengltextureid = atlas_opengltextureid;
+	uniform_values.atlas_opengltextureid = nature.atlas.opengltextureid;
 
 	ShaderProgramBlocks shader_program_blocks;
 	if (shader_program_blocks.init() == ErrorCode::ERROR)
@@ -98,54 +42,6 @@ int main()
 		return EXIT_FAILURE;
 	}
 
-
-	#if 0
-	Chunk* chunk = new Chunk(nature, RectInt(CoordsInt(-5, -5, -5), CoordsInt(5, 5, 5)));
-	{
-		Block& block = chunk->block(CoordsInt(-2, 4, 0));
-		block.is_air = false;
-		block.type_index = type_index_a;
-	}
-	{
-		Block& block = chunk->block(CoordsInt(3, -1, 1));
-		block.is_air = false;
-		block.type_index = type_index_a;
-	}
-	{
-		Block& block = chunk->block(CoordsInt(1, 3, -1));
-		block.is_air = false;
-		block.type_index = type_index_a;
-	}
-	{
-		Block& block = chunk->block(CoordsInt(4, -1, 1));
-		block.is_air = false;
-		block.type_index = type_index_b;
-	}
-	{
-		Block& block = chunk->block(CoordsInt(4, -2, 1));
-		block.is_air = false;
-		block.type_index = type_index_b;
-	}
-	{
-		Block& block = chunk->block(CoordsInt(4, -2, 2));
-		block.is_air = false;
-		block.type_index = type_index_b;
-	}
-	{
-		Block& block = chunk->block(CoordsInt(0, 0, -1));
-		block.is_air = false;
-		block.type_index = type_index_b;
-	}
-	chunk->recompute_mesh(nature);
-
-	assert(chunk->rect.length<Axis::X>() == chunk->rect.length<Axis::Y>());
-	assert(chunk->rect.length<Axis::X>() == chunk->rect.length<Axis::Z>());
-
-	ChunkGrid chunk_grid;
-	chunk_grid.chunk_side = chunk->rect.length<Axis::X>();
-	CoordsInt center = chunk_grid.center_coords(CoordsInt(0.0f, 0.0f, 0.0f));
-	chunk_grid.table[center] = chunk;
-	#endif
 
 	ChunkGrid chunk_grid(9);
 	const ChunkRect generated_chunk_rect =
@@ -171,7 +67,7 @@ int main()
 	bool moving_leftward = false;
 	bool moving_rightward = false;
 	const float moving_factor = 0.1f;
-	const float flying_moving_factor = 0.3f;
+	const float flying_moving_factor = 0.15f;
 
 	glm::vec3 player_motion{0.0f, 0.0f, 0.0f};
 	bool flying = false;
@@ -283,7 +179,7 @@ int main()
 		Chunk* player_chunk = chunk_grid.containing_chunk(player_position);
 		if (player_chunk == nullptr)
 		{
-			std::cerr << "h" << std::endl;
+			std::cerr << "Exiting the world" << std::endl;
 			return 0;
 		}
 		BlockCoords player_coords_int{
@@ -325,14 +221,17 @@ int main()
 		uniform_values.camera_matrix = camera.matrix;
 		shader_program_blocks.update_uniforms(uniform_values);
 		
-		const float v1 = time / 10.0f;
-		const float v2 = (std::cos(v1) + 1.0f) / 2.0f;
-		glClearColor(v2 * 0.2f, 0.0f, (1.0f - v2) * 0.2f, 1.0f);
+		const float sky_variation = (std::cos(time / 8.0f) + 1.0f) / 2.0f;
+		glClearColor(
+			0.0f + sky_variation * 0.2f,
+			0.7f - sky_variation * 0.2f,
+			0.9f - sky_variation * 0.4f,
+			1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		for (auto const& [chunk_coords, chunk] : chunk_grid.table)
 		{
-			shader_program_blocks.draw(chunk->mesh_openglid, chunk->mesh_vertex_count());
+			shader_program_blocks.draw(chunk->mesh.openglid, chunk->mesh.vertex_data.size());
 		}
 
 		SDL_GL_SwapWindow(g_window);

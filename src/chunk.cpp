@@ -2,6 +2,7 @@
 #include "chunk.hpp"
 #include "nature.hpp"
 #include <iostream>
+#include <iterator>
 
 namespace qwy2 {
 
@@ -132,7 +133,7 @@ Block::Block():
 
 void Block::generate_face(Nature const& nature,
 	BlockCoords coords, Axis axis, bool negativeward,
-	std::vector<float>& dst) const
+	std::vector<BlockVertexData>& dst) const
 {
 	const unsigned int index_axis = static_cast<int>(axis);
 	const unsigned int index_a = index_axis == 0 ? 1 : 0;
@@ -147,60 +148,80 @@ void Block::generate_face(Nature const& nature,
 		std::swap(atlas_rect.atlas_coords_min.x, atlas_rect.atlas_coords_max.x);
 	}
 
-	struct VertexData
-	{
-		glm::vec3 coords;
-		glm::vec2 atlas_coords;
-	};
-
 	glm::vec3 coords_nn = coords.to_float_coords() - glm::vec3(0.5f, 0.5f, 0.5f);
 	coords_nn[index_axis] += negativeward ? 0.0f : 1.0f;
 
-	VertexData nn;
+	BlockVertexData nn;
 	nn.coords = coords_nn;
 	nn.coords[index_a] += 0.0f;
 	nn.coords[index_b] += 0.0f;
 	nn.atlas_coords.x = atlas_rect.atlas_coords_min.x;
 	nn.atlas_coords.y = atlas_rect.atlas_coords_min.y;
-	VertexData np;
+	BlockVertexData np;
 	np.coords = coords_nn;
 	np.coords[index_a] += 0.0f;
 	np.coords[index_b] += 1.0f;
 	np.atlas_coords.x = atlas_rect.atlas_coords_min.x;
 	np.atlas_coords.y = atlas_rect.atlas_coords_max.y;
-	VertexData pn;
+	BlockVertexData pn;
 	pn.coords = coords_nn;
 	pn.coords[index_a] += 1.0f;
 	pn.coords[index_b] += 0.0f;
 	pn.atlas_coords.x = atlas_rect.atlas_coords_max.x;
 	pn.atlas_coords.y = atlas_rect.atlas_coords_min.y;
-	VertexData pp;
+	BlockVertexData pp;
 	pp.coords = coords_nn;
 	pp.coords[index_a] += 1.0f;
 	pp.coords[index_b] += 1.0f;
 	pp.atlas_coords.x = atlas_rect.atlas_coords_max.x;
 	pp.atlas_coords.y = atlas_rect.atlas_coords_max.y;
 
-	const std::array<VertexData, 6> vertex_data_sequence{nn, pn, pp, nn, pp, np};
-
-	dst.reserve(dst.size() + vertex_data_sequence.size() * 5);
-	for (VertexData const& vertex_data : vertex_data_sequence)
-	{
-		dst.push_back(vertex_data.coords.x);
-		dst.push_back(vertex_data.coords.y);
-		dst.push_back(vertex_data.coords.z);
-		dst.push_back(vertex_data.atlas_coords.x);
-		dst.push_back(vertex_data.atlas_coords.y);
-	}
+	const std::array<BlockVertexData, 6> vertex_data_sequence{nn, pn, pp, nn, pp, np};
+	/* Does std::copy preallocate the appropriate size ? Probably...
+	 * TODO: Find out and remove this std::vector::reserve call if redundant. */
+	dst.reserve(dst.size() + vertex_data_sequence.size());
+	std::copy(vertex_data_sequence.begin(), vertex_data_sequence.end(), std::back_inserter(dst));
 }
+
+template<typename VertexDataType>
+Mesh<VertexDataType>::Mesh():
+	Mesh(GL_DYNAMIC_DRAW)
+{
+	;
+}
+
+template<typename VertexDataType>
+Mesh<VertexDataType>::Mesh(GLenum opengl_buffer_usage):
+	opengl_buffer_usage(opengl_buffer_usage)
+{
+	glGenBuffers(1, &this->openglid);
+	assert(this->openglid != 0);
+}
+
+template<typename VertexDataType>
+Mesh<VertexDataType>::~Mesh()
+{
+	glDeleteBuffers(1, &this->openglid);
+}
+
+template<typename VertexDataType>
+void Mesh<VertexDataType>::update_opengl_data()
+{
+	glBindBuffer(GL_ARRAY_BUFFER, this->openglid);
+	glBufferData(GL_ARRAY_BUFFER, 
+		this->vertex_data.size() * sizeof (VertexDataType),
+		this->vertex_data.data(),
+		this->opengl_buffer_usage);
+}
+
+template class Mesh<BlockVertexData>;
 
 Chunk::Chunk(Nature const& nature, BlockRect rect):
 	rect(rect)
 {
 	this->block_grid.resize(rect.volume());
-	nature.generator.generate_chunk_content(nature, *this);
+	nature.world_generator.generate_chunk_content(nature, *this);
 
-	glGenBuffers(1, &this->mesh_openglid);
 	this->recompute_mesh(nature);
 }
 
@@ -212,7 +233,7 @@ Block& Chunk::block(BlockCoords const& coords)
 
 void Chunk::recompute_mesh(Nature const& nature)
 {
-	mesh_data.clear();
+	mesh.vertex_data.clear();
 
 	BlockCoords walker = this->rect.walker_start();
 	do
@@ -228,21 +249,17 @@ void Chunk::recompute_mesh(Nature const& nature)
 					this->block(neighbor).is_air)
 				{
 					this->block(walker).generate_face(nature,
-						walker, axis, negativeward, mesh_data);
+						walker, axis, negativeward, this->mesh.vertex_data);
 				}
 			}
 		}
 	}
 	while (this->rect.walker_iterate(walker));
 
-	glBindBuffer(GL_ARRAY_BUFFER, this->mesh_openglid);
-	glBufferData(GL_ARRAY_BUFFER, this->mesh_data.size() * sizeof (float),
-		this->mesh_data.data(), GL_DYNAMIC_DRAW);
-}
-
-unsigned int Chunk::mesh_vertex_count() const
-{
-	return this->mesh_data.size() / 5;
+	glBindBuffer(GL_ARRAY_BUFFER, this->mesh.openglid);
+	glBufferData(GL_ARRAY_BUFFER, 
+		this->mesh.vertex_data.size() * sizeof (decltype(this->mesh.vertex_data)::value_type),
+		this->mesh.vertex_data.data(), GL_DYNAMIC_DRAW);
 }
 
 ChunkGrid::ChunkGrid(int chunk_side):
