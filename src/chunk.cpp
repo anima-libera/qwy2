@@ -57,6 +57,20 @@ RectInt<L>::RectInt(CoordsInt<L> coords_min, CoordsInt<L> coords_max):
 }
 
 template<typename L>
+RectInt<L>::RectInt(CoordsInt<L> coords_center, unsigned int radius):
+	coords_min(
+		coords_center.x - static_cast<int>(radius - 1),
+		coords_center.y - static_cast<int>(radius - 1),
+		coords_center.z - static_cast<int>(radius - 1)),
+	coords_max(
+		coords_center.x + static_cast<int>(radius - 1),
+		coords_center.y + static_cast<int>(radius - 1),
+		coords_center.z + static_cast<int>(radius - 1))
+{
+	;
+}
+
+template<typename L>
 template<Axis A>
 unsigned int RectInt<L>::length() const
 {
@@ -310,9 +324,8 @@ BlockRect ChunkGrid::containing_chunk_rect(glm::vec3 coords) const
 	return this->containing_chunk_rect(coords_int);
 }
 
-Chunk* ChunkGrid::containing_chunk(BlockCoords coords)
+Chunk* ChunkGrid::chunk(ChunkCoords chunk_coords)
 {
-	const ChunkCoords chunk_coords = this->containing_chunk_coords(coords);
 	auto chunk_maybe = this->table.find(chunk_coords);
 	if (chunk_maybe == this->table.end())
 	{
@@ -321,9 +334,16 @@ Chunk* ChunkGrid::containing_chunk(BlockCoords coords)
 	else
 	{
 		Chunk* chunk = chunk_maybe->second;
-		assert(chunk->rect.contains(coords));
 		return chunk;
 	}
+}
+
+Chunk* ChunkGrid::containing_chunk(BlockCoords coords)
+{
+	const ChunkCoords chunk_coords = this->containing_chunk_coords(coords);
+	Chunk* chunk = this->chunk(chunk_coords);
+	assert(chunk == nullptr || chunk->rect.contains(coords));
+	return chunk;
 }
 
 Chunk* ChunkGrid::containing_chunk(glm::vec3 coords)

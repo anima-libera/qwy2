@@ -44,8 +44,7 @@ int main()
 
 
 	ChunkGrid chunk_grid(9);
-	const ChunkRect generated_chunk_rect =
-		ChunkRect(ChunkCoords(-5, -5, -5), ChunkCoords(5, 5, 5));
+	const ChunkRect generated_chunk_rect = ChunkRect(ChunkCoords(0, 0, 0), 5);
 	ChunkCoords walker = generated_chunk_rect.walker_start();
 	do
 	{
@@ -75,6 +74,8 @@ int main()
 	const float flying_factor = 0.003f;
 	const float flying_initial_value = 0.1f;
 	const float falling_factor = 0.012f;
+	const float friction_factor = 0.99f;
+	const float floor_friction_factor = 0.95f;
 
 	SDL_SetRelativeMouseMode(SDL_TRUE);
 	const float moving_angle_factor = 0.005f;
@@ -83,11 +84,17 @@ int main()
 	using clock = std::chrono::high_resolution_clock;
 	const auto clock_time_beginning = clock::now();
 	float time = 0.0f; /* Time in seconds. */
+	
+	float previous_time = -FLT_MAX;
+	bool one_second_pulse = false;
+
 
 	bool running = true;
 	while (running)
 	{
+		previous_time = time;
 		time = std::chrono::duration<float>(clock::now() - clock_time_beginning).count();
+		one_second_pulse = std::floor(previous_time) < std::floor(time);
 
 		float horizontal_angle_motion = 0.0f;
 		float vertical_angle_motion = 0.0f;
@@ -176,42 +183,69 @@ int main()
 		float rightward_motion = current_moving_factor *
 			((moving_rightward ? 1.0f : 0.0f) - (moving_leftward ? 1.0f : 0.0f));
 
-		Chunk* player_chunk = chunk_grid.containing_chunk(player_position);
-		if (player_chunk == nullptr)
-		{
-			std::cerr << "Exiting the world" << std::endl;
-			return 0;
-		}
+
 		BlockCoords player_coords_int{
 			static_cast<int>(std::round(player_position.x)),
 			static_cast<int>(std::round(player_position.y)),
 			static_cast<int>(std::round(player_position.z))};
+		ChunkCoords player_chunk_coords = chunk_grid.containing_chunk_coords(player_coords_int);
+		Chunk* player_chunk = chunk_grid.containing_chunk(player_position);
+		if (one_second_pulse || player_chunk == nullptr)
+		{
+			const ChunkRect around_chunk_rect = ChunkRect(player_chunk_coords, 5);
+			ChunkCoords walker = around_chunk_rect.walker_start();
+			do
+			{
+				if (chunk_grid.chunk(walker) == nullptr)
+				{
+					//std::cout << "Generate chunk " << walker << std::endl;
+					chunk_grid.generate_chunk(nature, walker);
+				}
+			}
+			while (around_chunk_rect.walker_iterate(walker));
+			player_chunk = chunk_grid.containing_chunk(player_position);
+		}
 		bool is_in_block = not player_chunk->block(player_coords_int).is_air;
+
 
 		if (flying)
 		{
 			if (flying_initial)
 			{
+				player_motion +=
+					player_horizontal_direction * forward_motion +
+					player_horizontal_right * rightward_motion;
 				player_motion.z = flying_initial_value;
 			}
 			else
 			{
 				player_motion.z += flying_factor;
 			}
+			player_motion *= friction_factor;
+			player_motion +=
+				player_horizontal_direction * forward_motion * flying_factor +
+				player_horizontal_right * rightward_motion * flying_factor;
+			player_position += player_motion;
 		}
 		else if (not is_in_block)
 		{
 			player_motion.z -= falling_factor;
+			player_motion *= friction_factor;
+			player_motion +=
+				player_horizontal_direction * forward_motion * flying_factor +
+				player_horizontal_right * rightward_motion * flying_factor;
+			player_position += player_motion;
 		}
 		else
 		{
 			player_motion.z = 0.0f;
+			player_motion *= floor_friction_factor;
+			player_position +=
+				player_horizontal_direction * forward_motion +
+				player_horizontal_right * rightward_motion +
+				player_motion;
 			player_position.z = std::round(player_position.z) + 0.5f;
 		}
-		player_position +=
-			player_horizontal_direction * forward_motion +
-			player_horizontal_right * rightward_motion +
-			player_motion;
 
 		glm::vec3 player_direction = glm::rotate(player_horizontal_direction,
 			player_vertical_angle, player_horizontal_right);

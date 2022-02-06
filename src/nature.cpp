@@ -146,7 +146,7 @@ void WorldGenerator::generate_chunk_content(Nature const& nature, Chunk& chunk) 
 		Block& block = chunk.block(walker);
 		block.type_index = 0;
 
-		if ((walker.z == 20 && (walker.x + walker.y) % 20 == 0) || walker.z == -1)
+		if ((walker.z % 20 == 0 && (walker.x + walker.y) % 20 == 0) || walker.z == -1)
 		{
 			block.is_air = false;
 			block.type_index = this->primary_block_type;

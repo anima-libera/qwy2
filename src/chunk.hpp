@@ -85,6 +85,7 @@ public:
 
 public:
 	RectInt(CoordsInt<L> coords_min, CoordsInt<L> coords_max);
+	RectInt(CoordsInt<L> coords_center, unsigned int radius);
 
 	template<Axis A>
 	unsigned int length() const;
@@ -166,6 +167,7 @@ public:
 	BlockRect containing_chunk_rect(BlockCoords coords) const;
 	BlockRect containing_chunk_rect(glm::vec3 coords) const;
 
+	Chunk* chunk(ChunkCoords chunk_coords);
 	Chunk* containing_chunk(BlockCoords coords);
 	Chunk* containing_chunk(glm::vec3 coords);
 
