@@ -102,7 +102,7 @@ for unknown_option in options:
 
 src_dir_name = "src"
 bin_dir_name = "bin"
-bin_name = "Qwy2"
+bin_name = "Qwy2" if not option_debug else "Qwy2-debug"
 
 # Help message if -h
 if option_help:
@@ -193,8 +193,10 @@ build_command_args.append("-pedantic")
 #	build_command_args.append("-Wno-maybe-uninitialized")
 if option_debug:
 	build_command_args.append("-DDEBUG")
+	build_command_args.append("-g")
 	build_command_args.append("-Og")
 else:
+	build_command_args.append("-DNDEBUG") # Should discard assets
 	build_command_args.append("-O3")
 	build_command_args.append("-no-pie")
 	build_command_args.append("-fno-stack-protector")

@@ -140,13 +140,18 @@ BlockType::BlockType(
 
 void WorldGenerator::generate_chunk_content(Nature const& nature, Chunk& chunk) const
 {
-	CoordsInt walker = chunk.rect.walker_start();
+	BlockCoords walker = chunk.rect.walker_start();
 	do
 	{
 		Block& block = chunk.block(walker);
 		block.type_index = 0;
 
-		if ((walker.z % 20 == 0 && (walker.x + walker.y) % 20 == 0) || walker.z == -1)
+		if ((walker.z % 20 == 0 && (walker.x + walker.y) % 20 == 0) || walker.z <= -1)
+		{
+			block.is_air = false;
+			block.type_index = this->primary_block_type;
+		}
+		else if (walker == BlockCoords(0, 3, 1))
 		{
 			block.is_air = false;
 			block.type_index = this->primary_block_type;

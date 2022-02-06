@@ -150,14 +150,21 @@ void Block::generate_face(Nature const& nature,
 	std::vector<BlockVertexData>& dst) const
 {
 	const unsigned int index_axis = static_cast<int>(axis);
-	const unsigned int index_a = index_axis == 0 ? 1 : 0;
-	const unsigned int index_b = index_axis == 2 ? 1 : 2;
+	unsigned int index_a = index_axis == 0 ? 1 : 0;
+	unsigned int index_b = index_axis == 2 ? 1 : 2;
 
 	BlockType const& type = nature.block_type_table[this->type_index];
 	AtlasRect atlas_rect = axis == Axis::Z ?
 		(negativeward ? type.fase_bottom_rect : type.fase_top_rect) :
 		type.fase_vertical_rect;
-	if ((axis == Axis::Y && negativeward) || (axis == Axis::X && not negativeward))
+
+	const bool reverse_vertex_order =
+		(axis == Axis::Y && not negativeward) ||
+		(axis == Axis::X && negativeward) ||
+		(axis == Axis::Z && negativeward);
+
+	if ((axis == Axis::Y && not negativeward) ||
+		(axis == Axis::X && negativeward))
 	{
 		std::swap(atlas_rect.atlas_coords_min.x, atlas_rect.atlas_coords_max.x);
 	}
@@ -194,7 +201,16 @@ void Block::generate_face(Nature const& nature,
 	/* Does std::copy preallocate the appropriate size ? Probably...
 	 * TODO: Find out and remove this std::vector::reserve call if redundant. */
 	dst.reserve(dst.size() + vertex_data_sequence.size());
-	std::copy(vertex_data_sequence.begin(), vertex_data_sequence.end(), std::back_inserter(dst));
+	if (reverse_vertex_order)
+	{
+		std::copy(vertex_data_sequence.rbegin(), vertex_data_sequence.rend(),
+			std::back_inserter(dst));
+	}
+	else
+	{
+		std::copy(vertex_data_sequence.begin(), vertex_data_sequence.end(),
+			std::back_inserter(dst));
+	}
 }
 
 template<typename VertexDataType>

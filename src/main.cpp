@@ -15,10 +15,21 @@
 #include <cmath>
 #include <vector>
 #include <cstdint>
+#include <cstring>
 
-int main()
+int main(int argc, char** argv)
 {
 	using namespace qwy2;
+
+	bool capture_cursor = true;
+	for (unsigned int i = 1; i < static_cast<unsigned int>(argc); i++)
+	{
+		if (std::strcmp(argv[i], "--no-cursor-capture") == 0)
+		{
+			capture_cursor = false;
+		}
+	}
+
 
 	if (init_window_graphics() == ErrorCode::ERROR)
 	{
@@ -26,6 +37,10 @@ int main()
 	}
 
 	glEnable(GL_DEPTH_TEST);
+
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_FRONT);
+	glFrontFace(GL_CW);
 
 
 	Nature nature;
@@ -77,7 +92,10 @@ int main()
 	const float friction_factor = 0.99f;
 	const float floor_friction_factor = 0.95f;
 
-	SDL_SetRelativeMouseMode(SDL_TRUE);
+	if (capture_cursor)
+	{
+		SDL_SetRelativeMouseMode(SDL_TRUE);
+	}
 	const float moving_angle_factor = 0.005f;
 
 
@@ -137,6 +155,10 @@ int main()
 							{
 								chunk->recompute_mesh(nature);
 							}
+						break;
+
+						case SDLK_l:
+							SDL_SetRelativeMouseMode(SDL_FALSE);
 						break;
 					}
 				break;
