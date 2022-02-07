@@ -10,7 +10,7 @@ namespace qwy2 {
 class NoiseGenerator
 {
 public:
-	using SeedType = std::uint32_t;
+	using SeedType = std::int32_t;
 
 public:
 	SeedType seed;

@@ -158,38 +158,34 @@ void WorldGenerator::generate_chunk_content(Nature const& nature, Chunk& chunk)
 		float zoom_y = static_cast<float>(walker.y) / 20.0f;
 		float zoom_z = static_cast<float>(walker.z) / 20.0f;
 
-		float value = this->noise_generator.base_noise(zoom_x, zoom_y, zoom_z) * 20.0f;
+		float value = this->noise_generator.base_noise(zoom_x, zoom_y, zoom_z) * 19.0f;
 		value += zoom_z * 3.0f;
 		if (value < 0.0f)
 		{
 			block.is_air = false;
 		}
-
-		#if 0
-		if ((walker.z % 20 == 0 && (walker.x + walker.y) % 20 == 0) || walker.z <= -1)
-		{
-			block.is_air = false;
-			block.type_index = this->primary_block_type;
-		}
-		else if (walker == BlockCoords(0, 3, 1))
-		{
-			block.is_air = false;
-			block.type_index = this->primary_block_type;
-		}
-		else
-		{
-			block.is_air = true;
-		}
-
-		if (-20 <= walker.x && walker.x <= -10 &&
-			-20 <= walker.y && walker.y <= -10 &&
-			walker.z <= 0)
-		{
-			block.is_air = true;
-		}
-		#endif
 	}
 	while (chunk.rect.walker_iterate(walker));
+}
+
+NatureGenerator::NatureGenerator(NoiseGenerator::SeedType seed):
+	noise_generator(seed)
+{
+	;
+}
+
+static void paint_grass_top(NoiseGenerator& noise_generator, PixelRect& pixel_rect)
+{
+	for (int y = 0; y < static_cast<int>(pixel_rect.h); y++)
+	for (int x = 0; x < static_cast<int>(pixel_rect.w); x++)
+	{
+		PixelData& pixel = pixel_rect.pixel(x, y);
+
+		pixel.r = (noise_generator.base_noise(x, y, 0) * 0.1f + 0.3f) * 255.0f;
+		pixel.g = (noise_generator.base_noise(x, y, 1) * 0.2f + 0.8f) * 255.0f;
+		pixel.b = (noise_generator.base_noise(x, y, 2) * 0.1f + 0.1f) * 255.0f;
+		pixel.a = 255;
+	}
 }
 
 BlockTypeId NatureGenerator::generate_block_type(Nature& nature)
@@ -198,16 +194,7 @@ BlockTypeId NatureGenerator::generate_block_type(Nature& nature)
 	PixelRect pixel_rect_vertical = nature.atlas.allocate_rect(16, 16);
 	PixelRect pixel_rect_bottom = nature.atlas.allocate_rect(16, 16);
 
-	for (unsigned int y = 0; y < pixel_rect_top.h; y++)
-	for (unsigned int x = 0; x < pixel_rect_top.w; x++)
-	{
-		PixelData& pixel = pixel_rect_top.pixel(x, y);
-
-		pixel.r = (std::cos(static_cast<float>(x) * 0.1f) + 1.0f) / 2.0f * 255.0f;
-		pixel.g = (std::cos(static_cast<float>(x + y) * 0.27f) + 1.0f) / 2.0f * 255.0f;
-		pixel.b = (std::cos(static_cast<float>(y) * 0.31f) + 1.0f) / 2.0f * 255.0f;
-		pixel.a = 255;
-	}
+	paint_grass_top(this->noise_generator, pixel_rect_top);
 
 	for (unsigned int y = 0; y < pixel_rect_vertical.h; y++)
 	for (unsigned int x = 0; x < pixel_rect_vertical.w; x++)
@@ -242,7 +229,7 @@ BlockTypeId NatureGenerator::generate_block_type(Nature& nature)
 }
 
 Nature::Nature(NoiseGenerator::SeedType seed):
-	atlas(1024), world_generator(seed)
+	atlas(1024), world_generator(seed), nature_generator(seed)
 {
 	;
 }

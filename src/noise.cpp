@@ -31,24 +31,26 @@ NoiseGenerator::NoiseGenerator(SeedType seed):
 float NoiseGenerator::base_noise(int x)
 {
 	const float value =
-		std::cos(static_cast<float>(x ^ 5467218) * 4561.3f);
+		std::cos(static_cast<float>(x ^ 5467218 ^ this->seed) * 4561.3f);
 	return value - std::floor(value);
 }
 
 float NoiseGenerator::base_noise(int x, int y)
 {
 	const float value =
-		std::cos(static_cast<float>(x ^ 6522762) * 4521.3f) -
-		std::cos(static_cast<float>(y ^ 7162738) * 4581.3f);
+		std::cos(static_cast<float>(x ^ 6522762 ^ this->seed) * 4521.3f) +
+		std::cos(static_cast<float>(y ^ 7162738 ^ this->seed) * 4581.3f) +
+		std::cos(this->base_noise((x ^ y) + x + y) * 4581.3f);
 	return value - std::floor(value);
 }
 
 float NoiseGenerator::base_noise(int x, int y, int z)
 {
 	const float value =
-		std::cos(static_cast<float>(x ^ 8133983) * 4531.3f) -
-		std::cos(static_cast<float>(y ^ 2938398) * 4591.3f) +
-		std::cos(static_cast<float>(z ^ 1863993) * 4511.3f);
+		std::cos(static_cast<float>(x ^ 8133983 ^ this->seed) * 4531.3f) +
+		std::cos(static_cast<float>(y ^ 2938398 ^ this->seed) * 4591.3f) +
+		std::cos(static_cast<float>(z ^ 1863993 ^ this->seed) * 4511.3f) +
+		std::cos(this->base_noise((x ^ y ^ z) + x + y + z) * 4511.3f);
 	return value - std::floor(value);
 }
 

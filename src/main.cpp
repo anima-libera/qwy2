@@ -35,11 +35,9 @@ int main(int argc, char** argv)
 	const NoiseGenerator::SeedType test_seed = 8;
 
 	NoiseGenerator noise_generator(test_seed);
-	for (int x = 0; x < 30; x++)
+	for (int x = -10; x < 10; x++)
 	{
-		const float zoom_x = static_cast<float>(x) / 10.0f;
-
-		float value = noise_generator.base_noise(zoom_x) * 20.0f;
+		std::cout << x << " -> " << noise_generator.base_noise(x) * 20.0f << std::endl;
 	}
 
 	return 0;
@@ -58,7 +56,7 @@ int main(int argc, char** argv)
 	glFrontFace(GL_CW);
 
 
-	const NoiseGenerator::SeedType seed = 8;
+	const NoiseGenerator::SeedType seed = 8 + 1;
 
 	Nature nature(seed);
 	nature.world_generator.primary_block_type =
@@ -294,7 +292,7 @@ int main(int argc, char** argv)
 		uniform_values.camera_matrix = camera.matrix;
 		shader_program_blocks.update_uniforms(uniform_values);
 		
-		const float sky_variation = (std::cos(time / 8.0f) + 1.0f) / 2.0f;
+		const float sky_variation = 0.0f * (std::cos(time / 8.0f) + 1.0f) / 2.0f;
 		glClearColor(
 			0.0f + sky_variation * 0.2f,
 			0.7f - sky_variation * 0.2f,

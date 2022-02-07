@@ -102,6 +102,10 @@ public:
 class NatureGenerator
 {
 public:
+	NoiseGenerator noise_generator;
+
+public:
+	NatureGenerator(NoiseGenerator::SeedType seed);
 	BlockTypeId generate_block_type(Nature& nature);
 };
 
