@@ -246,7 +246,7 @@ void Mesh<VertexDataType>::update_opengl_data()
 
 template class Mesh<BlockVertexData>;
 
-Chunk::Chunk(Nature const& nature, BlockRect rect):
+Chunk::Chunk(Nature& nature, BlockRect rect):
 	rect(rect)
 {
 	this->block_grid.resize(rect.volume());
@@ -371,7 +371,7 @@ Chunk* ChunkGrid::containing_chunk(glm::vec3 coords)
 	return this->containing_chunk(coords_int);
 }
 
-Chunk* ChunkGrid::generate_chunk(Nature const& nature, ChunkCoords chunk_coords)
+Chunk* ChunkGrid::generate_chunk(Nature& nature, ChunkCoords chunk_coords)
 {
 	return this->table[chunk_coords] = new Chunk(nature, this->chunk_rect(chunk_coords));
 }

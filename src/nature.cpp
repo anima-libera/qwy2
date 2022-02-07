@@ -138,14 +138,34 @@ BlockType::BlockType(
 	;
 }
 
-void WorldGenerator::generate_chunk_content(Nature const& nature, Chunk& chunk) const
+WorldGenerator::WorldGenerator(NoiseGenerator::SeedType seed):
+	noise_generator(seed)
 {
+	;
+}
+
+void WorldGenerator::generate_chunk_content(Nature const& nature, Chunk& chunk)
+{
+	(void)nature;
+
 	BlockCoords walker = chunk.rect.walker_start();
 	do
 	{
 		Block& block = chunk.block(walker);
 		block.type_index = 0;
 
+		float zoom_x = static_cast<float>(walker.x) / 20.0f;
+		float zoom_y = static_cast<float>(walker.y) / 20.0f;
+		float zoom_z = static_cast<float>(walker.z) / 20.0f;
+
+		float value = this->noise_generator.base_noise(zoom_x, zoom_y, zoom_z) * 20.0f;
+		value += zoom_z * 3.0f;
+		if (value < 0.0f)
+		{
+			block.is_air = false;
+		}
+
+		#if 0
 		if ((walker.z % 20 == 0 && (walker.x + walker.y) % 20 == 0) || walker.z <= -1)
 		{
 			block.is_air = false;
@@ -167,6 +187,7 @@ void WorldGenerator::generate_chunk_content(Nature const& nature, Chunk& chunk) 
 		{
 			block.is_air = true;
 		}
+		#endif
 	}
 	while (chunk.rect.walker_iterate(walker));
 }
@@ -220,8 +241,8 @@ BlockTypeId NatureGenerator::generate_block_type(Nature& nature)
 	return block_type_index;
 }
 
-Nature::Nature():
-	atlas(1024)
+Nature::Nature(NoiseGenerator::SeedType seed):
+	atlas(1024), world_generator(seed)
 {
 	;
 }

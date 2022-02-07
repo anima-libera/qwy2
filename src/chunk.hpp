@@ -141,7 +141,7 @@ private:
 	std::vector<Block> block_grid;
 
 public:
-	Chunk(Nature const& nature, BlockRect rect);
+	Chunk(Nature& nature, BlockRect rect);
 	Block& block(BlockCoords const& coords);
 	void recompute_mesh(Nature const& nature);
 
@@ -171,7 +171,7 @@ public:
 	Chunk* containing_chunk(BlockCoords coords);
 	Chunk* containing_chunk(glm::vec3 coords);
 
-	Chunk* generate_chunk(Nature const& nature, ChunkCoords chunk_coords);
+	Chunk* generate_chunk(Nature& nature, ChunkCoords chunk_coords);
 };
 
 } /* qwy2 */

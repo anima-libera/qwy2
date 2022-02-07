@@ -5,6 +5,7 @@
 #include "camera.hpp"
 #include "chunk.hpp"
 #include "nature.hpp"
+#include "noise.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
@@ -30,6 +31,20 @@ int main(int argc, char** argv)
 		}
 	}
 
+	#if 0
+	const NoiseGenerator::SeedType test_seed = 8;
+
+	NoiseGenerator noise_generator(test_seed);
+	for (int x = 0; x < 30; x++)
+	{
+		const float zoom_x = static_cast<float>(x) / 10.0f;
+
+		float value = noise_generator.base_noise(zoom_x) * 20.0f;
+	}
+
+	return 0;
+	#endif
+
 
 	if (init_window_graphics() == ErrorCode::ERROR)
 	{
@@ -43,7 +58,9 @@ int main(int argc, char** argv)
 	glFrontFace(GL_CW);
 
 
-	Nature nature;
+	const NoiseGenerator::SeedType seed = 8;
+
+	Nature nature(seed);
 	nature.world_generator.primary_block_type =
 		nature.nature_generator.generate_block_type(nature);
 
@@ -58,7 +75,7 @@ int main(int argc, char** argv)
 	}
 
 
-	ChunkGrid chunk_grid(9);
+	ChunkGrid chunk_grid(11);
 	const ChunkRect generated_chunk_rect = ChunkRect(ChunkCoords(0, 0, 0), 5);
 	ChunkCoords walker = generated_chunk_rect.walker_start();
 	do

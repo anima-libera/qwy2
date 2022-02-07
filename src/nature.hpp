@@ -3,6 +3,7 @@
 #define QWY2_HEADER_NATURE_
 
 #include "opengl.hpp"
+#include "noise.hpp"
 #include <glm/glm.hpp>
 #include <vector>
 #include <cstdint>
@@ -90,10 +91,12 @@ using BlockTypeId = unsigned int;
 class WorldGenerator
 {
 public:
+	NoiseGenerator noise_generator;
 	BlockTypeId primary_block_type;
 
 public:
-	void generate_chunk_content(Nature const& nature, Chunk& chunk) const;
+	WorldGenerator(NoiseGenerator::SeedType seed);
+	void generate_chunk_content(Nature const& nature, Chunk& chunk);
 };
 
 class NatureGenerator
@@ -112,7 +115,7 @@ public:
 	NatureGenerator nature_generator;
 
 public:
-	Nature();
+	Nature(NoiseGenerator::SeedType seed);
 };
 
 } /* qwy2 */
