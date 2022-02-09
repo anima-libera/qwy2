@@ -59,8 +59,7 @@ class Atlas
 public:
 	unsigned int side;
 	PixelData* data;
-	GLuint openglid;
-	unsigned int opengltextureid;
+	unsigned int texture_openglid;
 
 public:
 	Atlas(unsigned int side);

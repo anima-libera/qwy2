@@ -169,6 +169,9 @@ void Block::generate_face(Nature const& nature,
 		std::swap(atlas_rect.atlas_coords_min.x, atlas_rect.atlas_coords_max.x);
 	}
 
+	glm::vec3 normal{0.0f, 0.0f, 0.0f};
+	normal[index_axis] = negativeward ? -1.0f : 1.0f;
+
 	glm::vec3 coords_nn = coords.to_float_coords() - glm::vec3(0.5f, 0.5f, 0.5f);
 	coords_nn[index_axis] += negativeward ? 0.0f : 1.0f;
 
@@ -176,24 +179,28 @@ void Block::generate_face(Nature const& nature,
 	nn.coords = coords_nn;
 	nn.coords[index_a] += 0.0f;
 	nn.coords[index_b] += 0.0f;
+	nn.normal = normal;
 	nn.atlas_coords.x = atlas_rect.atlas_coords_min.x;
 	nn.atlas_coords.y = atlas_rect.atlas_coords_min.y;
 	BlockVertexData np;
 	np.coords = coords_nn;
 	np.coords[index_a] += 0.0f;
 	np.coords[index_b] += 1.0f;
+	np.normal = normal;
 	np.atlas_coords.x = atlas_rect.atlas_coords_min.x;
 	np.atlas_coords.y = atlas_rect.atlas_coords_max.y;
 	BlockVertexData pn;
 	pn.coords = coords_nn;
 	pn.coords[index_a] += 1.0f;
 	pn.coords[index_b] += 0.0f;
+	pn.normal = normal;
 	pn.atlas_coords.x = atlas_rect.atlas_coords_max.x;
 	pn.atlas_coords.y = atlas_rect.atlas_coords_min.y;
 	BlockVertexData pp;
 	pp.coords = coords_nn;
 	pp.coords[index_a] += 1.0f;
 	pp.coords[index_b] += 1.0f;
+	pp.normal = normal;
 	pp.atlas_coords.x = atlas_rect.atlas_coords_max.x;
 	pp.atlas_coords.y = atlas_rect.atlas_coords_max.y;
 

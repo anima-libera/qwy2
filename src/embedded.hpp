@@ -16,7 +16,10 @@
 #define BINARY /* Escapes the file content as an array of bytes. */
 #define SIZE /* Just produces an integer literal of the size in bytes. */
 
-EMBEDDED("shaders/blocks/blocks.vert", TEXT) const char g_shader_source_bocks_vert[];
-EMBEDDED("shaders/blocks/blocks.frag", TEXT) const char g_shader_source_bocks_frag[];
+EMBEDDED("shaders/blocks/blocks.vert", TEXT) const char g_shader_source_blocks_vert[];
+EMBEDDED("shaders/blocks/blocks.frag", TEXT) const char g_shader_source_blocks_frag[];
+
+EMBEDDED("shaders/sun/sun.vert", TEXT) const char g_shader_source_sun_vert[];
+EMBEDDED("shaders/sun/sun.frag", TEXT) const char g_shader_source_sun_frag[];
 
 #endif /* QWY2_HEADER_EMBEDDED_ */

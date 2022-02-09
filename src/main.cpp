@@ -2,6 +2,7 @@
 #include "window.hpp"
 #include "shaders/shader.hpp"
 #include "shaders/blocks/blocks.hpp"
+#include "shaders/sun/sun.hpp"
 #include "camera.hpp"
 #include "chunk.hpp"
 #include "nature.hpp"
@@ -31,18 +32,6 @@ int main(int argc, char** argv)
 		}
 	}
 
-	#if 0
-	const NoiseGenerator::SeedType test_seed = 8;
-
-	NoiseGenerator noise_generator(test_seed);
-	for (int x = -10; x < 10; x++)
-	{
-		std::cout << x << " -> " << noise_generator.base_noise(x) * 20.0f << std::endl;
-	}
-
-	return 0;
-	#endif
-
 
 	if (init_window_graphics() == ErrorCode::ERROR)
 	{
@@ -59,11 +48,67 @@ int main(int argc, char** argv)
 	const NoiseGenerator::SeedType seed = 8 + 1;
 
 	Nature nature(seed);
+	UniformValues uniform_values;
+
 	nature.world_generator.primary_block_type =
 		nature.nature_generator.generate_block_type(nature);
 
-	UniformValues uniform_values;
-	uniform_values.atlas_opengltextureid = nature.atlas.opengltextureid;
+	uniform_values.atlas_texture_openglid = nature.atlas.texture_openglid;
+
+
+	glm::vec3 sun_position{100.0f, 500.0f, 1000.0f};
+	Camera<OrthographicProjection> sun_camera{
+		sun_position,
+		-sun_position,
+		OrthographicProjection{500.0f, 500.0f},
+		1.0f, 2000.0f};
+	uniform_values.sun_camera_matrix = sun_camera.matrix;
+
+	/* See https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mappings for now. */
+
+	unsigned int sun_framebuffer_openglid;
+	glGenFramebuffers(1, &sun_framebuffer_openglid);
+	glBindFramebuffer(GL_FRAMEBUFFER, sun_framebuffer_openglid);
+
+	unsigned int sun_framebuffer_side = 2048;
+	GLint max_framebuffer_width, max_framebuffer_height;
+	glGetIntegerv(GL_MAX_FRAMEBUFFER_WIDTH, &max_framebuffer_width);
+	glGetIntegerv(GL_MAX_FRAMEBUFFER_HEIGHT, &max_framebuffer_height);
+	sun_framebuffer_side = std::min(sun_framebuffer_side,
+		static_cast<unsigned int>(max_framebuffer_width));
+	sun_framebuffer_side = std::min(sun_framebuffer_side,
+		static_cast<unsigned int>(max_framebuffer_height));
+	unsigned int sun_depth_texture_openglid;
+	glGenTextures(1, &sun_depth_texture_openglid);
+	glBindTexture(GL_TEXTURE_2D, sun_depth_texture_openglid);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16,
+		sun_framebuffer_side, sun_framebuffer_side,
+		0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
+		sun_depth_texture_openglid, 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		return EXIT_FAILURE;
+		/* TODO: Get a true error message. */
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	uniform_values.sun_depth_texture_openglid = sun_depth_texture_openglid;
+
+	ShaderProgramSun shader_program_sun;
+	if (shader_program_sun.init() == ErrorCode::ERROR)
+	{
+		std::cerr << "Error occured during shader compilation" << std::endl;
+		return EXIT_FAILURE;
+	}
+
 
 	ShaderProgramBlocks shader_program_blocks;
 	if (shader_program_blocks.init() == ErrorCode::ERROR)
@@ -74,7 +119,7 @@ int main(int argc, char** argv)
 
 
 	ChunkGrid chunk_grid(11);
-	const ChunkRect generated_chunk_rect = ChunkRect(ChunkCoords(0, 0, 0), 5);
+	const ChunkRect generated_chunk_rect = ChunkRect(ChunkCoords(0, 0, 0), 7);
 	ChunkCoords walker = generated_chunk_rect.walker_start();
 	do
 	{
@@ -83,7 +128,7 @@ int main(int argc, char** argv)
 	while (generated_chunk_rect.walker_iterate(walker));
 
 
-	Camera camera;
+	Camera<PerspectiveProjection> player_camera;
 
 	glm::vec3 player_position{0.0f, 0.0f, 0.0f};
 	float player_horizontal_angle = 0.0f;
@@ -122,6 +167,9 @@ int main(int argc, char** argv)
 	bool one_second_pulse = false;
 
 
+	bool see_from_sun = false;
+
+
 	bool running = true;
 	while (running)
 	{
@@ -143,6 +191,10 @@ int main(int argc, char** argv)
 
 				case SDL_KEYDOWN:
 				case SDL_KEYUP:
+					if (event.key.repeat != 0)
+					{
+						break;
+					}
 					switch (event.key.keysym.sym)
 					{
 						case SDLK_ESCAPE:
@@ -174,6 +226,21 @@ int main(int argc, char** argv)
 
 						case SDLK_l:
 							SDL_SetRelativeMouseMode(SDL_FALSE);
+						break;
+
+						case SDLK_m:
+							if (event.type == SDL_KEYDOWN)
+							{
+								see_from_sun = not see_from_sun;
+							}
+						break;
+
+						case SDLK_i:
+						case SDLK_k:
+							if (event.type == SDL_KEYDOWN)
+							{
+								sun_position.x += 100.0f * (event.key.keysym.sym == SDLK_i ? 1.0f : -1.0f);
+							}
 						break;
 					}
 				break;
@@ -287,19 +354,47 @@ int main(int argc, char** argv)
 		glm::vec3 player_direction = glm::rotate(player_horizontal_direction,
 			player_vertical_angle, player_horizontal_right);
 
-		camera.set_position(player_position + glm::vec3(0.0f, 0.0f, 2.0f));
-		camera.set_direction(player_direction);
-		uniform_values.camera_matrix = camera.matrix;
-		shader_program_blocks.update_uniforms(uniform_values);
-		
-		const float sky_variation = 0.0f * (std::cos(time / 8.0f) + 1.0f) / 2.0f;
-		glClearColor(
-			0.0f + sky_variation * 0.2f,
-			0.7f - sky_variation * 0.2f,
-			0.9f - sky_variation * 0.4f,
-			1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		player_camera.set_position(player_position + glm::vec3(0.0f, 0.0f, 2.0f));
+		player_camera.set_direction(player_direction);
 
+
+		sun_position.x = 500.0f * std::cos(time);
+		sun_position.y = 500.0f * std::sin(time);
+		sun_position.z = 300.0f;
+		sun_camera.set_position(sun_position);
+		//sun_camera.set_target_position(glm::vec3(0.0f, 0.0f, 0.0f));
+		sun_camera.set_direction(-sun_position);
+		if (see_from_sun)
+		{
+			uniform_values.player_camera_matrix = sun_camera.matrix;
+		}
+		else
+		{
+			uniform_values.player_camera_matrix = player_camera.matrix;
+		}
+		uniform_values.sun_camera_matrix = sun_camera.matrix;
+		uniform_values.sun_direction = sun_camera.get_direction();
+
+
+		/* Render the world from the sun camera to get the shadow map. */
+		shader_program_sun.update_uniforms(uniform_values);
+		glViewport(0, 0, sun_framebuffer_side, sun_framebuffer_side);
+		glBindFramebuffer(GL_FRAMEBUFFER, sun_framebuffer_openglid);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		glCullFace(GL_BACK);
+		for (auto const& [chunk_coords, chunk] : chunk_grid.table)
+		{
+			shader_program_sun.draw(chunk->mesh.openglid, chunk->mesh.vertex_data.size());
+		}
+		glCullFace(GL_FRONT);
+
+		/* Render the world from the player camera. */
+		shader_program_blocks.update_uniforms(uniform_values);
+		const auto [window_width, window_height] = window_width_height();
+		glViewport(0, 0, window_width, window_height);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glClearColor(0.0f, 0.7f, 0.9f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		for (auto const& [chunk_coords, chunk] : chunk_grid.table)
 		{
 			shader_program_blocks.draw(chunk->mesh.openglid, chunk->mesh.vertex_data.size());

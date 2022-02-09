@@ -63,10 +63,8 @@ Atlas::Atlas(unsigned int side):
 		std::cerr << "GL_MAX_TEXTURE_SIZE is " << max_atlas_side << " which is considered as "
 			<< "too small for an atlas of requested side " << this->side << std::endl;
 	}
-	glGenTextures(1, &openglid);
-	glBindTexture(GL_TEXTURE_2D, openglid);
-	this->opengltextureid = 0;
-	glActiveTexture(GL_TEXTURE0 + opengltextureid);
+	glGenTextures(1, &this->texture_openglid);
+	glBindTexture(GL_TEXTURE_2D, this->texture_openglid);
 	glTexImage2D(GL_TEXTURE_2D,
 		0, GL_RGBA, this->side, this->side, 0,
 		GL_RGBA, GL_UNSIGNED_BYTE, this->data);
@@ -119,8 +117,7 @@ PixelRect Atlas::allocate_rect(unsigned int w, unsigned int h)
 
 void Atlas::update_opengl_data()
 {
-	glBindTexture(GL_TEXTURE_2D, openglid);
-	glActiveTexture(GL_TEXTURE0 + opengltextureid);
+	glBindTexture(GL_TEXTURE_2D, this->texture_openglid);
 	/* TODO: Optimize ^^. */
 	glTexSubImage2D(GL_TEXTURE_2D, 0,
 		0, 0, this->side, this->side,
@@ -154,13 +151,21 @@ void WorldGenerator::generate_chunk_content(Nature const& nature, Chunk& chunk)
 		Block& block = chunk.block(walker);
 		block.type_index = 0;
 
+		if (walker.z <= 0)
+		{
+			block.is_air = false;
+			continue;
+		}
+
 		float zoom_x = static_cast<float>(walker.x) / 20.0f;
 		float zoom_y = static_cast<float>(walker.y) / 20.0f;
 		float zoom_z = static_cast<float>(walker.z) / 20.0f;
 
 		float value = this->noise_generator.base_noise(zoom_x, zoom_y, zoom_z) * 19.0f;
-		value += zoom_z * 3.0f;
-		if (value < 0.0f)
+		float origin_axis_dist =
+			std::sqrt((walker.x - 30.0f) * (walker.x - 30.0f) + walker.y * walker.y);
+		value += zoom_z * origin_axis_dist * 1.0f;
+		if (value < 40.0f)
 		{
 			block.is_air = false;
 		}
@@ -195,17 +200,8 @@ BlockTypeId NatureGenerator::generate_block_type(Nature& nature)
 	PixelRect pixel_rect_bottom = nature.atlas.allocate_rect(16, 16);
 
 	paint_grass_top(this->noise_generator, pixel_rect_top);
-
-	for (unsigned int y = 0; y < pixel_rect_vertical.h; y++)
-	for (unsigned int x = 0; x < pixel_rect_vertical.w; x++)
-	{
-		PixelData& pixel = pixel_rect_vertical.pixel(x, y);
-
-		pixel.r = (std::cos(static_cast<float>(x) * 0.1f) + 1.0f) / 2.0f * 255.0f;
-		pixel.g = (std::cos(static_cast<float>(x + y) * 0.27f) + 1.0f) / 2.0f * 255.0f;
-		pixel.b = (std::cos(static_cast<float>(y) * 0.31f) + 1.0f) / 2.0f * 255.0f;
-		pixel.a = 255;
-	}
+	
+	paint_grass_top(this->noise_generator, pixel_rect_vertical);
 
 	for (unsigned int y = 0; y < pixel_rect_bottom.h; y++)
 	for (unsigned int x = 0; x < pixel_rect_bottom.w; x++)

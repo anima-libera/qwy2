@@ -11,8 +11,11 @@ namespace qwy2 {
 class UniformValues
 {
 public:
-	glm::mat4 camera_matrix;
-	unsigned int atlas_opengltextureid;
+	glm::mat4 player_camera_matrix;
+	glm::mat4 sun_camera_matrix;
+	glm::vec3 sun_direction;
+	unsigned int atlas_texture_openglid;
+	unsigned int sun_depth_texture_openglid;
 };
 
 class ShaderProgram

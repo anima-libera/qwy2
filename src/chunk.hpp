@@ -27,7 +27,8 @@ class ChunkCoordsLevel {};
 
 template<typename T>
 inline constexpr bool is_coords_level =
-	std::is_same_v<T, BlockCoordsLevel> || std::is_same_v<T, ChunkCoordsLevel>;
+	std::is_same_v<T, BlockCoordsLevel> ||
+	std::is_same_v<T, ChunkCoordsLevel>;
 
 template<typename L>
 class CoordsInt
