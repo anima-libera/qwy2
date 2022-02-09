@@ -29,19 +29,19 @@ void ShaderProgramSun::update_uniforms(UniformValues const& uniform_values)
 	active_texture++;
 }
 
-void ShaderProgramSun::draw(GLuint triangle_buffer_openglid, unsigned int vertex_count)
+void ShaderProgramSun::draw(Mesh<BlockVertexData> const& mesh)
 {
 	glUseProgram(this->openglid);
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 	
-	glBindBuffer(GL_ARRAY_BUFFER, triangle_buffer_openglid);
+	glBindBuffer(GL_ARRAY_BUFFER, mesh.openglid);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof (BlockVertexData),
 		reinterpret_cast<void*>(offsetof(BlockVertexData, coords)));
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof (BlockVertexData),
 		reinterpret_cast<void*>(offsetof(BlockVertexData, atlas_coords)));
 
-	glDrawArrays(GL_TRIANGLES, 0, vertex_count);
+	glDrawArrays(GL_TRIANGLES, 0, mesh.vertex_data.size());
 	
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);

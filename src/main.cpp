@@ -50,6 +50,8 @@ int main(int argc, char** argv)
 	Nature nature(seed);
 	UniformValues uniform_values;
 
+	nature.world_generator.surface_block_type =
+		nature.nature_generator.generate_block_type(nature);
 	nature.world_generator.primary_block_type =
 		nature.nature_generator.generate_block_type(nature);
 
@@ -60,17 +62,15 @@ int main(int argc, char** argv)
 	Camera<OrthographicProjection> sun_camera{
 		sun_position,
 		-sun_position,
-		OrthographicProjection{500.0f, 500.0f},
+		OrthographicProjection{300.0f, 300.0f},
 		1.0f, 2000.0f};
 	uniform_values.sun_camera_matrix = sun_camera.matrix;
-
-	/* See https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mappings for now. */
 
 	unsigned int sun_framebuffer_openglid;
 	glGenFramebuffers(1, &sun_framebuffer_openglid);
 	glBindFramebuffer(GL_FRAMEBUFFER, sun_framebuffer_openglid);
 
-	unsigned int sun_framebuffer_side = 2048;
+	unsigned int sun_framebuffer_side = 4096;
 	GLint max_framebuffer_width, max_framebuffer_height;
 	glGetIntegerv(GL_MAX_FRAMEBUFFER_WIDTH, &max_framebuffer_width);
 	glGetIntegerv(GL_MAX_FRAMEBUFFER_HEIGHT, &max_framebuffer_height);
@@ -239,8 +239,20 @@ int main(int argc, char** argv)
 						case SDLK_k:
 							if (event.type == SDL_KEYDOWN)
 							{
-								sun_position.x += 100.0f * (event.key.keysym.sym == SDLK_i ? 1.0f : -1.0f);
+								sun_position.x +=
+									100.0f * (event.key.keysym.sym == SDLK_i ? 1.0f : -1.0f);
 							}
+						break;
+
+						case SDLK_u:
+							player_position.z += 20.0f;
+						break;
+						case SDLK_j:
+							player_position.z = 3.0f;
+						break;
+
+						case SDLK_n:
+							chunk_grid.table.clear();
 						break;
 					}
 				break;
@@ -348,7 +360,7 @@ int main(int argc, char** argv)
 				player_horizontal_direction * forward_motion +
 				player_horizontal_right * rightward_motion +
 				player_motion;
-			player_position.z = std::round(player_position.z) + 0.5f;
+			player_position.z = std::round(player_position.z) + 0.5f - 0.001f;
 		}
 
 		glm::vec3 player_direction = glm::rotate(player_horizontal_direction,
@@ -358,12 +370,11 @@ int main(int argc, char** argv)
 		player_camera.set_direction(player_direction);
 
 
-		sun_position.x = 500.0f * std::cos(time);
-		sun_position.y = 500.0f * std::sin(time);
+		sun_position.x = 500.0f * std::cos(time / 8.0f);
+		sun_position.y = 500.0f * std::sin(time / 8.0f);
 		sun_position.z = 300.0f;
 		sun_camera.set_position(sun_position);
-		//sun_camera.set_target_position(glm::vec3(0.0f, 0.0f, 0.0f));
-		sun_camera.set_direction(-sun_position);
+		sun_camera.set_target_position(glm::vec3(0.0f, 0.0f, 0.0f));
 		if (see_from_sun)
 		{
 			uniform_values.player_camera_matrix = sun_camera.matrix;
@@ -384,7 +395,7 @@ int main(int argc, char** argv)
 		glCullFace(GL_BACK);
 		for (auto const& [chunk_coords, chunk] : chunk_grid.table)
 		{
-			shader_program_sun.draw(chunk->mesh.openglid, chunk->mesh.vertex_data.size());
+			shader_program_sun.draw(chunk->mesh);
 		}
 		glCullFace(GL_FRONT);
 
@@ -397,7 +408,7 @@ int main(int argc, char** argv)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		for (auto const& [chunk_coords, chunk] : chunk_grid.table)
 		{
-			shader_program_blocks.draw(chunk->mesh.openglid, chunk->mesh.vertex_data.size());
+			shader_program_blocks.draw(chunk->mesh);
 		}
 
 		SDL_GL_SwapWindow(g_window);

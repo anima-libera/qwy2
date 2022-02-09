@@ -4,7 +4,6 @@
 
 #include "opengl.hpp"
 #include "nature.hpp"
-#include "shaders/blocks/blocks.hpp"
 #include <glm/glm.hpp>
 #include <vector>
 #include <array>
@@ -57,6 +56,9 @@ public:
 		#elif defined(__GNUG__)
 			#pragma GCC diagnostic pop
 		#endif
+		/* TODO: Try to do proper C++ here, such as by overloading the [] operator
+		 * and defining it with some inline (this+n) dereferancing if some static assertions
+		 * hold, and define it case by case otherwise. */
 	};
 
 public:
@@ -101,8 +103,29 @@ public:
 	bool walker_iterate(CoordsInt<L>& walker) const;
 };
 
+/* Represents an oriented face, the "interior" of which is at the internal_coords,
+ * and the "exterior" of which is at the external_coords that are the internal_coords but
+ * moved (of one length unit) along the given axis in the given negativewardness. */
+template<typename L>
+class FaceInt
+{
+	static_assert(is_coords_level<L>);
+
+public:
+	CoordsInt<L> internal_coords;
+	Axis axis;
+	bool negativeward;
+
+public:
+	FaceInt(CoordsInt<L> internal_coords, Axis axis, bool negativeward);
+	CoordsInt<L> external_coords() const;
+};
+
 using BlockCoords = CoordsInt<BlockCoordsLevel>;
 using BlockRect = RectInt<BlockCoordsLevel>;
+using BlockFace = FaceInt<BlockCoordsLevel>;
+
+class BlockVertexData;
 
 class Block
 {
@@ -112,8 +135,7 @@ public:
 
 public:
 	Block();
-	void generate_face(Nature const& nature,
-		BlockCoords coords, Axis axis, bool negativeward,
+	void generate_face(Nature const& nature, BlockFace const& face,
 		std::vector<BlockVertexData>& dst) const;
 };
 
@@ -133,6 +155,11 @@ public:
 	void update_opengl_data();
 };
 
+class ChunkGrid;
+using ChunkCoords = CoordsInt<ChunkCoordsLevel>;
+using ChunkRect = RectInt<ChunkCoordsLevel>;
+using ChunkFace = FaceInt<ChunkCoordsLevel>;
+
 class Chunk
 {
 public:
@@ -145,12 +172,11 @@ public:
 	Chunk(Nature& nature, BlockRect rect);
 	Block& block(BlockCoords const& coords);
 	void recompute_mesh(Nature const& nature);
+	void add_common_faces_to_mesh(Nature const& nature, ChunkGrid& chunk_grid,
+		ChunkFace chunk_face, Chunk& touching_chunk);
 
 	//friend class Generator;
 };
-
-using ChunkCoords = CoordsInt<ChunkCoordsLevel>;
-using ChunkRect = RectInt<ChunkCoordsLevel>;
 
 class ChunkGrid
 {

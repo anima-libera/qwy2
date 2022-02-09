@@ -1,6 +1,7 @@
 
 #include "chunk.hpp"
 #include "nature.hpp"
+#include "shaders/blocks/blocks.hpp"
 #include <iostream>
 #include <iterator>
 
@@ -139,41 +140,63 @@ bool RectInt<L>::walker_iterate(CoordsInt<L>& walker) const
 template class RectInt<BlockCoordsLevel>;
 template class RectInt<ChunkCoordsLevel>;
 
+template<typename L>
+FaceInt<L>::FaceInt(CoordsInt<L> internal_coords, Axis axis, bool negativeward):
+	internal_coords(internal_coords), axis(axis), negativeward(negativeward)
+{
+	;
+}
+
+template<typename L>
+CoordsInt<L> FaceInt<L>::external_coords() const
+{
+	unsigned int index_axis = static_cast<int>(this->axis);
+	CoordsInt<L> coords = this->internal_coords;
+	coords.arr[index_axis] += this->negativeward ? -1 : 1;
+	return coords;
+}
+
+template class FaceInt<BlockCoordsLevel>;
+template class FaceInt<ChunkCoordsLevel>;
+
 Block::Block():
 	is_air(true)
 {
 	;
 }
 
-void Block::generate_face(Nature const& nature,
-	BlockCoords coords, Axis axis, bool negativeward,
+void Block::generate_face(Nature const& nature, BlockFace const& face,
 	std::vector<BlockVertexData>& dst) const
 {
-	const unsigned int index_axis = static_cast<int>(axis);
+	const unsigned int index_axis = static_cast<int>(face.axis);
 	unsigned int index_a = index_axis == 0 ? 1 : 0;
 	unsigned int index_b = index_axis == 2 ? 1 : 2;
 
 	BlockType const& type = nature.block_type_table[this->type_index];
-	AtlasRect atlas_rect = axis == Axis::Z ?
-		(negativeward ? type.fase_bottom_rect : type.fase_top_rect) :
+	AtlasRect atlas_rect = face.axis == Axis::Z ?
+		(face.negativeward ? type.fase_bottom_rect : type.fase_top_rect) :
 		type.fase_vertical_rect;
 
 	const bool reverse_vertex_order =
-		(axis == Axis::Y && not negativeward) ||
-		(axis == Axis::X && negativeward) ||
-		(axis == Axis::Z && negativeward);
+		(face.axis == Axis::Y && not face.negativeward) ||
+		(face.axis == Axis::X && face.negativeward) ||
+		(face.axis == Axis::Z && face.negativeward);
 
-	if ((axis == Axis::Y && not negativeward) ||
-		(axis == Axis::X && negativeward))
+	if ((face.axis == Axis::Y && not face.negativeward) ||
+		(face.axis == Axis::X && face.negativeward))
 	{
 		std::swap(atlas_rect.atlas_coords_min.x, atlas_rect.atlas_coords_max.x);
 	}
+	if (face.axis == Axis::X || face.axis == Axis::Y)
+	{
+		std::swap(atlas_rect.atlas_coords_min.y, atlas_rect.atlas_coords_max.y);
+	}
 
 	glm::vec3 normal{0.0f, 0.0f, 0.0f};
-	normal[index_axis] = negativeward ? -1.0f : 1.0f;
+	normal[index_axis] = face.negativeward ? -1.0f : 1.0f;
 
-	glm::vec3 coords_nn = coords.to_float_coords() - glm::vec3(0.5f, 0.5f, 0.5f);
-	coords_nn[index_axis] += negativeward ? 0.0f : 1.0f;
+	glm::vec3 coords_nn = face.internal_coords.to_float_coords() - glm::vec3(0.5f, 0.5f, 0.5f);
+	coords_nn[index_axis] += face.negativeward ? 0.0f : 1.0f;
 
 	BlockVertexData nn;
 	nn.coords = coords_nn;
@@ -282,16 +305,59 @@ void Chunk::recompute_mesh(Nature const& nature)
 			{
 				BlockCoords neighbor = walker;
 				neighbor.arr[static_cast<int>(axis)] += negativeward ? -1 : 1;
-				if (not this->rect.contains(neighbor) ||
+				if (this->rect.contains(neighbor) &&
 					this->block(neighbor).is_air)
 				{
 					this->block(walker).generate_face(nature,
-						walker, axis, negativeward, this->mesh.vertex_data);
+						BlockFace(walker, axis, negativeward),
+						this->mesh.vertex_data);
 				}
 			}
 		}
 	}
 	while (this->rect.walker_iterate(walker));
+
+	glBindBuffer(GL_ARRAY_BUFFER, this->mesh.openglid);
+	glBufferData(GL_ARRAY_BUFFER, 
+		this->mesh.vertex_data.size() * sizeof (decltype(this->mesh.vertex_data)::value_type),
+		this->mesh.vertex_data.data(), GL_DYNAMIC_DRAW);
+}
+
+void Chunk::add_common_faces_to_mesh(Nature const& nature, ChunkGrid& chunk_grid,
+	ChunkFace chunk_face, Chunk& touching_chunk)
+{
+	const unsigned int index_axis = static_cast<int>(chunk_face.axis);
+	unsigned int index_a = index_axis == 0 ? 1 : 0;
+	unsigned int index_b = index_axis == 2 ? 1 : 2;
+
+	BlockRect rect = this->rect;
+	if (chunk_face.negativeward)
+	{
+		rect.coords_max.arr[index_axis] = rect.coords_min.arr[index_axis];
+	}
+	else
+	{
+		rect.coords_min.arr[index_axis] = rect.coords_max.arr[index_axis];
+	}
+
+	for (int a = rect.coords_min.arr[index_a]; a <= rect.coords_max.arr[index_a]; a++)
+	for (int b = rect.coords_min.arr[index_b]; b <= rect.coords_max.arr[index_b]; b++)
+	{
+		BlockCoords coords{0, 0, 0};
+		coords.arr[index_axis] = rect.coords_min.arr[index_axis];
+		coords.arr[index_a] = a;
+		coords.arr[index_b] = b;
+
+		BlockFace face{coords, chunk_face.axis, chunk_face.negativeward};
+
+		if (not this->block(coords).is_air &&
+			touching_chunk.block(face.external_coords()).is_air)
+		{
+			this->block(coords).generate_face(nature,
+				face,
+				this->mesh.vertex_data);
+		}
+	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, this->mesh.openglid);
 	glBufferData(GL_ARRAY_BUFFER, 
@@ -380,7 +446,23 @@ Chunk* ChunkGrid::containing_chunk(glm::vec3 coords)
 
 Chunk* ChunkGrid::generate_chunk(Nature& nature, ChunkCoords chunk_coords)
 {
-	return this->table[chunk_coords] = new Chunk(nature, this->chunk_rect(chunk_coords));
+	Chunk* chunk = this->table[chunk_coords] = new Chunk(nature, this->chunk_rect(chunk_coords));
+
+	for (Axis axis : {Axis::X, Axis::Y, Axis::Z})
+	for (bool negativeward : {false, true})
+	{
+		ChunkFace chunk_face{chunk_coords, axis, negativeward};
+		Chunk* touching_chunk = this->chunk(chunk_face.external_coords());
+		if (touching_chunk != nullptr)
+		{
+			chunk->add_common_faces_to_mesh(nature, *this, chunk_face, *touching_chunk);
+
+			ChunkFace chunk_face_mirror{chunk_face.external_coords(), axis, not negativeward};
+			touching_chunk->add_common_faces_to_mesh(nature, *this, chunk_face_mirror, *chunk);
+		}
+	}
+
+	return chunk;
 }
 
 } /* Qwy2 */

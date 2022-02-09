@@ -92,6 +92,7 @@ class WorldGenerator
 public:
 	NoiseGenerator noise_generator;
 	BlockTypeId primary_block_type;
+	BlockTypeId surface_block_type;
 
 public:
 	WorldGenerator(NoiseGenerator::SeedType seed);

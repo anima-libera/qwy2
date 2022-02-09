@@ -141,6 +141,30 @@ WorldGenerator::WorldGenerator(NoiseGenerator::SeedType seed):
 	;
 }
 
+static float generator_value(NoiseGenerator& noise_generator, BlockCoords coords)
+{
+	if (coords.z <= 0)
+	{
+		return -FLT_MAX;
+	}
+
+	float zoom_x = static_cast<float>(coords.x) / 20.0f;
+	float zoom_y = static_cast<float>(coords.y) / 20.0f;
+	float zoom_z = static_cast<float>(coords.z) / 20.0f;
+
+	float value = noise_generator.base_noise(zoom_x, zoom_y, zoom_z) * 19.0f;
+	const float pillar_x = 30.0f, pillar_y = 0.0f;
+	float pillar_dist = std::sqrt(
+		(coords.x - pillar_x) * (coords.x - pillar_x) +
+		(coords.y - pillar_y) * (coords.y - pillar_y));
+	pillar_dist = std::min(pillar_dist, 40.0f);
+	value += std::min(zoom_z, 20.0f / 20.0f) * pillar_dist * 0.1f;
+	value *= pillar_dist;
+	value -= 200.0f;
+
+	return value;
+}
+
 void WorldGenerator::generate_chunk_content(Nature const& nature, Chunk& chunk)
 {
 	(void)nature;
@@ -149,25 +173,20 @@ void WorldGenerator::generate_chunk_content(Nature const& nature, Chunk& chunk)
 	do
 	{
 		Block& block = chunk.block(walker);
-		block.type_index = 0;
+		block.type_index = this->primary_block_type;
 
-		if (walker.z <= 0)
+		float value = generator_value(this->noise_generator, walker);
+		if (value < 0.0f)
 		{
 			block.is_air = false;
-			continue;
-		}
 
-		float zoom_x = static_cast<float>(walker.x) / 20.0f;
-		float zoom_y = static_cast<float>(walker.y) / 20.0f;
-		float zoom_z = static_cast<float>(walker.z) / 20.0f;
-
-		float value = this->noise_generator.base_noise(zoom_x, zoom_y, zoom_z) * 19.0f;
-		float origin_axis_dist =
-			std::sqrt((walker.x - 30.0f) * (walker.x - 30.0f) + walker.y * walker.y);
-		value += zoom_z * origin_axis_dist * 1.0f;
-		if (value < 40.0f)
-		{
-			block.is_air = false;
+			BlockCoords neighbour_above = walker;
+			neighbour_above.z++;
+			float value_above = generator_value(this->noise_generator, neighbour_above);
+			if (value_above >= 0.0f)
+			{
+				block.type_index = this->surface_block_type;
+			}
 		}
 	}
 	while (chunk.rect.walker_iterate(walker));
@@ -179,39 +198,80 @@ NatureGenerator::NatureGenerator(NoiseGenerator::SeedType seed):
 	;
 }
 
+static void paint_grass_pixel(NoiseGenerator& noise_generator, int x, int y, PixelData& pixel)
+{
+	pixel.r = (noise_generator.base_noise(x, y, 0) * 0.1f + 0.3f) * 255.0f;
+	pixel.g = (noise_generator.base_noise(x, y, 1) * 0.2f + 0.8f) * 255.0f;
+	pixel.b = (noise_generator.base_noise(x, y, 2) * 0.1f + 0.1f) * 255.0f;
+	pixel.a = 255;
+}
+
+static void paint_dirt_pixel(NoiseGenerator& noise_generator, int x, int y, PixelData& pixel)
+{
+	pixel.r = (noise_generator.base_noise(x, y, 0) * 0.15f + 0.4f) * 255.0f;
+	pixel.g = (noise_generator.base_noise(x, y, 1) * 0.15f + 0.3f) * 255.0f;
+	pixel.b = (noise_generator.base_noise(x, y, 2) * 0.05f + 0.0f) * 255.0f;
+	pixel.a = 255;
+}
+
 static void paint_grass_top(NoiseGenerator& noise_generator, PixelRect& pixel_rect)
 {
 	for (int y = 0; y < static_cast<int>(pixel_rect.h); y++)
 	for (int x = 0; x < static_cast<int>(pixel_rect.w); x++)
 	{
 		PixelData& pixel = pixel_rect.pixel(x, y);
+		paint_grass_pixel(noise_generator, x, y, pixel);
+	}
+}
 
-		pixel.r = (noise_generator.base_noise(x, y, 0) * 0.1f + 0.3f) * 255.0f;
-		pixel.g = (noise_generator.base_noise(x, y, 1) * 0.2f + 0.8f) * 255.0f;
-		pixel.b = (noise_generator.base_noise(x, y, 2) * 0.1f + 0.1f) * 255.0f;
-		pixel.a = 255;
+static void paint_grass_vertical(NoiseGenerator& noise_generator, PixelRect& pixel_rect)
+{
+	for (int y = 0; y < static_cast<int>(pixel_rect.h); y++)
+	for (int x = 0; x < static_cast<int>(pixel_rect.w); x++)
+	{
+		PixelData& pixel = pixel_rect.pixel(x, y);
+
+		int grass_length = static_cast<int>(noise_generator.base_noise(x) * 2.0f + 4.5f);
+		if (y <= grass_length)
+		{
+			paint_grass_pixel(noise_generator, x, y, pixel);
+		}
+		else
+		{
+			paint_dirt_pixel(noise_generator, x, y, pixel);
+		}
+	}
+}
+
+static void paint_dirt(NoiseGenerator& noise_generator, PixelRect& pixel_rect)
+{
+	for (int y = 0; y < static_cast<int>(pixel_rect.h); y++)
+	for (int x = 0; x < static_cast<int>(pixel_rect.w); x++)
+	{
+		PixelData& pixel = pixel_rect.pixel(x, y);
+		paint_dirt_pixel(noise_generator, x, y, pixel);
 	}
 }
 
 BlockTypeId NatureGenerator::generate_block_type(Nature& nature)
 {
+	unsigned int block_type_index = nature.block_type_table.size();
+
 	PixelRect pixel_rect_top = nature.atlas.allocate_rect(16, 16);
 	PixelRect pixel_rect_vertical = nature.atlas.allocate_rect(16, 16);
 	PixelRect pixel_rect_bottom = nature.atlas.allocate_rect(16, 16);
 
-	paint_grass_top(this->noise_generator, pixel_rect_top);
-	
-	paint_grass_top(this->noise_generator, pixel_rect_vertical);
-
-	for (unsigned int y = 0; y < pixel_rect_bottom.h; y++)
-	for (unsigned int x = 0; x < pixel_rect_bottom.w; x++)
+	if (block_type_index == 0)
 	{
-		PixelData& pixel = pixel_rect_bottom.pixel(x, y);
-
-		pixel.r = (std::cos(static_cast<float>(x) * 0.1f) + 1.0f) / 2.0f * 255.0f;
-		pixel.g = (std::cos(static_cast<float>(x + y) * 0.27f) + 1.0f) / 2.0f * 255.0f;
-		pixel.b = (std::cos(static_cast<float>(y) * 0.31f) + 1.0f) / 2.0f * 255.0f;
-		pixel.a = 255;
+		paint_grass_top(this->noise_generator, pixel_rect_top);
+		paint_grass_vertical(this->noise_generator, pixel_rect_vertical);
+		paint_dirt(this->noise_generator, pixel_rect_bottom);
+	}
+	else
+	{
+		paint_dirt(this->noise_generator, pixel_rect_top);
+		paint_dirt(this->noise_generator, pixel_rect_vertical);
+		paint_dirt(this->noise_generator, pixel_rect_bottom);
 	}
 
 	nature.atlas.update_opengl_data();
@@ -220,7 +280,7 @@ BlockTypeId NatureGenerator::generate_block_type(Nature& nature)
 		pixel_rect_top.atlas_rect(),
 		pixel_rect_vertical.atlas_rect(),
 		pixel_rect_bottom.atlas_rect()));
-	unsigned int block_type_index = nature.block_type_table.size() - 1;
+
 	return block_type_index;
 }
 
