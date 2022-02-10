@@ -13,6 +13,8 @@ public:
 	glm::vec3 coords;
 	glm::vec3 normal;
 	glm::vec2 atlas_coords;
+	glm::vec2 atlas_coords_min;
+	glm::vec2 atlas_coords_max;
 };
 
 class ShaderProgramBlocks: public ShaderProgram

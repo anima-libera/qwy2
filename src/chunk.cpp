@@ -191,6 +191,8 @@ void Block::generate_face(Nature const& nature, BlockFace const& face,
 	{
 		std::swap(atlas_rect.atlas_coords_min.y, atlas_rect.atlas_coords_max.y);
 	}
+	//glm::vec2 atlas_coords_center =
+	//	(atlas_rect.atlas_coords_min + atlas_rect.atlas_coords_max) / 2.0f;
 
 	glm::vec3 normal{0.0f, 0.0f, 0.0f};
 	normal[index_axis] = face.negativeward ? -1.0f : 1.0f;
@@ -205,6 +207,8 @@ void Block::generate_face(Nature const& nature, BlockFace const& face,
 	nn.normal = normal;
 	nn.atlas_coords.x = atlas_rect.atlas_coords_min.x;
 	nn.atlas_coords.y = atlas_rect.atlas_coords_min.y;
+	nn.atlas_coords_min = atlas_rect.atlas_coords_min;
+	nn.atlas_coords_max = atlas_rect.atlas_coords_max;
 	BlockVertexData np;
 	np.coords = coords_nn;
 	np.coords[index_a] += 0.0f;
@@ -212,6 +216,8 @@ void Block::generate_face(Nature const& nature, BlockFace const& face,
 	np.normal = normal;
 	np.atlas_coords.x = atlas_rect.atlas_coords_min.x;
 	np.atlas_coords.y = atlas_rect.atlas_coords_max.y;
+	np.atlas_coords_min = atlas_rect.atlas_coords_min;
+	np.atlas_coords_max = atlas_rect.atlas_coords_max;
 	BlockVertexData pn;
 	pn.coords = coords_nn;
 	pn.coords[index_a] += 1.0f;
@@ -219,6 +225,8 @@ void Block::generate_face(Nature const& nature, BlockFace const& face,
 	pn.normal = normal;
 	pn.atlas_coords.x = atlas_rect.atlas_coords_max.x;
 	pn.atlas_coords.y = atlas_rect.atlas_coords_min.y;
+	pn.atlas_coords_min = atlas_rect.atlas_coords_min;
+	pn.atlas_coords_max = atlas_rect.atlas_coords_max;
 	BlockVertexData pp;
 	pp.coords = coords_nn;
 	pp.coords[index_a] += 1.0f;
@@ -226,6 +234,8 @@ void Block::generate_face(Nature const& nature, BlockFace const& face,
 	pp.normal = normal;
 	pp.atlas_coords.x = atlas_rect.atlas_coords_max.x;
 	pp.atlas_coords.y = atlas_rect.atlas_coords_max.y;
+	pp.atlas_coords_min = atlas_rect.atlas_coords_min;
+	pp.atlas_coords_max = atlas_rect.atlas_coords_max;
 
 	const std::array<BlockVertexData, 6> vertex_data_sequence{nn, pn, pp, nn, pp, np};
 	/* Does std::copy preallocate the appropriate size ? Probably...
@@ -347,15 +357,12 @@ void Chunk::add_common_faces_to_mesh(Nature const& nature, ChunkGrid& chunk_grid
 		coords.arr[index_axis] = rect.coords_min.arr[index_axis];
 		coords.arr[index_a] = a;
 		coords.arr[index_b] = b;
-
 		BlockFace face{coords, chunk_face.axis, chunk_face.negativeward};
 
 		if (not this->block(coords).is_air &&
 			touching_chunk.block(face.external_coords()).is_air)
 		{
-			this->block(coords).generate_face(nature,
-				face,
-				this->mesh.vertex_data);
+			this->block(coords).generate_face(nature, face, this->mesh.vertex_data);
 		}
 	}
 

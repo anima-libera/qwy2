@@ -56,6 +56,7 @@ int main(int argc, char** argv)
 		nature.nature_generator.generate_block_type(nature);
 
 	uniform_values.atlas_texture_openglid = nature.atlas.texture_openglid;
+	uniform_values.atlas_side = nature.atlas.side;
 
 
 	glm::vec3 sun_position{100.0f, 500.0f, 1000.0f};
@@ -86,8 +87,6 @@ int main(int argc, char** argv)
 		0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
 		sun_depth_texture_openglid, 0);
@@ -378,10 +377,12 @@ int main(int argc, char** argv)
 		if (see_from_sun)
 		{
 			uniform_values.player_camera_matrix = sun_camera.matrix;
+			uniform_values.player_camera_direction = sun_camera.get_direction();
 		}
 		else
 		{
 			uniform_values.player_camera_matrix = player_camera.matrix;
+			uniform_values.player_camera_direction = player_camera.get_direction();
 		}
 		uniform_values.sun_camera_matrix = sun_camera.matrix;
 		uniform_values.sun_direction = sun_camera.get_direction();

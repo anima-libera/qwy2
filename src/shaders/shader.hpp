@@ -11,10 +11,12 @@ namespace qwy2 {
 class UniformValues
 {
 public:
+	unsigned int atlas_texture_openglid;
+	float atlas_side;
 	glm::mat4 player_camera_matrix;
+	glm::vec3 player_camera_direction;
 	glm::mat4 sun_camera_matrix;
 	glm::vec3 sun_direction;
-	unsigned int atlas_texture_openglid;
 	unsigned int sun_depth_texture_openglid;
 };
 
