@@ -125,7 +125,7 @@ using BlockCoords = CoordsInt<BlockCoordsLevel>;
 using BlockRect = RectInt<BlockCoordsLevel>;
 using BlockFace = FaceInt<BlockCoordsLevel>;
 
-class BlockVertexData;
+class ClassicVertexData;
 
 class Block
 {
@@ -136,7 +136,7 @@ public:
 public:
 	Block();
 	void generate_face(Nature const& nature, BlockFace const& face,
-		std::vector<BlockVertexData>& dst) const;
+		std::vector<ClassicVertexData>& dst) const;
 };
 
 template<typename VertexDataType>
@@ -163,7 +163,7 @@ using ChunkFace = FaceInt<ChunkCoordsLevel>;
 class Chunk
 {
 public:
-	Mesh<BlockVertexData> mesh;
+	Mesh<ClassicVertexData> mesh;
 	BlockRect rect;
 private:
 	std::vector<Block> block_grid;
@@ -172,7 +172,7 @@ public:
 	Chunk(Nature& nature, BlockRect rect);
 	Block& block(BlockCoords const& coords);
 	void recompute_mesh(Nature const& nature);
-	void add_common_faces_to_mesh(Nature const& nature, ChunkGrid& chunk_grid,
+	void add_common_faces_to_mesh(Nature const& nature,
 		ChunkFace chunk_face, Chunk& touching_chunk);
 
 	//friend class Generator;

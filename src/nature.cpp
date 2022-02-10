@@ -143,23 +143,35 @@ WorldGenerator::WorldGenerator(NoiseGenerator::SeedType seed):
 
 static float generator_value(NoiseGenerator& noise_generator, BlockCoords coords)
 {
-	if (coords.z <= 0)
-	{
-		return -FLT_MAX;
-	}
-
 	float zoom_x = static_cast<float>(coords.x) / 20.0f;
 	float zoom_y = static_cast<float>(coords.y) / 20.0f;
 	float zoom_z = static_cast<float>(coords.z) / 20.0f;
 
 	float value = noise_generator.base_noise(zoom_x, zoom_y, zoom_z) * 19.0f;
+
+	const float hole_x = -40.0f, hole_y = 55.0f;
+	float hole_dist = std::sqrt(
+		(coords.x - hole_x) * (coords.x - hole_x) +
+		(coords.y - hole_y) * (coords.y - hole_y));
+
+	if (hole_dist > 15.0f && coords.z <= 0.0f)
+	{
+		return -FLT_MAX;
+	}
+	else if (hole_dist <= 15.0f && coords.z <= 0.0f)
+	{
+		return (value / 19.0f) * (15.0f - hole_dist + 1.0f) - 1.5f;
+	}
+
 	const float pillar_x = 30.0f, pillar_y = 0.0f;
 	float pillar_dist = std::sqrt(
 		(coords.x - pillar_x) * (coords.x - pillar_x) +
 		(coords.y - pillar_y) * (coords.y - pillar_y));
 	pillar_dist = std::min(pillar_dist, 40.0f);
+
 	value += std::min(zoom_z, 20.0f / 20.0f) * pillar_dist * 0.1f;
 	value *= pillar_dist;
+
 	value -= 200.0f;
 
 	return value;
