@@ -4,10 +4,11 @@
 #include <iostream>
 #include <algorithm>
 
-namespace qwy2 {
+namespace qwy2
+{
 
-const PixelData PixelData::unused{255, 0, 0, 0};
-const PixelData PixelData::not_unused{0, 0, 0, 0};
+PixelData const PixelData::UNUSED{255, 0, 0, 0};
+PixelData const PixelData::NOT_UNUSED{0, 0, 0, 0};
 
 bool PixelData::operator==(PixelData const& other) const
 {
@@ -26,7 +27,7 @@ bool PixelData::operator!=(PixelData const& other) const
 PixelRect::PixelRect(Atlas& atlas,
 	unsigned int x, unsigned int y, unsigned int w, unsigned int h
 ):
-	atlas(atlas), x(x), y(y), w(w), h(h)
+	atlas{atlas}, x{x}, y{y}, w{w}, h{h}
 {
 	;
 }
@@ -42,19 +43,19 @@ PixelData& PixelRect::pixel(unsigned int interior_x, unsigned int interior_y)
 AtlasRect PixelRect::atlas_rect() const
 {
 	AtlasRect rect;
-	rect.atlas_coords_min = glm::vec2(
+	rect.atlas_coords_min = glm::vec2{
 		static_cast<float>(this->x) / static_cast<float>(this->atlas.side),
-		static_cast<float>(this->y) / static_cast<float>(this->atlas.side));
-	rect.atlas_coords_max = glm::vec2(
+		static_cast<float>(this->y) / static_cast<float>(this->atlas.side)};
+	rect.atlas_coords_max = glm::vec2{
 		static_cast<float>(this->x + this->w) / static_cast<float>(this->atlas.side),
-		static_cast<float>(this->y + this->h) / static_cast<float>(this->atlas.side));
+		static_cast<float>(this->y + this->h) / static_cast<float>(this->atlas.side)};
 	return rect;
 }
 
 Atlas::Atlas(unsigned int side):
-	side(side), data(new PixelData[side * side])
+	side{side}, data{new PixelData[side * side]}
 {
-	std::fill(this->data, this->data + this->side * this->side, PixelData::unused);
+	std::fill(this->data, this->data + this->side * this->side, PixelData::UNUSED);
 
 	GLint max_atlas_side;
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_atlas_side);
@@ -86,7 +87,7 @@ PixelRect Atlas::allocate_rect(unsigned int w, unsigned int h)
 		for (unsigned int x = rect_view.x; x < rect_view.x + rect_view.w; x++)
 		for (unsigned int y = rect_view.y; y < rect_view.y + rect_view.h; y++)
 		{
-			if (this->data[x + this->side * y] != PixelData::unused)
+			if (this->data[x + this->side * y] != PixelData::UNUSED)
 			{
 				goto next_rect;
 			}
@@ -96,7 +97,7 @@ PixelRect Atlas::allocate_rect(unsigned int w, unsigned int h)
 		for (unsigned int x = rect_view.x; x < rect_view.x + rect_view.w; x++)
 		for (unsigned int y = rect_view.y; y < rect_view.y + rect_view.h; y++)
 		{
-			this->data[x + this->side * y] = PixelData::not_unused;
+			this->data[x + this->side * y] = PixelData::NOT_UNUSED;
 		}
 		return rect_view;
 
@@ -121,22 +122,22 @@ void Atlas::update_opengl_data()
 	/* TODO: Optimize ^^. */
 	glTexSubImage2D(GL_TEXTURE_2D, 0,
 		0, 0, this->side, this->side,
-		PixelData::opengl_format, PixelData::opengl_format_type,
+		PixelData::OPENGL_FORMAT, PixelData::OPENGL_FORMAT_TYPE,
 		this->data);
 }
 
 BlockType::BlockType(
 	AtlasRect fase_top_rect, AtlasRect fase_vertical_rect, AtlasRect fase_bottom_rect
 ):
-	fase_top_rect(fase_top_rect),
-	fase_vertical_rect(fase_vertical_rect),
-	fase_bottom_rect(fase_bottom_rect)
+	fase_top_rect{fase_top_rect},
+	fase_vertical_rect{fase_vertical_rect},
+	fase_bottom_rect{fase_bottom_rect}
 {
 	;
 }
 
 WorldGenerator::WorldGenerator(NoiseGenerator::SeedType seed):
-	noise_generator(seed)
+	noise_generator{seed}
 {
 	;
 }
@@ -149,7 +150,7 @@ static float generator_value(NoiseGenerator& noise_generator, BlockCoords coords
 
 	float value = noise_generator.base_noise(zoom_x, zoom_y, zoom_z) * 19.0f;
 
-	const float hole_x = -40.0f, hole_y = 55.0f;
+	float const hole_x = -40.0f, hole_y = 55.0f;
 	float hole_dist = std::sqrt(
 		(coords.x - hole_x) * (coords.x - hole_x) +
 		(coords.y - hole_y) * (coords.y - hole_y));
@@ -163,7 +164,7 @@ static float generator_value(NoiseGenerator& noise_generator, BlockCoords coords
 		return (value / 19.0f) * (15.0f - hole_dist + 1.0f) - 1.5f;
 	}
 
-	const float pillar_x = 30.0f, pillar_y = 0.0f;
+	float const pillar_x = 30.0f, pillar_y = 0.0f;
 	float pillar_dist = std::sqrt(
 		(coords.x - pillar_x) * (coords.x - pillar_x) +
 		(coords.y - pillar_y) * (coords.y - pillar_y));
@@ -181,8 +182,7 @@ void WorldGenerator::generate_chunk_content(Nature const& nature, Chunk& chunk)
 {
 	(void)nature;
 
-	BlockCoords walker = chunk.rect.walker_start();
-	do
+	for (BlockCoords const& walker : chunk.rect)
 	{
 		Block& block = chunk.block(walker);
 		block.type_index = this->primary_block_type;
@@ -201,11 +201,10 @@ void WorldGenerator::generate_chunk_content(Nature const& nature, Chunk& chunk)
 			}
 		}
 	}
-	while (chunk.rect.walker_iterate(walker));
 }
 
 NatureGenerator::NatureGenerator(NoiseGenerator::SeedType seed):
-	noise_generator(seed)
+	noise_generator{seed}
 {
 	;
 }
@@ -288,16 +287,16 @@ BlockTypeId NatureGenerator::generate_block_type(Nature& nature)
 
 	nature.atlas.update_opengl_data();
 
-	nature.block_type_table.push_back(BlockType(
+	nature.block_type_table.push_back(BlockType{
 		pixel_rect_top.atlas_rect(),
 		pixel_rect_vertical.atlas_rect(),
-		pixel_rect_bottom.atlas_rect()));
+		pixel_rect_bottom.atlas_rect()});
 
 	return block_type_index;
 }
 
 Nature::Nature(NoiseGenerator::SeedType seed):
-	atlas(1024), world_generator(seed), nature_generator(seed)
+	atlas{1024}, world_generator{seed}, nature_generator{seed}
 {
 	;
 }

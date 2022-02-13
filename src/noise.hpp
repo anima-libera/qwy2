@@ -5,7 +5,8 @@
 #include <glm/glm.hpp>
 #include <cstdint>
 
-namespace qwy2 {
+namespace qwy2
+{
 
 class NoiseGenerator
 {
@@ -25,6 +26,8 @@ public:
 	float base_noise(float x);
 	float base_noise(float x, float y);
 	float base_noise(float x, float y, float z);
+	/* TODO: Overload base_noise with block-level coords types,
+	 * and with template parameter packs. */
 };
 
 } /* qwy2 */

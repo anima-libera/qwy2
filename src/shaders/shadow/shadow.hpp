@@ -6,7 +6,8 @@
 #include "shaders/classic/classic.hpp"
 #include "chunk.hpp"
 
-namespace qwy2 {
+namespace qwy2
+{
 
 /* The shader program used to render the world viewed from the sun camera,
  * to get a depth buffer used to render cool dynamic shadows. */

@@ -1,11 +1,12 @@
 
 #include "classic.hpp"
 #include "embedded.hpp"
+#include "chunk.hpp"
 #include <glm/gtc/type_ptr.hpp>
 #include <cstddef>
-#include <iostream>
 
-namespace qwy2 {
+namespace qwy2
+{
 
 ErrorCode ShaderProgramClassic::init()
 {
@@ -59,15 +60,15 @@ void ShaderProgramClassic::draw(Mesh<ClassicVertexData> const& mesh)
 	
 	glBindBuffer(GL_ARRAY_BUFFER, mesh.openglid);
 	unsigned int attrib_index = 0;
-	glVertexAttribPointer(attrib_index++, 3, GL_FLOAT, GL_FALSE, sizeof (ClassicVertexData),
+	glVertexAttribPointer(attrib_index++, 3, GL_FLOAT, GL_FALSE, sizeof(ClassicVertexData),
 		reinterpret_cast<void*>(offsetof(ClassicVertexData, coords)));
-	glVertexAttribPointer(attrib_index++, 3, GL_FLOAT, GL_FALSE, sizeof (ClassicVertexData),
+	glVertexAttribPointer(attrib_index++, 3, GL_FLOAT, GL_FALSE, sizeof(ClassicVertexData),
 		reinterpret_cast<void*>(offsetof(ClassicVertexData, normal)));
-	glVertexAttribPointer(attrib_index++, 2, GL_FLOAT, GL_FALSE, sizeof (ClassicVertexData),
+	glVertexAttribPointer(attrib_index++, 2, GL_FLOAT, GL_FALSE, sizeof(ClassicVertexData),
 		reinterpret_cast<void*>(offsetof(ClassicVertexData, atlas_coords)));
-	glVertexAttribPointer(attrib_index++, 2, GL_FLOAT, GL_FALSE, sizeof (ClassicVertexData),
+	glVertexAttribPointer(attrib_index++, 2, GL_FLOAT, GL_FALSE, sizeof(ClassicVertexData),
 		reinterpret_cast<void*>(offsetof(ClassicVertexData, atlas_coords_min)));
-	glVertexAttribPointer(attrib_index++, 2, GL_FLOAT, GL_FALSE, sizeof (ClassicVertexData),
+	glVertexAttribPointer(attrib_index++, 2, GL_FLOAT, GL_FALSE, sizeof(ClassicVertexData),
 		reinterpret_cast<void*>(offsetof(ClassicVertexData, atlas_coords_max)));
 	assert(attrib_index == vertex_attrib_number);
 

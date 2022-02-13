@@ -8,18 +8,22 @@
 #include <vector>
 #include <cstdint>
 
-namespace qwy2 {
+namespace qwy2
+{
 
+/* One RGBA pixel of a pixel grid. */
 class PixelData
 {
 public:
-	static constexpr GLenum opengl_format = GL_RGBA;
-	static constexpr GLenum opengl_format_type =  GL_UNSIGNED_BYTE;
+	static constexpr GLenum OPENGL_FORMAT = GL_RGBA;
+	static constexpr GLenum OPENGL_FORMAT_TYPE = GL_UNSIGNED_BYTE;
 
-	/* In the texture atlas, unused pixels are of that color. */
-	static const PixelData unused;
+	/* In the texture atlas, unused pixels are of that color.
+	 * Pixels of that color are considered free to be allocated to some new texture. */
+	static PixelData const UNUSED;
 
-	static const PixelData not_unused;
+	/* Different of the unused color, used to mark newly allocated pixels as used. */
+	static PixelData const NOT_UNUSED;
 
 public:
 	std::uint8_t r, g, b, a;

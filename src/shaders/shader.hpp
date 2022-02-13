@@ -6,7 +6,8 @@
 #include "utils.hpp"
 #include <glm/glm.hpp>
 
-namespace qwy2 {
+namespace qwy2
+{
 
 /* A set of values that are to be assigned to some uniforms of some shader programs. */
 class UniformValues
@@ -28,9 +29,9 @@ public:
 
 protected:
 	ErrorCode compile_given_src(
-		const char* src_vert, const char* src_geom, const char* src_frag,
-		const char* debug_info_vert, const char* debug_info_geom, const char* debug_info_frag,
-		const char* debug_info);
+		char const* src_vert, char const* src_geom, char const* src_frag,
+		char const* debug_info_vert, char const* debug_info_geom, char const* debug_info_frag,
+		char const* debug_info);
 public:
 	virtual ErrorCode init() = 0;
 	void cleanup();

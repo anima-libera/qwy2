@@ -2,9 +2,10 @@
 #ifndef QWY2_HEADER_UTILS_
 #define QWY2_HEADER_UTILS_
 
-namespace qwy2 {
+namespace qwy2
+{
 
-#define TAU 6.28318530717
+inline constexpr float TAU = 6.28318530717f;
 
 enum class ErrorCode
 {

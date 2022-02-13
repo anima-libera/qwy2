@@ -31,8 +31,9 @@ void main()
 
 	/* Shadow calculation and effect. */
 	float light = -dot(v_normal, normalize(u_sun_camera_direction));
-	bool shadow = v_sun_camera_space_coords.z > texture(u_shadow_depth, v_sun_camera_space_coords.xy).r;
-	if (shadow || light < 0)
+	float shadow_depth = texture(u_shadow_depth, v_sun_camera_space_coords.xy).r;
+	bool is_in_shadow = v_sun_camera_space_coords.z > shadow_depth;
+	if (is_in_shadow || light < 0)
 	{
 		light = 0;
 	}

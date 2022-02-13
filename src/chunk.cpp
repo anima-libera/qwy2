@@ -5,40 +5,60 @@
 #include <iostream>
 #include <iterator>
 
-namespace qwy2 {
+namespace qwy2
+{
 
-template<typename L>
+template<CoordsLevel L>
 CoordsInt<L>::CoordsInt(int x, int y, int z):
-	x(x), y(y), z(z)
+	x{x}, y{y}, z{z}
 {
 	;
 }
 
-template<typename L>
+template<CoordsLevel L>
+int& CoordsInt<L>::operator[](int index)
+{
+	return (&x)[index];
+}
+
+template<CoordsLevel L>
+int const& CoordsInt<L>::operator[](int index) const
+{
+	return (&x)[index];
+}
+
+template<CoordsLevel L>
 glm::vec3 CoordsInt<L>::to_float_coords() const
 {
-	return glm::vec3(this->x, this->y, this->z);
+	return glm::vec3{this->x, this->y, this->z};
 }
 
-template<typename L>
+template<CoordsLevel L>
 bool CoordsInt<L>::operator==(CoordsInt const& other) const
 {
-	return this->arr == other.arr;
+	/* TODO: Find some C++17-idiomatic way to remove this kind of code duplication. */
+	return this->x == other.x && this->y == other.y && this->z == other.z;
 }
 
-template<typename L>
+template<CoordsLevel L>
+bool CoordsInt<L>::operator!=(CoordsInt const& other) const
+{
+	return not (*this == other);
+}
+
+template<CoordsLevel L>
 std::size_t CoordsInt<L>::Hash::operator()(CoordsInt const& coords) const noexcept
 {
 	return
-		std::hash<int>()(coords.x) ^
-		std::hash<int>()(coords.y) ^
-		std::hash<int>()(coords.z);
+		std::hash<int>()(coords.x ^ 10000) ^
+		std::hash<int>()(coords.y ^ 54678) ^
+		std::hash<int>()(coords.z ^ 22263);
 }
 
-template class CoordsInt<BlockCoordsLevel>;
-template class CoordsInt<ChunkCoordsLevel>;
+template class CoordsInt<CoordsLevel::BLOCK>;
+template class CoordsInt<CoordsLevel::CHUNK>;
 
-template<typename L>
+template<CoordsLevel L>
 std::ostream& operator<<(std::ostream& out_stream, CoordsInt<L> const& coords)
 {
 	out_stream << "(" << coords.x << ", " << coords.y << ", " << coords.z << ")";
@@ -46,44 +66,42 @@ std::ostream& operator<<(std::ostream& out_stream, CoordsInt<L> const& coords)
 }
 
 template std::ostream& operator<<(std::ostream& out_stream,
-	CoordsInt<BlockCoordsLevel> const& coords);
+	CoordsInt<CoordsLevel::BLOCK> const& coords);
 template std::ostream& operator<<(std::ostream& out_stream,
-	CoordsInt<ChunkCoordsLevel> const& coords);
+	CoordsInt<CoordsLevel::CHUNK> const& coords);
 
-template<typename L>
+template<CoordsLevel L>
 RectInt<L>::RectInt(CoordsInt<L> coords_min, CoordsInt<L> coords_max):
-	coords_min(coords_min), coords_max(coords_max)
+	coords_min{coords_min}, coords_max{coords_max}
 {
-	;
+	assert(coords_min.x <= coords_max.x);
+	assert(coords_min.y <= coords_max.y);
+	assert(coords_min.z <= coords_max.z);
 }
 
-template<typename L>
+template<CoordsLevel L>
 RectInt<L>::RectInt(CoordsInt<L> coords_center, unsigned int radius):
-	coords_min(
+	coords_min{
 		coords_center.x - static_cast<int>(radius - 1),
 		coords_center.y - static_cast<int>(radius - 1),
-		coords_center.z - static_cast<int>(radius - 1)),
-	coords_max(
+		coords_center.z - static_cast<int>(radius - 1)},
+	coords_max{
 		coords_center.x + static_cast<int>(radius - 1),
 		coords_center.y + static_cast<int>(radius - 1),
-		coords_center.z + static_cast<int>(radius - 1))
+		coords_center.z + static_cast<int>(radius - 1)}
 {
 	;
 }
 
-template<typename L>
+template<CoordsLevel L>
 template<Axis A>
 unsigned int RectInt<L>::length() const
 {
-	const int axis = static_cast<int>(A);
-	return this->coords_max.arr[axis] - this->coords_min.arr[axis] + 1;
+	int const axis = static_cast<int>(A);
+	return this->coords_max[axis] - this->coords_min[axis] + 1;
 }
 
-//template unsigned int RectInt::length<Axis::X>() const;
-//template unsigned int RectInt::length<Axis::Y>() const;
-//template unsigned int RectInt::length<Axis::Z>() const;
-
-template<typename L>
+template<CoordsLevel L>
 unsigned int RectInt<L>::volume() const
 {
 	return
@@ -92,7 +110,7 @@ unsigned int RectInt<L>::volume() const
 		this->length<Axis::Z>();
 }
 
-template<typename L>
+template<CoordsLevel L>
 bool RectInt<L>::contains(CoordsInt<L> const& coords) const
 {
 	return
@@ -101,7 +119,7 @@ bool RectInt<L>::contains(CoordsInt<L> const& coords) const
 		this->coords_min.z <= coords.z && coords.z <= this->coords_max.z;
 }
 
-template<typename L>
+template<CoordsLevel L>
 unsigned int RectInt<L>::to_index(CoordsInt<L> const& coords) const
 {
 	assert(this->contains(coords));
@@ -111,56 +129,101 @@ unsigned int RectInt<L>::to_index(CoordsInt<L> const& coords) const
 		(coords.z - this->coords_min.z) * this->length<Axis::X>() * this->length<Axis::Y>();
 }
 
-template<typename L>
-CoordsInt<L> RectInt<L>::walker_start() const
-{
-	return this->coords_min;
-}
-
-template<typename L>
-bool RectInt<L>::walker_iterate(CoordsInt<L>& walker) const
-{
-	int axis = static_cast<int>(Axis::X);
-	while (axis <= static_cast<int>(Axis::Z))
-	{
-		walker.arr[axis]++;
-		if (walker.arr[axis] > this->coords_max.arr[axis])
-		{
-			walker.arr[axis] = this->coords_min.arr[axis];
-			axis++;
-		}
-		else
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-template class RectInt<BlockCoordsLevel>;
-template class RectInt<ChunkCoordsLevel>;
-
-template<typename L>
-FaceInt<L>::FaceInt(CoordsInt<L> internal_coords, Axis axis, bool negativeward):
-	internal_coords(internal_coords), axis(axis), negativeward(negativeward)
+template<CoordsLevel L>
+RectInt<L>::Iterator::Iterator(CoordsInt<L> starting_coords, RectInt const* containing_rect):
+	current_coords{starting_coords}, containing_rect{containing_rect}
 {
 	;
 }
 
-template<typename L>
+template<CoordsLevel L>
+CoordsInt<L> const& RectInt<L>::Iterator::operator*() const
+{
+	return this->current_coords;
+}
+
+template<CoordsLevel L>
+typename RectInt<L>::Iterator& RectInt<L>::Iterator::operator++()
+{
+	int axis = static_cast<int>(Axis::X);
+	while (axis <= static_cast<int>(Axis::Z))
+	{
+		this->current_coords[axis]++;
+		if (this->current_coords[axis] > this->containing_rect->coords_max[axis])
+		{
+			this->current_coords[axis] = this->containing_rect->coords_min[axis];
+			axis++;
+		}
+		else
+		{
+			return *this;
+		}
+	}
+	/* Going past-the-end. */
+	*this = this->containing_rect->end();
+	return *this;
+}
+
+template<CoordsLevel L>
+typename RectInt<L>::Iterator RectInt<L>::Iterator::operator++(int)
+{
+	RectInt<L>::Iterator copy = *this;
+	++(*this);
+	return copy;
+}
+
+template<CoordsLevel L>
+bool RectInt<L>::Iterator::operator==(typename RectInt<L>::Iterator const& right) const
+{
+	assert(this->containing_rect == right.containing_rect);
+	return this->current_coords == right.current_coords;
+}
+
+template<CoordsLevel L>
+bool RectInt<L>::Iterator::operator!=(typename RectInt<L>::Iterator const& right) const
+{
+	assert(this->containing_rect == right.containing_rect);
+	return this->current_coords != right.current_coords;
+}
+
+template<CoordsLevel L>
+typename RectInt<L>::Iterator RectInt<L>::begin() const
+{
+	return RectInt<L>::Iterator{this->coords_min, this};
+}
+
+template<CoordsLevel L>
+typename RectInt<L>::Iterator RectInt<L>::end() const
+{
+	CoordsInt<L> past_the_end = this->coords_max;
+	past_the_end.x++;
+	return RectInt<L>::Iterator{past_the_end, this};
+}
+
+template class RectInt<CoordsLevel::BLOCK>;
+template class RectInt<CoordsLevel::CHUNK>;
+
+template<CoordsLevel L>
+FaceInt<L>::FaceInt(CoordsInt<L> internal_coords, Axis axis, bool negativeward):
+	internal_coords{internal_coords}, axis{axis}, negativeward{negativeward}
+{
+	;
+}
+
+template<CoordsLevel L>
 CoordsInt<L> FaceInt<L>::external_coords() const
 {
 	unsigned int index_axis = static_cast<int>(this->axis);
 	CoordsInt<L> coords = this->internal_coords;
-	coords.arr[index_axis] += this->negativeward ? -1 : 1;
+	coords[index_axis] += this->negativeward ? -1 : 1;
 	return coords;
 }
 
-template class FaceInt<BlockCoordsLevel>;
-template class FaceInt<ChunkCoordsLevel>;
+template class FaceInt<CoordsLevel::BLOCK>;
+template class FaceInt<CoordsLevel::CHUNK>;
 
 Block::Block():
-	is_air(true)
+	is_air{true}
 {
 	;
 }
@@ -168,7 +231,7 @@ Block::Block():
 void Block::generate_face(Nature const& nature, BlockFace const& face,
 	std::vector<ClassicVertexData>& dst) const
 {
-	const unsigned int index_axis = static_cast<int>(face.axis);
+	unsigned int const index_axis = static_cast<int>(face.axis);
 	unsigned int index_a = index_axis == 0 ? 1 : 0;
 	unsigned int index_b = index_axis == 2 ? 1 : 2;
 
@@ -177,7 +240,7 @@ void Block::generate_face(Nature const& nature, BlockFace const& face,
 		(face.negativeward ? type.fase_bottom_rect : type.fase_top_rect) :
 		type.fase_vertical_rect;
 
-	const bool reverse_vertex_order =
+	bool const reverse_vertex_order =
 		(face.axis == Axis::Y && not face.negativeward) ||
 		(face.axis == Axis::X && face.negativeward) ||
 		(face.axis == Axis::Z && face.negativeward);
@@ -198,7 +261,7 @@ void Block::generate_face(Nature const& nature, BlockFace const& face,
 	glm::vec3 normal{0.0f, 0.0f, 0.0f};
 	normal[index_axis] = face.negativeward ? -1.0f : 1.0f;
 
-	glm::vec3 coords_nn = face.internal_coords.to_float_coords() - glm::vec3(0.5f, 0.5f, 0.5f);
+	glm::vec3 coords_nn = face.internal_coords.to_float_coords() - glm::vec3{0.5f, 0.5f, 0.5f};
 	coords_nn[index_axis] += face.negativeward ? 0.0f : 1.0f;
 
 	ClassicVertexData nn;
@@ -238,7 +301,7 @@ void Block::generate_face(Nature const& nature, BlockFace const& face,
 	pp.atlas_coords_min = atlas_coords_min_real;
 	pp.atlas_coords_max = atlas_coords_max_real;
 
-	const std::array<ClassicVertexData, 6> vertex_data_sequence{nn, pn, pp, nn, pp, np};
+	std::array<ClassicVertexData, 6> const vertex_data_sequence{nn, pn, pp, nn, pp, np};
 	/* Does std::copy preallocate the appropriate size ? Probably...
 	 * TODO: Find out and remove this std::vector::reserve call if redundant. */
 	dst.reserve(dst.size() + vertex_data_sequence.size());
@@ -256,14 +319,14 @@ void Block::generate_face(Nature const& nature, BlockFace const& face,
 
 template<typename VertexDataType>
 Mesh<VertexDataType>::Mesh():
-	Mesh(GL_DYNAMIC_DRAW)
+	Mesh{GL_DYNAMIC_DRAW}
 {
 	;
 }
 
 template<typename VertexDataType>
 Mesh<VertexDataType>::Mesh(GLenum opengl_buffer_usage):
-	opengl_buffer_usage(opengl_buffer_usage)
+	opengl_buffer_usage{opengl_buffer_usage}
 {
 	glGenBuffers(1, &this->openglid);
 	assert(this->openglid != 0);
@@ -280,7 +343,7 @@ void Mesh<VertexDataType>::update_opengl_data()
 {
 	glBindBuffer(GL_ARRAY_BUFFER, this->openglid);
 	glBufferData(GL_ARRAY_BUFFER, 
-		this->vertex_data.size() * sizeof (VertexDataType),
+		this->vertex_data.size() * sizeof(VertexDataType),
 		this->vertex_data.data(),
 		this->opengl_buffer_usage);
 }
@@ -306,8 +369,7 @@ void Chunk::recompute_mesh(Nature const& nature)
 {
 	mesh.vertex_data.clear();
 
-	BlockCoords walker = this->rect.walker_start();
-	do
+	for (BlockCoords const& walker : this->rect)
 	{
 		if (not this->block(walker).is_air)
 		{
@@ -315,49 +377,48 @@ void Chunk::recompute_mesh(Nature const& nature)
 			for (bool negativeward : {false, true})
 			{
 				BlockCoords neighbor = walker;
-				neighbor.arr[static_cast<int>(axis)] += negativeward ? -1 : 1;
+				neighbor[static_cast<int>(axis)] += negativeward ? -1 : 1;
 				if (this->rect.contains(neighbor) &&
 					this->block(neighbor).is_air)
 				{
 					this->block(walker).generate_face(nature,
-						BlockFace(walker, axis, negativeward),
+						BlockFace{walker, axis, negativeward},
 						this->mesh.vertex_data);
 				}
 			}
 		}
 	}
-	while (this->rect.walker_iterate(walker));
 
 	glBindBuffer(GL_ARRAY_BUFFER, this->mesh.openglid);
 	glBufferData(GL_ARRAY_BUFFER, 
-		this->mesh.vertex_data.size() * sizeof (decltype(this->mesh.vertex_data)::value_type),
+		this->mesh.vertex_data.size() * sizeof(decltype(this->mesh.vertex_data)::value_type),
 		this->mesh.vertex_data.data(), GL_DYNAMIC_DRAW);
 }
 
 void Chunk::add_common_faces_to_mesh(Nature const& nature,
 	ChunkFace chunk_face, Chunk& touching_chunk)
 {
-	const unsigned int index_axis = static_cast<int>(chunk_face.axis);
+	unsigned int const index_axis = static_cast<int>(chunk_face.axis);
 	unsigned int index_a = index_axis == 0 ? 1 : 0;
 	unsigned int index_b = index_axis == 2 ? 1 : 2;
 
 	BlockRect rect = this->rect;
 	if (chunk_face.negativeward)
 	{
-		rect.coords_max.arr[index_axis] = rect.coords_min.arr[index_axis];
+		rect.coords_max[index_axis] = rect.coords_min[index_axis];
 	}
 	else
 	{
-		rect.coords_min.arr[index_axis] = rect.coords_max.arr[index_axis];
+		rect.coords_min[index_axis] = rect.coords_max[index_axis];
 	}
 
-	for (int a = rect.coords_min.arr[index_a]; a <= rect.coords_max.arr[index_a]; a++)
-	for (int b = rect.coords_min.arr[index_b]; b <= rect.coords_max.arr[index_b]; b++)
+	for (int a = rect.coords_min[index_a]; a <= rect.coords_max[index_a]; a++)
+	for (int b = rect.coords_min[index_b]; b <= rect.coords_max[index_b]; b++)
 	{
 		BlockCoords coords{0, 0, 0};
-		coords.arr[index_axis] = rect.coords_min.arr[index_axis];
-		coords.arr[index_a] = a;
-		coords.arr[index_b] = b;
+		coords[index_axis] = rect.coords_min[index_axis];
+		coords[index_a] = a;
+		coords[index_b] = b;
 		BlockFace face{coords, chunk_face.axis, chunk_face.negativeward};
 
 		if (not this->block(coords).is_air &&
@@ -369,12 +430,12 @@ void Chunk::add_common_faces_to_mesh(Nature const& nature,
 
 	glBindBuffer(GL_ARRAY_BUFFER, this->mesh.openglid);
 	glBufferData(GL_ARRAY_BUFFER, 
-		this->mesh.vertex_data.size() * sizeof (decltype(this->mesh.vertex_data)::value_type),
+		this->mesh.vertex_data.size() * sizeof(decltype(this->mesh.vertex_data)::value_type),
 		this->mesh.vertex_data.data(), GL_DYNAMIC_DRAW);
 }
 
 ChunkGrid::ChunkGrid(int chunk_side):
-	chunk_side(chunk_side)
+	chunk_side{chunk_side}
 {
 	assert(1 < chunk_side && chunk_side % 2 == 1);
 }
@@ -389,22 +450,22 @@ ChunkCoords ChunkGrid::containing_chunk_coords(BlockCoords coords) const
 
 BlockRect ChunkGrid::chunk_rect(ChunkCoords chunk_coords) const
 {
-	const BlockCoords center{
+	BlockCoords const center{
 		chunk_coords.x * this->chunk_side,
 		chunk_coords.y * this->chunk_side,
 		chunk_coords.z * this->chunk_side};
-	const int margin = this->chunk_side / 2;
-	return BlockRect(
-		BlockCoords(center.x - margin, center.y - margin, center.z - margin),
-		BlockCoords(center.x + margin, center.y + margin, center.z + margin));
+	int const margin = this->chunk_side / 2;
+	return BlockRect{
+		BlockCoords{center.x - margin, center.y - margin, center.z - margin},
+		BlockCoords{center.x + margin, center.y + margin, center.z + margin}};
 }
 
 BlockCoords ChunkGrid::containing_chunk_center_coords(BlockCoords coords) const
 {
-	return BlockCoords(
+	return BlockCoords{
 		(coords.x / this->chunk_side) * this->chunk_side,
 		(coords.y / this->chunk_side) * this->chunk_side,
-		(coords.z / this->chunk_side) * this->chunk_side);
+		(coords.z / this->chunk_side) * this->chunk_side};
 }
 
 BlockRect ChunkGrid::containing_chunk_rect(BlockCoords coords) const
@@ -414,7 +475,7 @@ BlockRect ChunkGrid::containing_chunk_rect(BlockCoords coords) const
 
 BlockRect ChunkGrid::containing_chunk_rect(glm::vec3 coords) const
 {
-	const BlockCoords coords_int{
+	BlockCoords const coords_int{
 		static_cast<int>(std::round(coords.x)),
 		static_cast<int>(std::round(coords.y)),
 		static_cast<int>(std::round(coords.z))};
@@ -437,7 +498,7 @@ Chunk* ChunkGrid::chunk(ChunkCoords chunk_coords)
 
 Chunk* ChunkGrid::containing_chunk(BlockCoords coords)
 {
-	const ChunkCoords chunk_coords = this->containing_chunk_coords(coords);
+	ChunkCoords const chunk_coords = this->containing_chunk_coords(coords);
 	Chunk* chunk = this->chunk(chunk_coords);
 	assert(chunk == nullptr || chunk->rect.contains(coords));
 	return chunk;
@@ -445,7 +506,7 @@ Chunk* ChunkGrid::containing_chunk(BlockCoords coords)
 
 Chunk* ChunkGrid::containing_chunk(glm::vec3 coords)
 {
-	const BlockCoords coords_int{
+	BlockCoords const coords_int{
 		static_cast<int>(std::round(coords.x)),
 		static_cast<int>(std::round(coords.y)),
 		static_cast<int>(std::round(coords.z))};
@@ -454,7 +515,7 @@ Chunk* ChunkGrid::containing_chunk(glm::vec3 coords)
 
 Chunk* ChunkGrid::generate_chunk(Nature& nature, ChunkCoords chunk_coords)
 {
-	Chunk* chunk = this->table[chunk_coords] = new Chunk(nature, this->chunk_rect(chunk_coords));
+	Chunk* chunk = this->table[chunk_coords] = new Chunk{nature, this->chunk_rect(chunk_coords)};
 
 	for (Axis axis : {Axis::X, Axis::Y, Axis::Z})
 	for (bool negativeward : {false, true})

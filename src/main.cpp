@@ -24,11 +24,16 @@ int main(int argc, char** argv)
 	using namespace qwy2;
 
 	bool capture_cursor = true;
+	bool quick_loading = false;
 	for (unsigned int i = 1; i < static_cast<unsigned int>(argc); i++)
 	{
 		if (std::strcmp(argv[i], "--no-cursor-capture") == 0)
 		{
 			capture_cursor = false;
+		}
+		else if (std::strcmp(argv[i], "--quick-loading") == 0)
+		{
+			quick_loading = true;
 		}
 	}
 
@@ -45,9 +50,9 @@ int main(int argc, char** argv)
 	glFrontFace(GL_CW);
 
 
-	const NoiseGenerator::SeedType seed = 8 + 1;
+	NoiseGenerator::SeedType const seed = 8 + 1;
 
-	Nature nature(seed);
+	Nature nature{seed};
 	UniformValues uniform_values;
 
 	nature.world_generator.surface_block_type =
@@ -61,10 +66,8 @@ int main(int argc, char** argv)
 
 	glm::vec3 sun_position{100.0f, 500.0f, 1000.0f};
 	Camera<OrthographicProjection> sun_camera{
-		sun_position,
-		-sun_position,
 		OrthographicProjection{300.0f, 300.0f},
-		1.0f, 2000.0f};
+		10.0f, 2000.0f};
 	uniform_values.sun_camera_matrix = sun_camera.matrix;
 
 	unsigned int shadow_framebuffer_openglid;
@@ -117,17 +120,20 @@ int main(int argc, char** argv)
 	}
 
 
-	ChunkGrid chunk_grid(13);
-	const ChunkRect generated_chunk_rect = ChunkRect(ChunkCoords(0, 0, 0), 7);
-	ChunkCoords walker = generated_chunk_rect.walker_start();
-	do
+	ChunkGrid chunk_grid{13};
+	unsigned int const loading_radius = quick_loading ? 2 : 7;
+	ChunkRect const loading_chunk_rect = ChunkRect{ChunkCoords{0, 0, 0}, loading_radius};
+	for (ChunkCoords const& walker : loading_chunk_rect)
 	{
 		chunk_grid.generate_chunk(nature, walker);
 	}
-	while (generated_chunk_rect.walker_iterate(walker));
 
 
-	Camera<PerspectiveProjection> player_camera;
+	auto const [width, height] = window_width_height();
+	float const aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
+	Camera<PerspectiveProjection> player_camera{
+		PerspectiveProjection{TAU / 8.0f, aspect_ratio},
+		0.1f, 300.0f};
 
 	glm::vec3 player_position{0.0f, 0.0f, 0.0f};
 	float player_horizontal_angle = TAU / 2.0f;
@@ -139,31 +145,34 @@ int main(int argc, char** argv)
 	bool moving_backward = false;
 	bool moving_leftward = false;
 	bool moving_rightward = false;
-	const float moving_factor = 0.1f;
-	const float flying_moving_factor = 0.15f;
+	float const moving_factor = 0.1f;
+	float const flying_moving_factor = 0.15f;
 
 	glm::vec3 player_motion{0.0f, 0.0f, 0.0f};
 	bool flying = false;
 	bool flying_initial = false;
-	const float flying_factor = 0.003f;
-	const float flying_initial_value = 0.1f;
-	const float falling_factor = 0.012f;
-	const float friction_factor = 0.99f;
-	const float floor_friction_factor = 0.95f;
+	float const flying_factor = 0.003f;
+	float const flying_initial_value = 0.1f;
+	float const falling_factor = 0.012f;
+	float const friction_factor = 0.99f;
+	float const floor_friction_factor = 0.95f;
 
 	if (capture_cursor)
 	{
 		SDL_SetRelativeMouseMode(SDL_TRUE);
 	}
-	const float moving_angle_factor = 0.005f;
+	float const moving_angle_factor = 0.005f;
 
 
 	using clock = std::chrono::high_resolution_clock;
-	const auto clock_time_beginning = clock::now();
+	auto const clock_time_beginning = clock::now();
 	float time = 0.0f; /* Time in seconds. */
 	
 	float previous_time = -FLT_MAX;
 	bool one_second_pulse = false;
+
+
+	unsigned int const chunks_to_load_each_frame = 3;
 
 
 	bool see_from_sun = false;
@@ -264,6 +273,8 @@ int main(int argc, char** argv)
 						case SDLK_n:
 							if (event.type == SDL_KEYDOWN)
 							{
+								std::cout << "Unloading "
+									<< chunk_grid.table.size() << " chunks" << std::endl;
 								chunk_grid.table.clear();
 							}
 						break;
@@ -328,33 +339,34 @@ int main(int argc, char** argv)
 		Chunk* player_chunk = chunk_grid.containing_chunk(player_position);
 		if (player_chunk == nullptr)
 		{
-			const ChunkRect around_chunk_rect = ChunkRect(player_chunk_coords, 2);
-			ChunkCoords walker = around_chunk_rect.walker_start();
-			do
+			ChunkRect const around_chunk_rect = ChunkRect{player_chunk_coords, 2};
+			for (ChunkCoords const& walker : around_chunk_rect)
 			{
 				if (chunk_grid.chunk(walker) == nullptr)
 				{
 					chunk_grid.generate_chunk(nature, walker);
 				}
 			}
-			while (around_chunk_rect.walker_iterate(walker));
 			player_chunk = chunk_grid.containing_chunk(player_position);
 		}
 		else
 		{
-			const ChunkRect around_chunk_rect = ChunkRect(player_chunk_coords, 5);
-			ChunkCoords walker = around_chunk_rect.walker_start();
-			do
+			unsigned int chunks_to_load = chunks_to_load_each_frame;
+			ChunkRect const around_chunk_rect = ChunkRect{player_chunk_coords, 5};
+			for (ChunkCoords const& walker : around_chunk_rect)
 			{
 				if (chunk_grid.chunk(walker) == nullptr)
 				{
 					chunk_grid.generate_chunk(nature, walker);
-					break;
+					chunks_to_load--;
+					if (chunks_to_load == 0)
+					{
+						break;
+					}
 				}
 			}
-			while (around_chunk_rect.walker_iterate(walker));
 		}
-		bool is_in_block = not player_chunk->block(player_coords_int).is_air;
+		bool player_is_in_air = player_chunk->block(player_coords_int).is_air;
 
 
 		if (flying)
@@ -376,7 +388,7 @@ int main(int argc, char** argv)
 				player_horizontal_right * rightward_motion * flying_factor;
 			player_position += player_motion;
 		}
-		else if (not is_in_block)
+		else if (player_is_in_air)
 		{
 			player_motion.z -= falling_factor;
 			player_motion *= friction_factor;
@@ -399,7 +411,7 @@ int main(int argc, char** argv)
 		glm::vec3 player_direction = glm::rotate(player_horizontal_direction,
 			player_vertical_angle, player_horizontal_right);
 
-		player_camera.set_position(player_position + glm::vec3(0.0f, 0.0f, 2.0f));
+		player_camera.set_position(player_position + glm::vec3{0.0f, 0.0f, 2.0f});
 		player_camera.set_direction(player_direction);
 
 
@@ -407,7 +419,7 @@ int main(int argc, char** argv)
 		sun_position.y = 500.0f * std::sin(time / 8.0f);
 		sun_position.z = 300.0f;
 		sun_camera.set_position(sun_position);
-		sun_camera.set_target_position(glm::vec3(0.0f, 0.0f, 0.0f));
+		sun_camera.set_target_position(glm::vec3{0.0f, 0.0f, 0.0f});
 		if (see_from_sun)
 		{
 			uniform_values.user_camera_matrix = sun_camera.matrix;
@@ -441,7 +453,7 @@ int main(int argc, char** argv)
 
 		/* Render the world from the player camera. */
 		shader_program_classic.update_uniforms(uniform_values);
-		const auto [window_width, window_height] = window_width_height();
+		auto const [window_width, window_height] = window_width_height();
 		glViewport(0, 0, window_width, window_height);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glClearColor(0.0f, 0.7f, 0.9f, 1.0f);

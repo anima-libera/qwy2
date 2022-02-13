@@ -1,18 +1,19 @@
 
-#include "dbgmsg.hpp"
+#include "debug_message.hpp"
 #include "opengl.hpp"
 #include "utils.hpp"
 #include <SDL2/SDL.h>
 #include <tuple>
 
-namespace qwy2 {
+namespace qwy2
+{
 
 SDL_Window* g_window = nullptr;
 SDL_GLContext g_opengl_context = nullptr;
 
 static GLuint s_vao_id;
 
-#define WINDOW_NAME "Qwy2"
+static constexpr char const* window_name = "Qwy2";
 
 ErrorCode init_window_graphics()
 {
@@ -23,7 +24,7 @@ ErrorCode init_window_graphics()
 	}
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
-	g_window = SDL_CreateWindow(WINDOW_NAME,
+	g_window = SDL_CreateWindow(window_name,
 		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1600, 800,
 		SDL_WINDOW_OPENGL);
 	if (g_window == nullptr)
@@ -60,7 +61,7 @@ ErrorCode init_window_graphics()
 				"\"" << glewGetErrorString(gnew_init_result) << "\"" << std::endl;
 		}
 	#endif
-	enable_opengl_dbgmsg();
+	enable_opengl_debug_message();
 	glEnable(GL_MULTISAMPLE);
 	if (SDL_GL_SetSwapInterval(-1) != 0)
 	{

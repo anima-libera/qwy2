@@ -203,6 +203,9 @@ else:
 	build_command_args.append("-fno-stack-protector")
 	build_command_args.append("-flto")
 	build_command_args.append("-s")
+if False:
+	build_command_args.append("-v")
+	build_command_args.append("-Wl,-v")
 if option_opengl_notifs:
 	build_command_args.append("-DENABLE_OPENGL_NOTIFICATIONS")
 build_command_args.append("-lGL")

@@ -5,24 +5,30 @@
 #include <glm/glm.hpp>
 #include "utils.hpp"
 
-namespace qwy2 {
+namespace qwy2
+{
 
+/* Set of values exclusive to the generation of a perspective projection matrix.
+ * Perspective such that perspective lines eventually cross, this is not isometric. */
 class PerspectiveProjection
 {
 private:
-	float fovy = TAU / 8.0f;
+	float fovy; /* Camera angle ? (If so, which one ?) */
+	float aspect_ratio; /* Ratio width / height. */
 
 public:
 	PerspectiveProjection();
-	PerspectiveProjection(float fovy);
+	PerspectiveProjection(float fovy, float aspect_ratio);
 	glm::mat4 matrix(float near, float far) const;
 };
 
+/* Set of values exclusive to the generation of an orthographic projection matrix.
+ * It produces an isometric rendering in which perspective lines are parallel. */
 class OrthographicProjection
 {
 private:
-	float width = 100.0f;
-	float height = 100.0f;
+	float width;
+	float height;
 
 public:
 	OrthographicProjection();
@@ -35,6 +41,9 @@ inline constexpr bool is_projection =
 	std::is_same_v<T, PerspectiveProjection> || 
 	std::is_same_v<T, OrthographicProjection>;
 
+/* View projection matrix allowing the rendering of 3D scenes onto 2D screens.
+ * The projection part of the view projection matrix is handled by the projection
+ * member as well as the near and far members. The view part is handled by the rest. */
 template<typename P>
 class Camera
 {
@@ -47,13 +56,12 @@ private:
 	glm::vec3 direction;
 	glm::vec3 up = glm::vec3(0.0f, 0.0f, 1.0f);
 	P projection;
-	float near = 0.1f;
-	float far = 400.0f;
+	float near; /* Near clipping plane distance. */
+	float far; /* Far clipping plane distance. */
 
 public:
 	Camera();
-	Camera(glm::vec3 position, glm::vec3 direction);
-	Camera(glm::vec3 position, glm::vec3 direction, P projection, float near, float far);
+	Camera(P projection, float near, float far);
 	void set_position(glm::vec3 position);
 	void set_direction(glm::vec3 direction);
 	void set_target_position(glm::vec3 target_position);

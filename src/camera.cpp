@@ -1,38 +1,37 @@
 
 #include "camera.hpp"
-#include "window.hpp"
-#include <SDL2/SDL.h>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 
-namespace qwy2 {
+namespace qwy2
+{
 
-PerspectiveProjection::PerspectiveProjection()
+PerspectiveProjection::PerspectiveProjection():
+	fovy{TAU / 8.0f}, aspect_ratio{1.0f}
 {
 	;
 }
 
-PerspectiveProjection::PerspectiveProjection(float fovy):
-	fovy(fovy)
+PerspectiveProjection::PerspectiveProjection(float fovy, float aspect_ratio):
+	fovy{fovy}, aspect_ratio{aspect_ratio}
 {
 	;
 }
 
 glm::mat4 PerspectiveProjection::matrix(float near, float far) const
 {
-	const auto [width, height] = window_width_height();
-	const float aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
-	return glm::perspective(this->fovy, aspect_ratio, near, far);
+	return glm::perspective(this->fovy, this->aspect_ratio, near, far);
 }
 
-OrthographicProjection::OrthographicProjection()
+OrthographicProjection::OrthographicProjection():
+	width{100.0f}, height{100.0f}
 {
 	;
 }
 
 OrthographicProjection::OrthographicProjection(float width, float height):
-	width(width), height(height)
+	width{width}, height{height}
 {
 	;
 }
@@ -47,21 +46,14 @@ glm::mat4 OrthographicProjection::matrix(float near, float far) const
 
 template<typename P>
 Camera<P>::Camera():
-	position(glm::vec3()), direction(glm::vec3())
+	position{}, direction{}, near{0.1f}, far{400.0f}
 {
 	this->compute_matrix();
 }
 
 template<typename P>
-Camera<P>::Camera(glm::vec3 position, glm::vec3 direction):
-	position(position), direction(direction)
-{
-	this->compute_matrix();
-}
-
-template<typename P>
-Camera<P>::Camera(glm::vec3 position, glm::vec3 direction, P projection, float near, float far):
-	position(position), direction(direction), projection(projection), near(near), far(far)
+Camera<P>::Camera(P projection, float near, float far):
+	projection{projection}, near{near}, far{far}
 {
 	this->compute_matrix();
 }
@@ -103,9 +95,9 @@ glm::vec3 Camera<P>::get_direction() const
 template<typename P>
 void Camera<P>::compute_matrix()
 {
-	const glm::mat4 projection =
+	glm::mat4 const projection =
 		this->projection.matrix(this->near, this->far);
-	const glm::mat4 view =
+	glm::mat4 const view =
 		glm::lookAt(this->position, this->position + this->direction, this->up);
 	this->matrix = projection * view;
 }

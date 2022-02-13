@@ -1,20 +1,20 @@
 
 #include "shader.hpp"
-#include "embedded.hpp"
 #include "opengl.hpp"
 #include "utils.hpp"
 #include <iostream>
 
-namespace qwy2 {
+namespace qwy2
+{
 
 /* Creates an OpenGL shader object with the given GLSL source code, then
  * compiles it and returns its id.
  * Returns 0 if compilation fails, debug_info being included in the error message. */
-static GLuint shader_src_compile(const char* shader_src, GLuint shader_type,
-	const char* debug_info)
+static GLuint shader_src_compile(char const* shader_src, GLuint shader_type,
+	char const* debug_info)
 {
 	GLuint shader_openglid = glCreateShader(shader_type);
-	glShaderSource(shader_openglid, 1, (const GLchar* const*)&shader_src, nullptr);
+	glShaderSource(shader_openglid, 1, (GLchar const* const*)&shader_src, nullptr);
 	glCompileShader(shader_openglid);
 	GLint compile_status = 0;
 	glGetShaderiv(shader_openglid, GL_COMPILE_STATUS, &compile_status);
@@ -27,9 +27,9 @@ static GLuint shader_src_compile(const char* shader_src, GLuint shader_type,
 			std::cerr << "OpenGL shader compilation error ";
 			if (debug_info != nullptr)
 			{
-				std::cerr << "(" << debug_info << ")";
+				std::cerr << "(" << debug_info << ") ";
 			}
-			std::cerr << " without an OpenGL error message" << std::endl;
+			std::cerr << "without an OpenGL error message" << std::endl;
 			/* Is it even possible to reach that point? */
 		}
 		else
@@ -44,9 +44,9 @@ static GLuint shader_src_compile(const char* shader_src, GLuint shader_type,
 			std::cerr << "OpenGL shader compilation error ";
 			if (debug_info != nullptr)
 			{
-				std::cerr << "(" << debug_info << ")";
+				std::cerr << "(" << debug_info << ") ";
 			}
-			std::cerr << " \x1b[31m\"" << message << "\"\x1b[39m" << std::endl;
+			std::cerr << "\x1b[31m\"" << message << "\"\x1b[39m" << std::endl;
 			delete[] message;
 		}
 		glDeleteShader(shader_openglid);
@@ -60,9 +60,9 @@ static GLuint shader_src_compile(const char* shader_src, GLuint shader_type,
  * The src_geom parameter can be nullptr as a geometry shader is optional in the
  * OpenGL rendering pipeline. */
 static GLuint shader_program_build(
-	const char* src_vert, const char* src_geom, const char* src_frag,
-	const char* debug_info_vert, const char* debug_info_geom, const char* debug_info_frag,
-	const char* debug_info)
+	char const* src_vert, char const* src_geom, char const* src_frag,
+	char const* debug_info_vert, char const* debug_info_geom, char const* debug_info_frag,
+	char const* debug_info)
 {
 	GLuint shader_vert_openglid =
 		shader_src_compile(src_vert, GL_VERTEX_SHADER, debug_info_vert);
@@ -113,9 +113,9 @@ static GLuint shader_program_build(
 			std::cerr << "OpenGL shader program linkage error ";
 			if (debug_info != nullptr)
 			{
-				std::cerr << "(" << debug_info << ")";
+				std::cerr << "(" << debug_info << ") ";
 			}
-			std::cerr << " without an OpenGL error message" << std::endl;
+			std::cerr << "without an OpenGL error message" << std::endl;
 			/* Is it even possible to reach that point? */
 		}
 		else
@@ -130,9 +130,9 @@ static GLuint shader_program_build(
 			std::cerr << "OpenGL shader program linkage error ";
 			if (debug_info != nullptr)
 			{
-				std::cerr << "(" << debug_info << ")";
+				std::cerr << "(" << debug_info << ") ";
 			}
-			std::cerr << " \x1b[31m\"" << message << "\"\x1b[39m" << std::endl;
+			std::cerr << "\x1b[31m\"" << message << "\"\x1b[39m" << std::endl;
 			delete[] message;
 		}
 		glDetachShader(shader_program_openglid, shader_vert_openglid);
@@ -161,9 +161,9 @@ static GLuint shader_program_build(
 }
 
 ErrorCode ShaderProgram::compile_given_src(
-	const char* src_vert, const char* src_geom, const char* src_frag,
-	const char* debug_info_vert, const char* debug_info_geom, const char* debug_info_frag,
-	const char* debug_info)
+	char const* src_vert, char const* src_geom, char const* src_frag,
+	char const* debug_info_vert, char const* debug_info_geom, char const* debug_info_frag,
+	char const* debug_info)
 {
 	this->openglid = shader_program_build(src_vert, src_geom, src_frag,
 		debug_info_vert, debug_info_geom, debug_info_frag, debug_info);

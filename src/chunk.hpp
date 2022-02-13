@@ -8,12 +8,22 @@
 #include <vector>
 #include <array>
 #include <unordered_map>
-#include <functional>
-#include <type_traits>
 #include <ostream>
 
-namespace qwy2 {
+namespace qwy2
+{
 
+/* There are two natural length units here: the length of the edge of a block
+ * and the length of the edge of a chunk. The latter should remain specific to
+ * chunk handling, and thus the coordinate system used to map the 3D space of
+ * the world considers that the edge of a block is of length 1.
+ * Here, the vertical axis is Z (not Y), integer coordinates correspond to points
+ * at the center of blocks (not at the corner of blocks), chunks are of odd side
+ * length so that they have a center block, and the center block of the chunk at
+ * the (0, 0, 0) chunk coords is the block at the (0, 0, 0) block coords. */
+
+/* Used to represent one non-oriented axis. The vertical axis is Z.
+ * If needed, an orientation is often given as a boolean negativewardness. */
 enum class Axis
 {
 	X = 0,
@@ -21,52 +31,35 @@ enum class Axis
 	Z = 2,
 };
 
-class BlockCoordsLevel {};
-class ChunkCoordsLevel {};
+enum class CoordsLevel
+{
+	/* The associated coords types describe points in the world,
+	* with the edge of a block being of length 1. */
+	BLOCK,
 
-template<typename T>
-inline constexpr bool is_coords_level =
-	std::is_same_v<T, BlockCoordsLevel> ||
-	std::is_same_v<T, ChunkCoordsLevel>;
+	/* The associated coords types describe chunks in the chunk grid,
+	* with the edge of a chunk being of length 1 (for what this is worth). */
+	CHUNK,
+};
 
-template<typename L>
+/* Integer 3D coords. */
+template<CoordsLevel L>
 class CoordsInt
 {
-	static_assert(is_coords_level<L>);
-
 public:
-	union
-	{
-		std::array<int, 3> arr;
-		
-		/* Here are some compiler-specific (ugh) pragmas to allow
-		 * for an anonymous struct to exist, for aesthetic purposes.
-		 * Inspired from the GLM source code. */
-		#if defined(__clang__)
-			#pragma clang diagnostic push
-			#pragma clang diagnostic ignored "-Wgnu-anonymous-struct"
-			#pragma clang diagnostic ignored "-Wnested-anon-types"		
-		#elif defined(__GNUG__)
-			#pragma GCC diagnostic push
-			#pragma GCC diagnostic ignored "-Wpedantic"
-		#endif
-		struct { int x, y, z; };
-		#if defined(__clang__)
-			#pragma clang diagnostic pop
-		#elif defined(__GNUG__)
-			#pragma GCC diagnostic pop
-		#endif
-		/* TODO: Try to do proper C++ here, such as by overloading the [] operator
-		 * and defining it with some inline (this+n) dereferancing if some static assertions
-		 * hold, and define it case by case otherwise. */
-	};
+	int x, y, z;
 
 public:
 	CoordsInt(int x, int y, int z);
-	glm::vec3 to_float_coords() const;	
+	int& operator[](int index);
+	int const& operator[](int index) const;
+	glm::vec3 to_float_coords() const;
 	bool operator==(CoordsInt const& other) const;
+	bool operator!=(CoordsInt const& other) const;
 
 public:
+	/* Callable hash that allows CoordsInt values to be used as keys
+	 * in std::unordered_map (that is implemented as a hash map). */
 	class Hash
 	{
 	public:
@@ -74,14 +67,14 @@ public:
 	};
 };
 
-template<typename L>
+template<CoordsLevel L>
 std::ostream& operator<<(std::ostream& out_stream, CoordsInt<L> const& coords);
 
-template<typename L>
+/* A 3D axis-aligned rectangle area of integer coords,
+ * such as a recangle of blocks or a ractangle of chunks. */
+template<CoordsLevel L>
 class RectInt
 {
-	static_assert(is_coords_level<L>);
-
 public:
 	CoordsInt<L> coords_min; /* Included. */
 	CoordsInt<L> coords_max; /* Included. */
@@ -99,18 +92,38 @@ public:
 
 	unsigned int to_index(CoordsInt<L> const& coords) const;
 
-	CoordsInt<L> walker_start() const;
-	bool walker_iterate(CoordsInt<L>& walker) const;
+	class Iterator
+	{
+	public:
+		using iterator_category = std::input_iterator_tag;
+		using difference_type = int;
+		using value_type = CoordsInt<L>;
+		using pointer = value_type*;
+		using reference = value_type&;
+
+	public:
+		CoordsInt<L> current_coords;
+		RectInt const* containing_rect;
+	
+	public:
+		Iterator(CoordsInt<L> starting_coords, RectInt const* containing_rect);
+		CoordsInt<L> const& operator*() const;
+		Iterator& operator++();
+		Iterator operator++(int);
+		bool operator==(Iterator const& right) const;
+		bool operator!=(Iterator const& right) const;
+	};
+
+	Iterator begin() const;
+	Iterator end() const;
 };
 
 /* Represents an oriented face, the "interior" of which is at the internal_coords,
  * and the "exterior" of which is at the external_coords that are the internal_coords but
  * moved (of one length unit) along the given axis in the given negativewardness. */
-template<typename L>
+template<CoordsLevel L>
 class FaceInt
 {
-	static_assert(is_coords_level<L>);
-
 public:
 	CoordsInt<L> internal_coords;
 	Axis axis;
@@ -121,12 +134,13 @@ public:
 	CoordsInt<L> external_coords() const;
 };
 
-using BlockCoords = CoordsInt<BlockCoordsLevel>;
-using BlockRect = RectInt<BlockCoordsLevel>;
-using BlockFace = FaceInt<BlockCoordsLevel>;
+using BlockCoords = CoordsInt<CoordsLevel::BLOCK>;
+using BlockRect = RectInt<CoordsLevel::BLOCK>;
+using BlockFace = FaceInt<CoordsLevel::BLOCK>;
 
 class ClassicVertexData;
 
+/* Describes the state of one voxel in a grid of voxels. */
 class Block
 {
 public:
@@ -156,9 +170,9 @@ public:
 };
 
 class ChunkGrid;
-using ChunkCoords = CoordsInt<ChunkCoordsLevel>;
-using ChunkRect = RectInt<ChunkCoordsLevel>;
-using ChunkFace = FaceInt<ChunkCoordsLevel>;
+using ChunkCoords = CoordsInt<CoordsLevel::CHUNK>;
+using ChunkRect = RectInt<CoordsLevel::CHUNK>;
+using ChunkFace = FaceInt<CoordsLevel::CHUNK>;
 
 class Chunk
 {
