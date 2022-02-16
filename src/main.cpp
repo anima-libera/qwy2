@@ -414,27 +414,26 @@ int main(int argc, char** argv)
 		player_position += player_motion;
 
 		/* Handle collisions with blocks. */
+		falling = true;
 		player_box.center = player_position + glm::vec3{0.0f, 0.0f, 1.0f};
 		BlockRect player_rect = player_box.containing_block_rect();
 		BlockCoords player_center_coords_int{
 			static_cast<int>(std::round(player_box.center.x)),
 			static_cast<int>(std::round(player_box.center.y)),
 			static_cast<int>(std::round(player_box.center.z))};
-
-		falling = true;
-		std::unordered_set<BlockCoords, BlockCoords::Hash> collision_black_list;
+		std::unordered_set<BlockCoords, BlockCoords::Hash> collision_blacklist;
 		constexpr unsigned int max_steps_collisions = 30;
 		for (unsigned int i = 0; i < max_steps_collisions; i++)
 		{
 			player_rect = player_box.containing_block_rect();
 
 			/* Find the closest colliding block, and forget the others for now.
-				* If that is not enough then we will end up back here anyway. */
+			 * If that is not enough then we will end up back here anyway. */
 			std::vector<BlockCoords> collisions;
 			for (BlockCoords coords : player_rect)
 			{
 				if ((not chunk_grid.block_is_air_or_not_generated(coords)) &&
-					(collision_black_list.find(coords) == collision_black_list.end()))
+					(collision_blacklist.find(coords) == collision_blacklist.end()))
 				{
 					collisions.push_back(coords);
 				}
@@ -446,23 +445,31 @@ int main(int argc, char** argv)
 			BlockCoords const& collision = *std::min(collisions.begin(), collisions.end(),
 				[player_box](auto const& left, auto const& right){
 					float const left_dist =
-						(player_box.center - left->to_float_coords()).length();
+						glm::length(player_box.center - left->to_float_coords());
 					float const right_dist =
-						(player_box.center - right->to_float_coords()).length();
+						glm::length(player_box.center - right->to_float_coords());
 					return left_dist < right_dist;
 				});
 
-			/* Take into account multiple points in the player, not just its center.
-			 * This is a sort of dirty fix that could be more elegant if there were a list
-			 * of such points somewhere or something. */
+			/* Take into account multiple points in the player, not just its center. */
 			glm::vec3 player_feet =
-				player_box.center + glm::vec3{0.0f, 0.0f, - player_box.dimensions.z / 2.0f};
-			float const dist_to_center =
-				(player_box.center - collision.to_float_coords()).length();
+				player_box.center + glm::vec3{0.0f, 0.0f, - player_box.dimensions.z / 2.3f};
+			glm::vec3 player_center =
+				player_box.center;
+			glm::vec3 player_head =
+				player_box.center + glm::vec3{0.0f, 0.0f, player_box.dimensions.z / 2.3f};
 			float const dist_to_feet =
-				(player_feet - collision.to_float_coords()).length();
+				glm::length(player_feet - collision.to_float_coords());
+			float const dist_to_center =
+				glm::length(player_center - collision.to_float_coords());
+			float const dist_to_head =
+				glm::length(player_head - collision.to_float_coords());
+			float min_dist = std::min({dist_to_feet, dist_to_center, dist_to_head});
 			glm::vec3 player_point =
-				dist_to_center < dist_to_feet ? player_box.center : player_feet;
+				min_dist == dist_to_feet ? player_feet :
+				min_dist == dist_to_center ? player_center :
+				min_dist == dist_to_head ? player_head :
+				(assert(0), glm::vec3{});
 
 			glm::vec3 raw_force = player_point - collision.to_float_coords();
 
@@ -549,6 +556,15 @@ int main(int argc, char** argv)
 				}
 			}
 
+			if (raw_force == glm::vec3{0.0f, 0.0f, 0.0f})
+			{
+				/* This collision doesn't seem to be of any use, all of its relevant faces
+				 * are probably untouchable. Hopefully more useful collisions will follow. */
+				collision_blacklist.insert(collision);
+				continue;
+			}
+			raw_force /= glm::length(raw_force); /* Useless normalization xd. */
+
 			/* Push the player out of the colliding block,
 			 * also stopping motion towards the colliding block as it bonked. */
 			if (raw_force.x > 0.0f)
@@ -611,13 +627,6 @@ int main(int argc, char** argv)
 				player_box.center.z =
 					static_cast<float>(collision.z)
 						- (0.5f + player_box.dimensions.z / 2.0f + 0.0001f);
-			}
-			if (raw_force == glm::vec3{0.0f, 0.0f, 0.0f})
-			{
-				/* This collision doesn't seem to be of any use, all of its relevant faces
-				 * are probably untouchable. Hopefully more useful collisions will follow. */
-				collision_black_list.insert(collision);
-				continue;
 			}
 		}
 

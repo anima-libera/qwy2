@@ -144,6 +144,11 @@ WorldGenerator::WorldGenerator(NoiseGenerator::SeedType seed):
 
 static float generator_value(NoiseGenerator& noise_generator, BlockCoords coords)
 {
+	if (std::abs(coords.x) == 10 && std::abs(coords.y) == 10 && coords.z == 2)
+	{
+		return -1.0f;
+	}
+
 	float zoom_x = static_cast<float>(coords.x) / 20.0f;
 	float zoom_y = static_cast<float>(coords.y) / 20.0f;
 	float zoom_z = static_cast<float>(coords.z) / 20.0f;
