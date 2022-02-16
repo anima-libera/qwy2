@@ -94,6 +94,9 @@ public:
 
 	unsigned int to_index(CoordsInt<L> const& coords) const;
 
+	bool operator==(RectInt const& right) const;
+	bool operator!=(RectInt const& right) const;
+
 	class Iterator
 	{
 	public:
@@ -215,6 +218,8 @@ public:
 	Chunk* containing_chunk(glm::vec3 coords);
 
 	Chunk* generate_chunk(Nature& nature, ChunkCoords chunk_coords);
+
+	bool block_is_air_or_not_generated(BlockCoords coords);
 };
 
 } /* qwy2 */

@@ -17,6 +17,7 @@ public:
 	glm::vec3 dimensions;
 
 public:
+	AlignedBox();
 	AlignedBox(glm::vec3 center, glm::vec3 dimensions);
 	BlockRect containing_block_rect() const;
 	std::pair<glm::vec3, glm::vec3> coords_min_max() const;

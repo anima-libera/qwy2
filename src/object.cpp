@@ -4,6 +4,11 @@
 namespace qwy2
 {
 
+AlignedBox::AlignedBox()
+{
+	;
+}
+
 AlignedBox::AlignedBox(glm::vec3 center, glm::vec3 dimensions):
 	center{center}, dimensions{dimensions}
 {

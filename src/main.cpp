@@ -20,6 +20,8 @@
 #include <vector>
 #include <cstdint>
 #include <cstring>
+#include <algorithm>
+#include <unordered_set>
 
 int main(int argc, char** argv)
 {
@@ -153,6 +155,7 @@ int main(int argc, char** argv)
 	AlignedBox player_box{
 		player_position + glm::vec3{0.0f, 0.0f, 1.0f},
 		glm::vec3{0.8f, 0.8f, 1.8f}};
+	AlignedBox player_box_blocks;
 
 	SDL_Event event;
 
@@ -160,17 +163,18 @@ int main(int argc, char** argv)
 	bool moving_backward = false;
 	bool moving_leftward = false;
 	bool moving_rightward = false;
-	float const moving_factor = 0.1f;
-	float const flying_moving_factor = 0.15f;
+	float const floor_moving_factor = 0.13f;
+	float const falling_moving_factor = 0.005f;
 
 	glm::vec3 player_motion{0.0f, 0.0f, 0.0f};
-	bool flying = false;
-	bool flying_initial = false;
-	float const flying_factor = 0.003f;
-	float const flying_initial_value = 0.1f;
+	bool jump_boost = false;
+	float const jump_boost_value = 0.2f;
 	float const falling_factor = 0.012f;
-	float const friction_factor = 0.99f;
-	float const floor_friction_factor = 0.95f;
+	float const falling_friction_factor = 0.99f;
+	float const floor_friction_factor = 0.4f;
+
+	bool falling = true;
+
 
 	if (capture_cursor)
 	{
@@ -192,6 +196,8 @@ int main(int argc, char** argv)
 
 	bool see_from_sun = false;
 	bool see_through_walls = false;
+	bool see_boxes = false;
+	bool see_from_behind = false;
 
 
 	bool running = true;
@@ -203,7 +209,7 @@ int main(int argc, char** argv)
 
 		float horizontal_angle_motion = 0.0f;
 		float vertical_angle_motion = 0.0f;
-		flying_initial = false;
+		jump_boost = false;
 
 		while (SDL_PollEvent(&event))
 		{
@@ -299,6 +305,20 @@ int main(int argc, char** argv)
 								see_through_walls = not see_through_walls;
 							}
 						break;
+
+						case SDLK_b:
+							if (event.type == SDL_KEYDOWN)
+							{
+								see_boxes = not see_boxes;
+							}
+						break;
+
+						case SDLK_v:
+							if (event.type == SDL_KEYDOWN)
+							{
+								see_from_behind = not see_from_behind;
+							}
+						break;
 					}
 				break;
 
@@ -306,8 +326,7 @@ int main(int argc, char** argv)
 				case SDL_MOUSEBUTTONUP:
 					if (event.button.button == SDL_BUTTON_RIGHT)
 					{
-						flying = event.type == SDL_MOUSEBUTTONDOWN;
-						flying_initial = event.type == SDL_MOUSEBUTTONDOWN;
+						jump_boost = event.type == SDL_MOUSEBUTTONDOWN;
 					}
 				break;
 
@@ -338,7 +357,7 @@ int main(int argc, char** argv)
 			std::sin(player_horizontal_angle - TAU / 4.0f),
 			0.0f};
 		float current_moving_factor =
-			flying ? flying_moving_factor : moving_factor;
+			falling ? falling_moving_factor : floor_moving_factor;
 		float forward_motion = current_moving_factor *
 			((moving_forward ? 1.0f : 0.0f) - (moving_backward ? 1.0f : 0.0f));
 		float rightward_motion = current_moving_factor *
@@ -380,56 +399,251 @@ int main(int argc, char** argv)
 				}
 			}
 		}
-		bool player_is_in_air = player_chunk->block(player_coords_int).is_air;
 
 
-		if (flying)
+		player_motion *= falling ? falling_friction_factor : floor_friction_factor;
+		player_motion.z -= falling_factor;
+		player_motion +=
+			player_horizontal_direction * forward_motion +
+			player_horizontal_right * rightward_motion;
+		if (jump_boost)
 		{
-			if (flying_initial)
+			player_motion.z = jump_boost_value;
+		}
+
+		player_position += player_motion;
+
+		/* Handle collisions with blocks. */
+		player_box.center = player_position + glm::vec3{0.0f, 0.0f, 1.0f};
+		BlockRect player_rect = player_box.containing_block_rect();
+		BlockCoords player_center_coords_int{
+			static_cast<int>(std::round(player_box.center.x)),
+			static_cast<int>(std::round(player_box.center.y)),
+			static_cast<int>(std::round(player_box.center.z))};
+
+		falling = true;
+		std::unordered_set<BlockCoords, BlockCoords::Hash> collision_black_list;
+		constexpr unsigned int max_steps_collisions = 30;
+		for (unsigned int i = 0; i < max_steps_collisions; i++)
+		{
+			player_rect = player_box.containing_block_rect();
+
+			/* Find the closest colliding block, and forget the others for now.
+				* If that is not enough then we will end up back here anyway. */
+			std::vector<BlockCoords> collisions;
+			for (BlockCoords coords : player_rect)
 			{
-				player_motion +=
-					player_horizontal_direction * forward_motion +
-					player_horizontal_right * rightward_motion;
-				player_motion.z = flying_initial_value;
+				if ((not chunk_grid.block_is_air_or_not_generated(coords)) &&
+					(collision_black_list.find(coords) == collision_black_list.end()))
+				{
+					collisions.push_back(coords);
+				}
+			}
+			if (collisions.empty())
+			{
+				break;
+			}
+			BlockCoords const& collision = *std::min(collisions.begin(), collisions.end(),
+				[player_box](auto const& left, auto const& right){
+					float const left_dist =
+						(player_box.center - left->to_float_coords()).length();
+					float const right_dist =
+						(player_box.center - right->to_float_coords()).length();
+					return left_dist < right_dist;
+				});
+
+			/* Take into account multiple points in the player, not just its center.
+			 * This is a sort of dirty fix that could be more elegant if there were a list
+			 * of such points somewhere or something. */
+			glm::vec3 player_feet =
+				player_box.center + glm::vec3{0.0f, 0.0f, - player_box.dimensions.z / 2.0f};
+			float const dist_to_center =
+				(player_box.center - collision.to_float_coords()).length();
+			float const dist_to_feet =
+				(player_feet - collision.to_float_coords()).length();
+			glm::vec3 player_point =
+				dist_to_center < dist_to_feet ? player_box.center : player_feet;
+
+			glm::vec3 raw_force = player_point - collision.to_float_coords();
+
+			/* Prevent untouchable block faces from being able to push in any way. */
+			if (raw_force.x > 0)
+			{
+				BlockCoords neighboor = collision;
+				neighboor.x++;
+				if (not chunk_grid.block_is_air_or_not_generated(neighboor))
+				{
+					raw_force.x = 0.0f;
+				}
 			}
 			else
 			{
-				player_motion.z += flying_factor;
+				BlockCoords neighboor = collision;
+				neighboor.x--;
+				if (not chunk_grid.block_is_air_or_not_generated(neighboor))
+				{
+					raw_force.x = 0.0f;
+				}
 			}
-			player_motion *= friction_factor;
-			player_motion +=
-				player_horizontal_direction * forward_motion * flying_factor +
-				player_horizontal_right * rightward_motion * flying_factor;
-			player_position += player_motion;
-		}
-		else if (player_is_in_air)
-		{
-			player_motion.z -= falling_factor;
-			player_motion *= friction_factor;
-			player_motion +=
-				player_horizontal_direction * forward_motion * flying_factor +
-				player_horizontal_right * rightward_motion * flying_factor;
-			player_position += player_motion;
-		}
-		else
-		{
-			player_motion.z = 0.0f;
-			player_motion *= floor_friction_factor;
-			player_position +=
-				player_horizontal_direction * forward_motion +
-				player_horizontal_right * rightward_motion +
-				player_motion;
-			player_position.z = std::round(player_position.z) + 0.5f - 0.001f;
+			if (raw_force.y > 0)
+			{
+				BlockCoords neighboor = collision;
+				neighboor.y++;
+				if (not chunk_grid.block_is_air_or_not_generated(neighboor))
+				{
+					raw_force.y = 0.0f;
+				}
+			}
+			else
+			{
+				BlockCoords neighboor = collision;
+				neighboor.y--;
+				if (not chunk_grid.block_is_air_or_not_generated(neighboor))
+				{
+					raw_force.y = 0.0f;
+				}
+			}
+			if (raw_force.z > 0)
+			{
+				BlockCoords neighboor = collision;
+				neighboor.z++;
+				if (not chunk_grid.block_is_air_or_not_generated(neighboor))
+				{
+					raw_force.z = 0.0f;
+				}
+			}
+			else
+			{
+				BlockCoords neighboor = collision;
+				neighboor.z--;
+				if (not chunk_grid.block_is_air_or_not_generated(neighboor))
+				{
+					raw_force.z = 0.0f;
+				}
+			}
+
+			/* Only keep the biggest axis-aligned component so that block faces push in
+			 * an axis-aligned way (good) and not in some diagonalish directions (bad). */
+			if (std::abs(raw_force.x) > std::abs(raw_force.y))
+			{
+				raw_force.y = 0.0f;
+				if (std::abs(raw_force.x) > std::abs(raw_force.z))
+				{
+					raw_force.z = 0.0f;
+				}
+				else
+				{
+					raw_force.x = 0.0f;
+				}
+			}
+			else
+			{
+				raw_force.x = 0.0f;
+				if (std::abs(raw_force.y) > std::abs(raw_force.z))
+				{
+					raw_force.z = 0.0f;
+				}
+				else
+				{
+					raw_force.y = 0.0f;
+				}
+			}
+
+			/* Push the player out of the colliding block,
+			 * also stopping motion towards the colliding block as it bonked. */
+			if (raw_force.x > 0.0f)
+			{
+				if (player_motion.x < 0.0f)
+				{
+					player_motion.x = 0.0f;
+				}
+				player_box.center.x =
+					static_cast<float>(collision.x)
+						+ (0.5f + player_box.dimensions.x / 2.0f + 0.0001f);
+			}
+			else if (raw_force.x < 0.0f)
+			{
+				if (player_motion.x > 0.0f)
+				{
+					player_motion.x = 0.0f;
+				}
+				player_box.center.x =
+					static_cast<float>(collision.x)
+						- (0.5f + player_box.dimensions.x / 2.0f + 0.0001f);
+			}
+			if (raw_force.y > 0.0f)
+			{
+				if (player_motion.y < 0.0f)
+				{
+					player_motion.y = 0.0f;
+				}
+				player_box.center.y =
+					static_cast<float>(collision.y)
+						+ (0.5f + player_box.dimensions.y / 2.0f + 0.0001f);
+			}
+			else if (raw_force.y < 0.0f)
+			{
+				if (player_motion.y > 0.0f)
+				{
+					player_motion.y = 0.0f;
+				}
+				player_box.center.y =
+					static_cast<float>(collision.y)
+						- (0.5f + player_box.dimensions.y / 2.0f + 0.0001f);
+			}
+			if (raw_force.z > 0.0f)
+			{
+				falling = false; /* The player is on the ground, stop falling. */
+				if (player_motion.z < 0.0f)
+				{
+					player_motion.z = 0.0f;
+				}
+				player_box.center.z =
+					static_cast<float>(collision.z)
+						+ (0.5f + player_box.dimensions.z / 2.0f + 0.0001f);
+			}
+			else if (raw_force.z < 0.0f)
+			{
+				if (player_motion.z > 0.0f)
+				{
+					player_motion.z = 0.0f;
+				}
+				player_box.center.z =
+					static_cast<float>(collision.z)
+						- (0.5f + player_box.dimensions.z / 2.0f + 0.0001f);
+			}
+			if (raw_force == glm::vec3{0.0f, 0.0f, 0.0f})
+			{
+				/* This collision doesn't seem to be of any use, all of its relevant faces
+				 * are probably untouchable. Hopefully more useful collisions will follow. */
+				collision_black_list.insert(collision);
+				continue;
+			}
 		}
 
-		player_box.center = player_position + glm::vec3{0.0f, 0.0f, 1.0f};
+		player_box_blocks.center = glm::vec3{
+			static_cast<float>(player_rect.coords_min.x + player_rect.coords_max.x) / 2.0f,
+			static_cast<float>(player_rect.coords_min.y + player_rect.coords_max.y) / 2.0f,
+			static_cast<float>(player_rect.coords_min.z + player_rect.coords_max.z) / 2.0f};
+		player_box_blocks.dimensions = glm::vec3{
+			static_cast<float>(player_rect.coords_max.x - player_rect.coords_min.x) + 1.0f,
+			static_cast<float>(player_rect.coords_max.y - player_rect.coords_min.y) + 1.0f,
+			static_cast<float>(player_rect.coords_max.z - player_rect.coords_min.z) + 1.0f};
+
+		player_position = player_box.center - glm::vec3{0.0f, 0.0f, 1.0f};
+
 
 		glm::vec3 player_direction = glm::rotate(player_horizontal_direction,
 			player_vertical_angle, player_horizontal_right);
 
-		player_camera.set_position(player_position + glm::vec3{0.0f, 0.0f, 1.5f});
+		glm::vec3 player_camera_position = player_position + glm::vec3{0.0f, 0.0f, 1.5f};
+		player_camera.set_position(player_camera_position);
 		player_camera.set_direction(player_direction);
-
+		if (see_from_behind)
+		{
+			player_camera_position -= 5.0f * player_direction;
+			player_camera.set_position(player_camera_position);
+		}
 
 		sun_position.x = 500.0f * std::cos(time / 8.0f);
 		sun_position.y = 500.0f * std::sin(time / 8.0f);
@@ -488,13 +702,24 @@ int main(int argc, char** argv)
 		glCullFace(GL_FRONT);
 
 		
-		line_rect_drawer.color = glm::vec3{0.0f, 0.0f, 0.7f};
-		line_rect_drawer.set_box(player_box);
-		
-		shader_program_line.update_uniforms(uniform_values);
-		glViewport(0, 0, window_width, window_height);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		shader_program_line.draw(line_rect_drawer.mesh);
+		if (see_boxes)
+		{	
+			shader_program_line.update_uniforms(uniform_values);
+			glViewport(0, 0, window_width, window_height);
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+			std::array<std::pair<AlignedBox, glm::vec3>, 2> const box_array{
+				std::make_pair(player_box, glm::vec3{0.0f, 0.0f, 0.7f}),
+				std::make_pair(player_box_blocks, glm::vec3{0.7f, 0.0f, 0.0f})};
+			
+			for (auto const& [box, color] : box_array)
+			{
+				line_rect_drawer.color = color;
+				line_rect_drawer.set_box(box);
+				
+				shader_program_line.draw(line_rect_drawer.mesh);
+			}
+		}
 
 
 		SDL_GL_SwapWindow(g_window);

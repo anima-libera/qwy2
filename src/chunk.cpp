@@ -147,6 +147,18 @@ unsigned int RectInt<L>::to_index(CoordsInt<L> const& coords) const
 }
 
 template<CoordsLevel L>
+bool RectInt<L>::operator==(RectInt const& right) const
+{
+	return this->coords_min == right.coords_min && this->coords_max == right.coords_max;
+}
+
+template<CoordsLevel L>
+bool RectInt<L>::operator!=(RectInt const& right) const
+{
+	return not (*this == right);
+}
+
+template<CoordsLevel L>
 RectInt<L>::Iterator::Iterator(CoordsInt<L> starting_coords, RectInt const* containing_rect):
 	current_coords{starting_coords}, containing_rect{containing_rect}
 {
@@ -551,6 +563,19 @@ Chunk* ChunkGrid::generate_chunk(Nature& nature, ChunkCoords chunk_coords)
 	}
 
 	return chunk;
+}
+
+bool ChunkGrid::block_is_air_or_not_generated(BlockCoords coords)
+{
+	Chunk* chunk = this->containing_chunk(coords);
+	if (chunk == nullptr)
+	{
+		return true;
+	}
+	else
+	{
+		return chunk->block(coords).is_air;
+	}
 }
 
 } /* Qwy2 */
