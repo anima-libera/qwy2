@@ -163,8 +163,10 @@ int main(int argc, char** argv)
 	bool moving_backward = false;
 	bool moving_leftward = false;
 	bool moving_rightward = false;
-	float const floor_moving_factor = 0.13f;
+	float const floor_moving_factor_fast = 0.13f;
+	float const floor_moving_factor_normal = 0.05f;
 	float const falling_moving_factor = 0.005f;
+	bool fast = false;
 
 	glm::vec3 player_motion{0.0f, 0.0f, 0.0f};
 	bool jump_boost = false;
@@ -172,8 +174,8 @@ int main(int argc, char** argv)
 	float const falling_factor = 0.012f;
 	float const falling_friction_factor = 0.99f;
 	float const floor_friction_factor = 0.4f;
-
 	bool falling = true;
+	bool allow_infinite_jumps = false;
 
 
 	if (capture_cursor)
@@ -248,22 +250,36 @@ int main(int argc, char** argv)
 						break;
 
 						case SDLK_p:
-							for (auto const& [chunk_coords, chunk] : chunk_grid.table)
+							if (event.type == SDL_KEYDOWN)
 							{
-								chunk->recompute_mesh(nature);
+								std::cout << "[P] Recompute meshes" << std::endl;
+								for (auto const& [chunk_coords, chunk] : chunk_grid.table)
+								{
+									chunk->recompute_mesh(nature);
+								}
 							}
 						break;
 
 						case SDLK_l:
 							if (event.type == SDL_KEYDOWN)
 							{
-								SDL_SetRelativeMouseMode(SDL_FALSE);
+								if (SDL_GetRelativeMouseMode() == SDL_TRUE)
+								{
+									std::cout << "[L] Mouse cursor released" << std::endl;
+									SDL_SetRelativeMouseMode(SDL_FALSE);
+								}
+								else
+								{
+									std::cout << "[L] Mouse cursor captured" << std::endl;
+									SDL_SetRelativeMouseMode(SDL_TRUE);
+								}
 							}
 						break;
 
 						case SDLK_m:
 							if (event.type == SDL_KEYDOWN)
 							{
+								std::cout << "[M] See from sun" << std::endl;
 								see_from_sun = not see_from_sun;
 							}
 						break;
@@ -280,12 +296,14 @@ int main(int argc, char** argv)
 						case SDLK_u:
 							if (event.type == SDL_KEYDOWN)
 							{
+								std::cout << "[U] Player tp upward z+=20" << std::endl;
 								player_position.z += 20.0f;
 							}
 						break;
 						case SDLK_j:
 							if (event.type == SDL_KEYDOWN)
 							{
+								std::cout << "[J] Player tp at z=3" << std::endl;
 								player_position.z = 3.0f;
 							}
 						break;
@@ -293,7 +311,7 @@ int main(int argc, char** argv)
 						case SDLK_n:
 							if (event.type == SDL_KEYDOWN)
 							{
-								std::cout << "Unloading "
+								std::cout << "[N] Unloading "
 									<< chunk_grid.table.size() << " chunks" << std::endl;
 								chunk_grid.table.clear();
 							}
@@ -302,6 +320,7 @@ int main(int argc, char** argv)
 						case SDLK_h:
 							if (event.type == SDL_KEYDOWN)
 							{
+								std::cout << "[H] See through walls" << std::endl;
 								see_through_walls = not see_through_walls;
 							}
 						break;
@@ -309,6 +328,7 @@ int main(int argc, char** argv)
 						case SDLK_b:
 							if (event.type == SDL_KEYDOWN)
 							{
+								std::cout << "[B] See boxes" << std::endl;
 								see_boxes = not see_boxes;
 							}
 						break;
@@ -316,7 +336,19 @@ int main(int argc, char** argv)
 						case SDLK_v:
 							if (event.type == SDL_KEYDOWN)
 							{
+								std::cout << "[V] See from behind" << std::endl;
 								see_from_behind = not see_from_behind;
+							}
+						break;
+
+						case SDLK_f:
+							if (event.type == SDL_KEYDOWN)
+							{
+								std::cout << "[F] Allow infinite jumps "
+									<< "and running fast like sonic" << std::endl;
+								allow_infinite_jumps = not allow_infinite_jumps;
+								fast = not fast;
+								assert(allow_infinite_jumps == fast);
 							}
 						break;
 					}
@@ -326,7 +358,10 @@ int main(int argc, char** argv)
 				case SDL_MOUSEBUTTONUP:
 					if (event.button.button == SDL_BUTTON_RIGHT)
 					{
-						jump_boost = event.type == SDL_MOUSEBUTTONDOWN;
+						if ((falling && allow_infinite_jumps) || (not falling))
+						{
+							jump_boost = event.type == SDL_MOUSEBUTTONDOWN;
+						}
 					}
 				break;
 
@@ -357,7 +392,9 @@ int main(int argc, char** argv)
 			std::sin(player_horizontal_angle - TAU / 4.0f),
 			0.0f};
 		float current_moving_factor =
-			falling ? falling_moving_factor : floor_moving_factor;
+			falling ? falling_moving_factor :
+			fast ? floor_moving_factor_fast :
+			floor_moving_factor_normal;
 		float forward_motion = current_moving_factor *
 			((moving_forward ? 1.0f : 0.0f) - (moving_backward ? 1.0f : 0.0f));
 		float rightward_motion = current_moving_factor *
@@ -423,7 +460,8 @@ int main(int argc, char** argv)
 			static_cast<int>(std::round(player_box.center.z))};
 		std::unordered_set<BlockCoords, BlockCoords::Hash> collision_blacklist;
 		constexpr unsigned int max_steps_collisions = 30;
-		for (unsigned int i = 0; i < max_steps_collisions; i++)
+		for (unsigned int collision_step = 0;
+			collision_step < max_steps_collisions; collision_step++)
 		{
 			player_rect = player_box.containing_block_rect();
 
@@ -445,31 +483,56 @@ int main(int argc, char** argv)
 			BlockCoords const& collision = *std::min(collisions.begin(), collisions.end(),
 				[player_box](auto const& left, auto const& right){
 					float const left_dist =
-						glm::length(player_box.center - left->to_float_coords());
+						8; //glm::length(player_box.center - left->to_float_coords());
 					float const right_dist =
-						glm::length(player_box.center - right->to_float_coords());
+						8; //glm::length(player_box.center - right->to_float_coords());
 					return left_dist < right_dist;
 				});
+				/* Note:
+				 * For SOME REASON taking the closest colliding block makes the game ignore
+				 * some walls in some situations.. */
 
 			/* Take into account multiple points in the player, not just its center. */
-			glm::vec3 player_feet =
-				player_box.center + glm::vec3{0.0f, 0.0f, - player_box.dimensions.z / 2.3f};
-			glm::vec3 player_center =
-				player_box.center;
-			glm::vec3 player_head =
-				player_box.center + glm::vec3{0.0f, 0.0f, player_box.dimensions.z / 2.3f};
-			float const dist_to_feet =
-				glm::length(player_feet - collision.to_float_coords());
-			float const dist_to_center =
-				glm::length(player_center - collision.to_float_coords());
-			float const dist_to_head =
-				glm::length(player_head - collision.to_float_coords());
-			float min_dist = std::min({dist_to_feet, dist_to_center, dist_to_head});
-			glm::vec3 player_point =
-				min_dist == dist_to_feet ? player_feet :
-				min_dist == dist_to_center ? player_center :
-				min_dist == dist_to_head ? player_head :
-				(assert(0), glm::vec3{});
+			/* TODO: Unstupidize or something. */
+			std::array<glm::vec3, 27> const possible_player_points{
+				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{-1.0f, -1.0f, -1.0f},
+				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{-1.0f, -1.0f, 0.0f},
+				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{-1.0f, -1.0f, 1.0f},
+				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{-1.0f, 0.0f, -1.0f},
+				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{-1.0f, 0.0f, 0.0f},
+				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{-1.0f, 0.0f, 1.0f},
+				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{-1.0f, 1.0f, -1.0f},
+				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{-1.0f, 1.0f, 0.0f},
+				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{-1.0f, 1.0f, 1.0f},
+				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{0.0f, -1.0f, -1.0f},
+				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{0.0f, -1.0f, 0.0f},
+				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{0.0f, -1.0f, 1.0f},
+				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{0.0f, 0.0f, -1.0f},
+				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{0.0f, 0.0f, 0.0f},
+				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{0.0f, 0.0f, 1.0f},
+				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{0.0f, 1.0f, -1.0f},
+				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{0.0f, 1.0f, 0.0f},
+				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{0.0f, 1.0f, 1.0f},
+				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{1.0f, -1.0f, -1.0f},
+				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{1.0f, -1.0f, 0.0f},
+				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{1.0f, -1.0f, 1.0f},
+				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{1.0f, 0.0f, -1.0f},
+				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{1.0f, 0.0f, 0.0f},
+				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{1.0f, 0.0f, 1.0f},
+				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{1.0f, 1.0f, -1.0f},
+				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{1.0f, 1.0f, 0.0f},
+				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{1.0f, 1.0f, 1.0f}};
+			float min_dist = FLT_MAX;
+			glm::vec3 player_point;
+			for (glm::vec3 possible_player_point : possible_player_points)
+			{
+				float dist = glm::length(possible_player_point - collision.to_float_coords());
+				if (dist < min_dist)
+				{
+					min_dist = dist;
+					player_point = possible_player_point;
+				}
+			}
 
 			glm::vec3 raw_force = player_point - collision.to_float_coords();
 
@@ -564,6 +627,8 @@ int main(int argc, char** argv)
 				continue;
 			}
 			raw_force /= glm::length(raw_force); /* Useless normalization xd. */
+
+			std::cout << raw_force.x << "," << raw_force.y << "," << raw_force.z << std::endl;
 
 			/* Push the player out of the colliding block,
 			 * also stopping motion towards the colliding block as it bonked. */
