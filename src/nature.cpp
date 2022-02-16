@@ -178,10 +178,8 @@ static float generator_value(NoiseGenerator& noise_generator, BlockCoords coords
 	return value;
 }
 
-void WorldGenerator::generate_chunk_content(Nature const& nature, Chunk& chunk)
+void WorldGenerator::generate_chunk_content([[maybe_unused]] Nature const& nature, Chunk& chunk)
 {
-	(void)nature;
-
 	for (BlockCoords const& walker : chunk.rect)
 	{
 		Block& block = chunk.block(walker);

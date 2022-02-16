@@ -78,10 +78,9 @@ static std::string_view opengl_debug_message_severity_name(GLenum type)
 /* Debug message callback given to glDebugMessageCallback. Prints an error
  * message to stderr. */
 static void GLAPIENTRY opengl_debug_message_callback(
-	GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
-	GLchar const* message, void const* user_param)
+	GLenum source, GLenum type, GLuint id, GLenum severity, [[maybe_unused]] GLsizei length,
+	GLchar const* message, [[maybe_unused]] void const* user_param)
 {
-	(void)length; (void)user_param;
 	#ifndef ENABLE_OPENGL_NOTIFICATIONS
 		/* Filter out non-error debug messages if not opted-in. */
 		if (type != GL_DEBUG_TYPE_ERROR)

@@ -2,6 +2,8 @@
 #include "window.hpp"
 #include "shaders/shader.hpp"
 #include "shaders/classic/classic.hpp"
+#include "shaders/line/line.hpp"
+#include "shaders/line/line_rect.hpp"
 #include "shaders/shadow/shadow.hpp"
 #include "camera.hpp"
 #include "chunk.hpp"
@@ -112,6 +114,15 @@ int main(int argc, char** argv)
 	}
 
 
+	ShaderProgramLine shader_program_line;
+	if (shader_program_line.init() == ErrorCode::ERROR)
+	{
+		std::cerr << "Error occured during shader compilation" << std::endl;
+		return EXIT_FAILURE;
+	}
+	LineRectDrawer line_rect_drawer;
+
+
 	ShaderProgramClassic shader_program_classic;
 	if (shader_program_classic.init() == ErrorCode::ERROR)
 	{
@@ -138,6 +149,10 @@ int main(int argc, char** argv)
 	glm::vec3 player_position{0.0f, 0.0f, 0.0f};
 	float player_horizontal_angle = TAU / 2.0f;
 	float player_vertical_angle = 0.0f;
+
+	AlignedBox player_box{
+		player_position + glm::vec3{0.0f, 0.0f, 1.0f},
+		glm::vec3{0.8f, 0.8f, 1.8f}};
 
 	SDL_Event event;
 
@@ -169,7 +184,7 @@ int main(int argc, char** argv)
 	float time = 0.0f; /* Time in seconds. */
 	
 	float previous_time = -FLT_MAX;
-	bool one_second_pulse = false;
+	[[maybe_unused]] bool one_second_pulse = false;
 
 
 	unsigned int const chunks_to_load_each_frame = 3;
@@ -185,7 +200,6 @@ int main(int argc, char** argv)
 		previous_time = time;
 		time = std::chrono::duration<float>(clock::now() - clock_time_beginning).count();
 		one_second_pulse = std::floor(previous_time) < std::floor(time);
-		(void)one_second_pulse;
 
 		float horizontal_angle_motion = 0.0f;
 		float vertical_angle_motion = 0.0f;
@@ -408,10 +422,12 @@ int main(int argc, char** argv)
 			player_position.z = std::round(player_position.z) + 0.5f - 0.001f;
 		}
 
+		player_box.center = player_position + glm::vec3{0.0f, 0.0f, 1.0f};
+
 		glm::vec3 player_direction = glm::rotate(player_horizontal_direction,
 			player_vertical_angle, player_horizontal_right);
 
-		player_camera.set_position(player_position + glm::vec3{0.0f, 0.0f, 2.0f});
+		player_camera.set_position(player_position + glm::vec3{0.0f, 0.0f, 1.5f});
 		player_camera.set_direction(player_direction);
 
 
@@ -470,6 +486,16 @@ int main(int argc, char** argv)
 			}
 		}
 		glCullFace(GL_FRONT);
+
+		
+		line_rect_drawer.color = glm::vec3{0.0f, 0.0f, 0.7f};
+		line_rect_drawer.set_box(player_box);
+		
+		shader_program_line.update_uniforms(uniform_values);
+		glViewport(0, 0, window_width, window_height);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		shader_program_line.draw(line_rect_drawer.mesh);
+
 
 		SDL_GL_SwapWindow(g_window);
 	}

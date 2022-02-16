@@ -19,6 +19,9 @@
 EMBEDDED("shaders/classic/classic.vert", TEXT) char const g_shader_source_classic_vert[];
 EMBEDDED("shaders/classic/classic.frag", TEXT) char const g_shader_source_classic_frag[];
 
+EMBEDDED("shaders/line/line.vert", TEXT) char const g_shader_source_line_vert[];
+EMBEDDED("shaders/line/line.frag", TEXT) char const g_shader_source_line_frag[];
+
 EMBEDDED("shaders/shadow/shadow.vert", TEXT) char const g_shader_source_shadow_vert[];
 EMBEDDED("shaders/shadow/shadow.frag", TEXT) char const g_shader_source_shadow_frag[];
 

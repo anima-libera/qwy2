@@ -82,6 +82,8 @@ public:
 public:
 	RectInt(CoordsInt<L> coords_min, CoordsInt<L> coords_max);
 	RectInt(CoordsInt<L> coords_center, unsigned int radius);
+	RectInt(CoordsInt<L> coords_center,
+		unsigned int radius_x, unsigned int radius_y, unsigned int radius_z);
 
 	template<Axis A>
 	unsigned int length() const;
@@ -138,7 +140,7 @@ using BlockCoords = CoordsInt<CoordsLevel::BLOCK>;
 using BlockRect = RectInt<CoordsLevel::BLOCK>;
 using BlockFace = FaceInt<CoordsLevel::BLOCK>;
 
-class ClassicVertexData;
+class VertexDataClassic;
 
 /* Describes the state of one voxel in a grid of voxels. */
 class Block
@@ -150,7 +152,7 @@ public:
 public:
 	Block();
 	void generate_face(Nature const& nature, BlockFace const& face,
-		std::vector<ClassicVertexData>& dst) const;
+		std::vector<VertexDataClassic>& dst) const;
 };
 
 template<typename VertexDataType>
@@ -177,7 +179,7 @@ using ChunkFace = FaceInt<CoordsLevel::CHUNK>;
 class Chunk
 {
 public:
-	Mesh<ClassicVertexData> mesh;
+	Mesh<VertexDataClassic> mesh;
 	BlockRect rect;
 private:
 	std::vector<Block> block_grid;

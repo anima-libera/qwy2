@@ -1,6 +1,7 @@
 
 #include "shadow.hpp"
 #include "shaders/classic/classic.hpp"
+#include "chunk.hpp"
 #include "embedded.hpp"
 #include <glm/gtc/type_ptr.hpp>
 #include <cstddef>
@@ -30,7 +31,7 @@ void ShaderProgramShadow::update_uniforms(UniformValues const& uniform_values)
 	active_texture++;
 }
 
-void ShaderProgramShadow::draw(Mesh<ClassicVertexData> const& mesh)
+void ShaderProgramShadow::draw(Mesh<VertexDataClassic> const& mesh)
 {
 	glUseProgram(this->openglid);
 	constexpr unsigned int vertex_attrib_number = 2;
@@ -41,10 +42,10 @@ void ShaderProgramShadow::draw(Mesh<ClassicVertexData> const& mesh)
 	
 	glBindBuffer(GL_ARRAY_BUFFER, mesh.openglid);
 	unsigned int attrib_index = 0;
-	glVertexAttribPointer(attrib_index++, 3, GL_FLOAT, GL_FALSE, sizeof(ClassicVertexData),
-		reinterpret_cast<void*>(offsetof(ClassicVertexData, coords)));
-	glVertexAttribPointer(attrib_index++, 2, GL_FLOAT, GL_FALSE, sizeof(ClassicVertexData),
-		reinterpret_cast<void*>(offsetof(ClassicVertexData, atlas_coords)));
+	glVertexAttribPointer(attrib_index++, 3, GL_FLOAT, GL_FALSE, sizeof(VertexDataClassic),
+		reinterpret_cast<void*>(offsetof(VertexDataClassic, coords)));
+	glVertexAttribPointer(attrib_index++, 2, GL_FLOAT, GL_FALSE, sizeof(VertexDataClassic),
+		reinterpret_cast<void*>(offsetof(VertexDataClassic, atlas_coords)));
 	assert(attrib_index == vertex_attrib_number);
 
 	glDrawArrays(GL_TRIANGLES, 0, mesh.vertex_data.size());

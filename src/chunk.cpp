@@ -2,6 +2,7 @@
 #include "chunk.hpp"
 #include "nature.hpp"
 #include "shaders/classic/classic.hpp"
+#include "shaders/line/line.hpp"
 #include <iostream>
 #include <iterator>
 
@@ -89,6 +90,22 @@ RectInt<L>::RectInt(CoordsInt<L> coords_center, unsigned int radius):
 		coords_center.x + static_cast<int>(radius - 1),
 		coords_center.y + static_cast<int>(radius - 1),
 		coords_center.z + static_cast<int>(radius - 1)}
+{
+	;
+}
+
+template<CoordsLevel L>
+RectInt<L>::RectInt(CoordsInt<L> coords_center,
+	unsigned int radius_x, unsigned int radius_y, unsigned int radius_z
+):
+	coords_min{
+		coords_center.x - static_cast<int>(radius_x - 1),
+		coords_center.y - static_cast<int>(radius_y - 1),
+		coords_center.z - static_cast<int>(radius_z - 1)},
+	coords_max{
+		coords_center.x + static_cast<int>(radius_x - 1),
+		coords_center.y + static_cast<int>(radius_y - 1),
+		coords_center.z + static_cast<int>(radius_z - 1)}
 {
 	;
 }
@@ -229,11 +246,11 @@ Block::Block():
 }
 
 void Block::generate_face(Nature const& nature, BlockFace const& face,
-	std::vector<ClassicVertexData>& dst) const
+	std::vector<VertexDataClassic>& dst) const
 {
 	unsigned int const index_axis = static_cast<int>(face.axis);
-	unsigned int index_a = index_axis == 0 ? 1 : 0;
-	unsigned int index_b = index_axis == 2 ? 1 : 2;
+	unsigned int const index_a = index_axis == 0 ? 1 : 0;
+	unsigned int const index_b = index_axis == 2 ? 1 : 2;
 
 	BlockType const& type = nature.block_type_table[this->type_index];
 	AtlasRect atlas_rect = face.axis == Axis::Z ?
@@ -241,8 +258,8 @@ void Block::generate_face(Nature const& nature, BlockFace const& face,
 		type.fase_vertical_rect;
 
 	bool const reverse_vertex_order =
-		(face.axis == Axis::Y && not face.negativeward) ||
 		(face.axis == Axis::X && face.negativeward) ||
+		(face.axis == Axis::Y && not face.negativeward) ||
 		(face.axis == Axis::Z && face.negativeward);
 
 	glm::vec2 atlas_coords_min_real = atlas_rect.atlas_coords_min;
@@ -264,7 +281,7 @@ void Block::generate_face(Nature const& nature, BlockFace const& face,
 	glm::vec3 coords_nn = face.internal_coords.to_float_coords() - glm::vec3{0.5f, 0.5f, 0.5f};
 	coords_nn[index_axis] += face.negativeward ? 0.0f : 1.0f;
 
-	ClassicVertexData nn;
+	VertexDataClassic nn;
 	nn.coords = coords_nn;
 	nn.coords[index_a] += 0.0f;
 	nn.coords[index_b] += 0.0f;
@@ -273,7 +290,7 @@ void Block::generate_face(Nature const& nature, BlockFace const& face,
 	nn.atlas_coords.y = atlas_rect.atlas_coords_min.y;
 	nn.atlas_coords_min = atlas_coords_min_real;
 	nn.atlas_coords_max = atlas_coords_max_real;
-	ClassicVertexData np;
+	VertexDataClassic np;
 	np.coords = coords_nn;
 	np.coords[index_a] += 0.0f;
 	np.coords[index_b] += 1.0f;
@@ -282,7 +299,7 @@ void Block::generate_face(Nature const& nature, BlockFace const& face,
 	np.atlas_coords.y = atlas_rect.atlas_coords_max.y;
 	np.atlas_coords_min = atlas_coords_min_real;
 	np.atlas_coords_max = atlas_coords_max_real;
-	ClassicVertexData pn;
+	VertexDataClassic pn;
 	pn.coords = coords_nn;
 	pn.coords[index_a] += 1.0f;
 	pn.coords[index_b] += 0.0f;
@@ -291,7 +308,7 @@ void Block::generate_face(Nature const& nature, BlockFace const& face,
 	pn.atlas_coords.y = atlas_rect.atlas_coords_min.y;
 	pn.atlas_coords_min = atlas_coords_min_real;
 	pn.atlas_coords_max = atlas_coords_max_real;
-	ClassicVertexData pp;
+	VertexDataClassic pp;
 	pp.coords = coords_nn;
 	pp.coords[index_a] += 1.0f;
 	pp.coords[index_b] += 1.0f;
@@ -301,7 +318,7 @@ void Block::generate_face(Nature const& nature, BlockFace const& face,
 	pp.atlas_coords_min = atlas_coords_min_real;
 	pp.atlas_coords_max = atlas_coords_max_real;
 
-	std::array<ClassicVertexData, 6> const vertex_data_sequence{nn, pn, pp, nn, pp, np};
+	std::array<VertexDataClassic, 6> const vertex_data_sequence{nn, pn, pp, nn, pp, np};
 	/* Does std::copy preallocate the appropriate size ? Probably...
 	 * TODO: Find out and remove this std::vector::reserve call if redundant. */
 	dst.reserve(dst.size() + vertex_data_sequence.size());
@@ -346,9 +363,11 @@ void Mesh<VertexDataType>::update_opengl_data()
 		this->vertex_data.size() * sizeof(VertexDataType),
 		this->vertex_data.data(),
 		this->opengl_buffer_usage);
+	/* TODO: Optimize. */
 }
 
-template class Mesh<ClassicVertexData>;
+template class Mesh<VertexDataClassic>;
+template class Mesh<VertexDataLine>;
 
 Chunk::Chunk(Nature& nature, BlockRect rect):
 	rect(rect)
@@ -399,8 +418,8 @@ void Chunk::add_common_faces_to_mesh(Nature const& nature,
 	ChunkFace chunk_face, Chunk& touching_chunk)
 {
 	unsigned int const index_axis = static_cast<int>(chunk_face.axis);
-	unsigned int index_a = index_axis == 0 ? 1 : 0;
-	unsigned int index_b = index_axis == 2 ? 1 : 2;
+	unsigned int const index_a = index_axis == 0 ? 1 : 0;
+	unsigned int const index_b = index_axis == 2 ? 1 : 2;
 
 	BlockRect rect = this->rect;
 	if (chunk_face.negativeward)

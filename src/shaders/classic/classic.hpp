@@ -8,7 +8,7 @@ namespace qwy2
 {
 
 /* Data held by one vertex in a mesh that can be rendered by the classic shader program. */
-class ClassicVertexData
+class VertexDataClassic
 {
 public:
 	glm::vec3 coords; /* Coords in the world, block level. */
@@ -34,7 +34,7 @@ class ShaderProgramClassic: public ShaderProgram
 public:
 	virtual ErrorCode init() override;
 	virtual void update_uniforms(UniformValues const& uniform_values) override;
-	void draw(Mesh<ClassicVertexData> const& mesh);
+	void draw(Mesh<VertexDataClassic> const& mesh);
 };
 
 } /* qwy2 */
