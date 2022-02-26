@@ -184,6 +184,7 @@ class Chunk
 public:
 	Mesh<VertexDataClassic> mesh;
 	BlockRect rect;
+	bool is_all_air;
 private:
 	std::vector<Block> block_grid;
 

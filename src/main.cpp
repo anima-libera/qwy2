@@ -28,16 +28,15 @@ int main(int argc, char** argv)
 	using namespace qwy2;
 
 	bool capture_cursor = true;
-	bool quick_loading = false;
 	for (unsigned int i = 1; i < static_cast<unsigned int>(argc); i++)
 	{
 		if (std::strcmp(argv[i], "--no-cursor-capture") == 0)
 		{
 			capture_cursor = false;
 		}
-		else if (std::strcmp(argv[i], "--quick-loading") == 0)
+		else
 		{
-			quick_loading = true;
+			std::cout << "Command line error: Unknown argument " << argv[i] << std::endl;
 		}
 	}
 
@@ -133,9 +132,8 @@ int main(int argc, char** argv)
 	}
 
 
-	ChunkGrid chunk_grid{13};
-	unsigned int const loading_radius = quick_loading ? 2 : 7;
-	ChunkRect const loading_chunk_rect = ChunkRect{ChunkCoords{0, 0, 0}, loading_radius};
+	ChunkGrid chunk_grid{15};
+	ChunkRect const loading_chunk_rect = ChunkRect{ChunkCoords{0, 0, 0}, 1};
 	for (ChunkCoords const& walker : loading_chunk_rect)
 	{
 		chunk_grid.generate_chunk(nature, walker);
@@ -193,13 +191,14 @@ int main(int argc, char** argv)
 	[[maybe_unused]] bool one_second_pulse = false;
 
 
-	unsigned int const chunks_to_load_each_frame = 3;
+	unsigned int const chunks_to_load_each_frame = 1;
 
 
 	bool see_from_sun = false;
 	bool see_through_walls = false;
 	bool see_boxes = false;
 	bool see_from_behind = false;
+	bool render_shadows = true;
 
 
 	bool running = true;
@@ -232,6 +231,7 @@ int main(int argc, char** argv)
 						case SDLK_ESCAPE:
 							if (event.type == SDL_KEYDOWN)
 							{
+								std::cout << "[Escape] Quit" << std::endl;
 								running = false;
 							}
 						break;
@@ -279,17 +279,9 @@ int main(int argc, char** argv)
 						case SDLK_m:
 							if (event.type == SDL_KEYDOWN)
 							{
-								std::cout << "[M] See from sun" << std::endl;
 								see_from_sun = not see_from_sun;
-							}
-						break;
-
-						case SDLK_i:
-						case SDLK_k:
-							if (event.type == SDL_KEYDOWN)
-							{
-								sun_position.x +=
-									100.0f * (event.key.keysym.sym == SDLK_i ? 1.0f : -1.0f);
+								std::cout << "[M] See from sun "
+									<< (see_from_sun ? "enabled" : "disabled") << std::endl;
 							}
 						break;
 
@@ -320,35 +312,50 @@ int main(int argc, char** argv)
 						case SDLK_h:
 							if (event.type == SDL_KEYDOWN)
 							{
-								std::cout << "[H] See through walls" << std::endl;
 								see_through_walls = not see_through_walls;
+								std::cout << "[H] See through walls "
+									<< (see_through_walls ? "enabled" : "disabled") << std::endl;
 							}
 						break;
 
 						case SDLK_b:
 							if (event.type == SDL_KEYDOWN)
 							{
-								std::cout << "[B] See boxes" << std::endl;
 								see_boxes = not see_boxes;
+								std::cout << "[B] See boxes "
+									<< (see_boxes ? "enabled" : "disabled") << std::endl;
 							}
 						break;
 
 						case SDLK_v:
 							if (event.type == SDL_KEYDOWN)
 							{
-								std::cout << "[V] See from behind" << std::endl;
 								see_from_behind = not see_from_behind;
+								std::cout << "[V] See from behind "
+									<< (see_from_behind ? "enabled" : "disabled") << std::endl;
 							}
 						break;
 
 						case SDLK_f:
 							if (event.type == SDL_KEYDOWN)
 							{
-								std::cout << "[F] Allow infinite jumps "
-									<< "and running fast like sonic" << std::endl;
 								allow_infinite_jumps = not allow_infinite_jumps;
 								fast = not fast;
 								assert(allow_infinite_jumps == fast);
+								std::cout << "[F] Infinite jumps "
+									<< "and running fast like sonic "
+									<< (fast ? "enabled" : "disabled") << std::endl;
+							}
+						break;
+
+						case SDLK_c:
+							if (event.type == SDL_KEYDOWN)
+							{
+								render_shadows = not render_shadows;
+								std::cout << "[C] Sun shadows "
+									<< (render_shadows ? "enabled" : "disabled") << std::endl;
+								glBindFramebuffer(GL_FRAMEBUFFER, shadow_framebuffer_openglid);
+								glClear(GL_DEPTH_BUFFER_BIT);
 							}
 						break;
 					}
@@ -406,35 +413,45 @@ int main(int argc, char** argv)
 			static_cast<int>(std::round(player_position.y)),
 			static_cast<int>(std::round(player_position.z))};
 		ChunkCoords player_chunk_coords = chunk_grid.containing_chunk_coords(player_coords_int);
-		Chunk* player_chunk = chunk_grid.containing_chunk(player_position);
-		if (player_chunk == nullptr)
+		[[maybe_unused]] Chunk* player_chunk = chunk_grid.containing_chunk(player_position);
+
+		/* Generate chunks around the player. */
+		ChunkRect const around_chunk_rect = ChunkRect{player_chunk_coords, 9};
+		std::vector<ChunkCoords> around_chunk_vec;
+		for (ChunkCoords const& walker : around_chunk_rect)
 		{
-			ChunkRect const around_chunk_rect = ChunkRect{player_chunk_coords, 2};
-			for (ChunkCoords const& walker : around_chunk_rect)
+			if (chunk_grid.chunk(walker) == nullptr)
 			{
-				if (chunk_grid.chunk(walker) == nullptr)
-				{
-					chunk_grid.generate_chunk(nature, walker);
-				}
+				around_chunk_vec.push_back(walker);
 			}
-			player_chunk = chunk_grid.containing_chunk(player_position);
 		}
-		else
+		std::sort(around_chunk_vec.begin(), around_chunk_vec.end(),
+			[chunk_side = chunk_grid.chunk_side, player_position](
+				ChunkCoords const& left, ChunkCoords const& right
+			){
+				glm::vec3 const left_center_position{
+					left.x * chunk_side,
+					left.y * chunk_side,
+					left.z * chunk_side,
+				};
+				float const left_distance = glm::distance(player_position, left_center_position);
+				glm::vec3 const right_center_position{
+					right.x * chunk_side,
+					right.y * chunk_side,
+					right.z * chunk_side,
+				};
+				float const right_distance = glm::distance(player_position, right_center_position);
+				return left_distance < right_distance;
+			});
+		unsigned int chunks_to_load = chunks_to_load_each_frame;
+		for (ChunkCoords const& chunk_coords : around_chunk_vec)
 		{
-			unsigned int chunks_to_load = chunks_to_load_each_frame;
-			ChunkRect const around_chunk_rect = ChunkRect{player_chunk_coords, 5};
-			for (ChunkCoords const& walker : around_chunk_rect)
+			if (chunks_to_load <= 0)
 			{
-				if (chunk_grid.chunk(walker) == nullptr)
-				{
-					chunk_grid.generate_chunk(nature, walker);
-					chunks_to_load--;
-					if (chunks_to_load == 0)
-					{
-						break;
-					}
-				}
+				break;
 			}
+			chunk_grid.generate_chunk(nature, chunk_coords);
+			chunks_to_load--;
 		}
 
 
@@ -448,250 +465,275 @@ int main(int argc, char** argv)
 			player_motion.z = jump_boost_value;
 		}
 
-		player_position += player_motion;
-
-		/* Handle collisions with blocks. */
-		falling = true;
-		player_box.center = player_position + glm::vec3{0.0f, 0.0f, 1.0f};
+		glm::vec3 player_motion_remaining = player_motion;
+		glm::vec3 player_motion_nonfinal_step = glm::normalize(player_motion) * 0.05f;
 		BlockRect player_rect = player_box.containing_block_rect();
-		BlockCoords player_center_coords_int{
-			static_cast<int>(std::round(player_box.center.x)),
-			static_cast<int>(std::round(player_box.center.y)),
-			static_cast<int>(std::round(player_box.center.z))};
-		std::unordered_set<BlockCoords, BlockCoords::Hash> collision_blacklist;
-		constexpr unsigned int max_steps_collisions = 30;
-		for (unsigned int collision_step = 0;
-			collision_step < max_steps_collisions; collision_step++)
+		while (glm::dot(player_motion_remaining, player_motion_nonfinal_step) > 0.0f)
 		{
+			glm::vec3 player_motion_step =
+				glm::length(player_motion_remaining) > glm::length(player_motion_nonfinal_step) ?
+				player_motion_nonfinal_step : player_motion_remaining;
+			player_motion_remaining -= player_motion_nonfinal_step;
+
+			player_position += player_motion_step;
+
+			/* Handle collisions with blocks. */
+			/* TODO: Make it work once and for all!
+			 * It is still broken somehow (there is a starecase effect on some faces
+			 * when moving in diagonal). */
+			/* Ideas to fix it:
+			 * - iterate over colliding faces instead of colliding blocks (remake it from scratch)
+			 * ..err that is all for now. */
+			falling = true;
+			player_box.center = player_position + glm::vec3{0.0f, 0.0f, 1.0f};
 			player_rect = player_box.containing_block_rect();
+			BlockCoords player_center_coords_int{
+				static_cast<int>(std::round(player_box.center.x)),
+				static_cast<int>(std::round(player_box.center.y)),
+				static_cast<int>(std::round(player_box.center.z))};
+			std::unordered_set<BlockCoords, BlockCoords::Hash> collision_blacklist;
+			constexpr unsigned int max_steps_collisions = 30;
+			for (unsigned int collision_step = 0;
+				collision_step < max_steps_collisions; collision_step++)
+			{
+				player_rect = player_box.containing_block_rect();
 
-			/* Find the closest colliding block, and forget the others for now.
-			 * If that is not enough then we will end up back here anyway. */
-			std::vector<BlockCoords> collisions;
-			for (BlockCoords coords : player_rect)
-			{
-				if ((not chunk_grid.block_is_air_or_not_generated(coords)) &&
-					(collision_blacklist.find(coords) == collision_blacklist.end()))
+				/* Find the closest colliding block, and forget the others for now.
+				 * If that is not enough then we will end up back here anyway. */
+				std::vector<BlockCoords> collisions;
+				for (BlockCoords coords : player_rect)
 				{
-					collisions.push_back(coords);
+					if ((not chunk_grid.block_is_air_or_not_generated(coords)) &&
+						(collision_blacklist.find(coords) == collision_blacklist.end()))
+					{
+						collisions.push_back(coords);
+					}
 				}
-			}
-			if (collisions.empty())
-			{
-				break;
-			}
-			BlockCoords const& collision = *std::min(collisions.begin(), collisions.end(),
-				[player_box](auto const& left, auto const& right){
-					float const left_dist =
-						8; //glm::length(player_box.center - left->to_float_coords());
-					float const right_dist =
-						8; //glm::length(player_box.center - right->to_float_coords());
-					return left_dist < right_dist;
-				});
-				/* Note:
-				 * For SOME REASON taking the closest colliding block makes the game ignore
-				 * some walls in some situations.. */
+				if (collisions.empty())
+				{
+					break;
+				}
+				BlockCoords const& collision = *std::min(collisions.begin(), collisions.end(),
+					[player_box](
+						[[maybe_unused]] auto const& left, [[maybe_unused]] auto const& right
+					){
+						float const left_dist =
+							8; //glm::length(player_box.center - left->to_float_coords());
+						float const right_dist =
+							8; //glm::length(player_box.center - right->to_float_coords());
+						return left_dist < right_dist;
+					});
+					/* Note:
+					 * For SOME REASON taking the closest colliding block makes the game ignore
+					 * some walls in some situations.. */
 
-			/* Take into account multiple points in the player, not just its center. */
-			/* TODO: Unstupidize or something. */
-			std::array<glm::vec3, 27> const possible_player_points{
-				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{-1.0f, -1.0f, -1.0f},
-				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{-1.0f, -1.0f, 0.0f},
-				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{-1.0f, -1.0f, 1.0f},
-				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{-1.0f, 0.0f, -1.0f},
-				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{-1.0f, 0.0f, 0.0f},
-				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{-1.0f, 0.0f, 1.0f},
-				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{-1.0f, 1.0f, -1.0f},
-				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{-1.0f, 1.0f, 0.0f},
-				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{-1.0f, 1.0f, 1.0f},
-				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{0.0f, -1.0f, -1.0f},
-				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{0.0f, -1.0f, 0.0f},
-				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{0.0f, -1.0f, 1.0f},
-				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{0.0f, 0.0f, -1.0f},
-				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{0.0f, 0.0f, 0.0f},
-				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{0.0f, 0.0f, 1.0f},
-				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{0.0f, 1.0f, -1.0f},
-				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{0.0f, 1.0f, 0.0f},
-				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{0.0f, 1.0f, 1.0f},
-				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{1.0f, -1.0f, -1.0f},
-				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{1.0f, -1.0f, 0.0f},
-				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{1.0f, -1.0f, 1.0f},
-				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{1.0f, 0.0f, -1.0f},
-				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{1.0f, 0.0f, 0.0f},
-				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{1.0f, 0.0f, 1.0f},
-				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{1.0f, 1.0f, -1.0f},
-				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{1.0f, 1.0f, 0.0f},
-				player_box.center + (player_box.dimensions/2.0f) * glm::vec3{1.0f, 1.0f, 1.0f}};
-			float min_dist = FLT_MAX;
-			glm::vec3 player_point;
-			for (glm::vec3 possible_player_point : possible_player_points)
-			{
-				float dist = glm::length(possible_player_point - collision.to_float_coords());
-				if (dist < min_dist)
+				/* Take into account multiple points in the player, not just its center. */
+				/* TODO: Unstupidize or something. */
+				#define P(x_, y_, z_) \
+					player_box.center + (player_box.dimensions/2.0f) * glm::vec3{x_, y_, z_}
+				std::array const possible_player_points{
+					P(-1.0f, -1.0f, -1.0f),
+					P(-1.0f, -1.0f, 0.0f),
+					P(-1.0f, -1.0f, 1.0f),
+					P(-1.0f, 0.0f, -1.0f),
+					P(-1.0f, 0.0f, 0.0f),
+					P(-1.0f, 0.0f, 1.0f),
+					P(-1.0f, 1.0f, -1.0f),
+					P(-1.0f, 1.0f, 0.0f),
+					P(-1.0f, 1.0f, 1.0f),
+					P(0.0f, -1.0f, -1.0f),
+					P(0.0f, -1.0f, 0.0f),
+					P(0.0f, -1.0f, 1.0f),
+					P(0.0f, 0.0f, -1.0f),
+					P(0.0f, 0.0f, 0.0f),
+					P(0.0f, 0.0f, 1.0f),
+					P(0.0f, 1.0f, -1.0f),
+					P(0.0f, 1.0f, 0.0f),
+					P(0.0f, 1.0f, 1.0f),
+					P(1.0f, -1.0f, -1.0f),
+					P(1.0f, -1.0f, 0.0f),
+					P(1.0f, -1.0f, 1.0f),
+					P(1.0f, 0.0f, -1.0f),
+					P(1.0f, 0.0f, 0.0f),
+					P(1.0f, 0.0f, 1.0f),
+					P(1.0f, 1.0f, -1.0f),
+					P(1.0f, 1.0f, 0.0f),
+					P(1.0f, 1.0f, 1.0f),
+					/* Test. */
+					P(1.0f, 0.0f, -0.5f),
+					P(-1.0f, 0.0f, -0.5f),
+					P(0.0f, 1.0f, -0.5f),
+					P(0.0f, -1.0f, -0.5f)};
+				#undef P
+				float min_dist = FLT_MAX;
+				glm::vec3 player_point;
+				for (glm::vec3 possible_player_point : possible_player_points)
 				{
-					min_dist = dist;
-					player_point = possible_player_point;
+					float dist = glm::length(possible_player_point - collision.to_float_coords());
+					if (dist < min_dist)
+					{
+						min_dist = dist;
+						player_point = possible_player_point;
+					}
 				}
-			}
 
-			glm::vec3 raw_force = player_point - collision.to_float_coords();
+				glm::vec3 raw_force = player_point - collision.to_float_coords();
 
-			/* Prevent untouchable block faces from being able to push in any way. */
-			if (raw_force.x > 0)
-			{
-				BlockCoords neighboor = collision;
-				neighboor.x++;
-				if (not chunk_grid.block_is_air_or_not_generated(neighboor))
+				/* Prevent untouchable block faces from being able to push in any way. */
+				if (raw_force.x > 0)
 				{
-					raw_force.x = 0.0f;
+					BlockCoords neighboor = collision;
+					neighboor.x++;
+					if (not chunk_grid.block_is_air_or_not_generated(neighboor))
+					{
+						raw_force.x = 0.0f;
+					}
 				}
-			}
-			else
-			{
-				BlockCoords neighboor = collision;
-				neighboor.x--;
-				if (not chunk_grid.block_is_air_or_not_generated(neighboor))
+				else
 				{
-					raw_force.x = 0.0f;
+					BlockCoords neighboor = collision;
+					neighboor.x--;
+					if (not chunk_grid.block_is_air_or_not_generated(neighboor))
+					{
+						raw_force.x = 0.0f;
+					}
 				}
-			}
-			if (raw_force.y > 0)
-			{
-				BlockCoords neighboor = collision;
-				neighboor.y++;
-				if (not chunk_grid.block_is_air_or_not_generated(neighboor))
+				if (raw_force.y > 0)
+				{
+					BlockCoords neighboor = collision;
+					neighboor.y++;
+					if (not chunk_grid.block_is_air_or_not_generated(neighboor))
+					{
+						raw_force.y = 0.0f;
+					}
+				}
+				else
+				{
+					BlockCoords neighboor = collision;
+					neighboor.y--;
+					if (not chunk_grid.block_is_air_or_not_generated(neighboor))
+					{
+						raw_force.y = 0.0f;
+					}
+				}
+				if (raw_force.z > 0)
+				{
+					BlockCoords neighboor = collision;
+					neighboor.z++;
+					if (not chunk_grid.block_is_air_or_not_generated(neighboor))
+					{
+						raw_force.z = 0.0f;
+					}
+				}
+				else
+				{
+					BlockCoords neighboor = collision;
+					neighboor.z--;
+					if (not chunk_grid.block_is_air_or_not_generated(neighboor))
+					{
+						raw_force.z = 0.0f;
+					}
+				}
+
+				/* Only keep the biggest axis-aligned component so that block faces push in
+				 * an axis-aligned way (good) and not in some diagonalish directions (bad). */
+				if (std::abs(raw_force.x) > std::abs(raw_force.y))
 				{
 					raw_force.y = 0.0f;
-				}
-			}
-			else
-			{
-				BlockCoords neighboor = collision;
-				neighboor.y--;
-				if (not chunk_grid.block_is_air_or_not_generated(neighboor))
-				{
-					raw_force.y = 0.0f;
-				}
-			}
-			if (raw_force.z > 0)
-			{
-				BlockCoords neighboor = collision;
-				neighboor.z++;
-				if (not chunk_grid.block_is_air_or_not_generated(neighboor))
-				{
-					raw_force.z = 0.0f;
-				}
-			}
-			else
-			{
-				BlockCoords neighboor = collision;
-				neighboor.z--;
-				if (not chunk_grid.block_is_air_or_not_generated(neighboor))
-				{
-					raw_force.z = 0.0f;
-				}
-			}
-
-			/* Only keep the biggest axis-aligned component so that block faces push in
-			 * an axis-aligned way (good) and not in some diagonalish directions (bad). */
-			if (std::abs(raw_force.x) > std::abs(raw_force.y))
-			{
-				raw_force.y = 0.0f;
-				if (std::abs(raw_force.x) > std::abs(raw_force.z))
-				{
-					raw_force.z = 0.0f;
+					if (std::abs(raw_force.x) > std::abs(raw_force.z))
+					{
+						raw_force.z = 0.0f;
+					}
+					else
+					{
+						raw_force.x = 0.0f;
+					}
 				}
 				else
 				{
 					raw_force.x = 0.0f;
+					if (std::abs(raw_force.y) > std::abs(raw_force.z))
+					{
+						raw_force.z = 0.0f;
+					}
+					else
+					{
+						raw_force.y = 0.0f;
+					}
 				}
-			}
-			else
-			{
-				raw_force.x = 0.0f;
-				if (std::abs(raw_force.y) > std::abs(raw_force.z))
-				{
-					raw_force.z = 0.0f;
-				}
-				else
-				{
-					raw_force.y = 0.0f;
-				}
-			}
 
-			if (raw_force == glm::vec3{0.0f, 0.0f, 0.0f})
-			{
-				/* This collision doesn't seem to be of any use, all of its relevant faces
-				 * are probably untouchable. Hopefully more useful collisions will follow. */
-				collision_blacklist.insert(collision);
-				continue;
-			}
-			raw_force /= glm::length(raw_force); /* Useless normalization xd. */
+				if (raw_force == glm::vec3{0.0f, 0.0f, 0.0f})
+				{
+					/* This collision doesn't seem to be of any use, all of its relevant faces
+					 * are probably untouchable. Hopefully more useful collisions will follow. */
+					collision_blacklist.insert(collision);
+					continue;
+				}
+				raw_force /= glm::length(raw_force); /* Useless normalization xd. */
 
-			std::cout << raw_force.x << "," << raw_force.y << "," << raw_force.z << std::endl;
-
-			/* Push the player out of the colliding block,
-			 * also stopping motion towards the colliding block as it bonked. */
-			if (raw_force.x > 0.0f)
-			{
-				if (player_motion.x < 0.0f)
+				/* Push the player out of the colliding block,
+				 * also stopping motion towards the colliding block as it bonked. */
+				if (raw_force.x > 0.0f)
 				{
-					player_motion.x = 0.0f;
+					if (player_motion_step.x < 0.0f)
+					{
+						player_motion_step.x = 0.0f;
+					}
+					player_box.center.x =
+						static_cast<float>(collision.x)
+							+ (0.5f + player_box.dimensions.x / 2.0f + 0.0001f);
 				}
-				player_box.center.x =
-					static_cast<float>(collision.x)
-						+ (0.5f + player_box.dimensions.x / 2.0f + 0.0001f);
-			}
-			else if (raw_force.x < 0.0f)
-			{
-				if (player_motion.x > 0.0f)
+				else if (raw_force.x < 0.0f)
 				{
-					player_motion.x = 0.0f;
+					if (player_motion_step.x > 0.0f)
+					{
+						player_motion_step.x = 0.0f;
+					}
+					player_box.center.x =
+						static_cast<float>(collision.x)
+							- (0.5f + player_box.dimensions.x / 2.0f + 0.0001f);
 				}
-				player_box.center.x =
-					static_cast<float>(collision.x)
-						- (0.5f + player_box.dimensions.x / 2.0f + 0.0001f);
-			}
-			if (raw_force.y > 0.0f)
-			{
-				if (player_motion.y < 0.0f)
+				if (raw_force.y > 0.0f)
 				{
-					player_motion.y = 0.0f;
+					if (player_motion_step.y < 0.0f)
+					{
+						player_motion_step.y = 0.0f;
+					}
+					player_box.center.y =
+						static_cast<float>(collision.y)
+							+ (0.5f + player_box.dimensions.y / 2.0f + 0.0001f);
 				}
-				player_box.center.y =
-					static_cast<float>(collision.y)
-						+ (0.5f + player_box.dimensions.y / 2.0f + 0.0001f);
-			}
-			else if (raw_force.y < 0.0f)
-			{
-				if (player_motion.y > 0.0f)
+				else if (raw_force.y < 0.0f)
 				{
-					player_motion.y = 0.0f;
+					if (player_motion_step.y > 0.0f)
+					{
+						player_motion_step.y = 0.0f;
+					}
+					player_box.center.y =
+						static_cast<float>(collision.y)
+							- (0.5f + player_box.dimensions.y / 2.0f + 0.0001f);
 				}
-				player_box.center.y =
-					static_cast<float>(collision.y)
-						- (0.5f + player_box.dimensions.y / 2.0f + 0.0001f);
-			}
-			if (raw_force.z > 0.0f)
-			{
-				falling = false; /* The player is on the ground, stop falling. */
-				if (player_motion.z < 0.0f)
+				if (raw_force.z > 0.0f)
 				{
-					player_motion.z = 0.0f;
+					falling = false; /* The player is on the ground, stop falling. */
+					if (player_motion_step.z < 0.0f)
+					{
+						player_motion_step.z = 0.0f;
+					}
+					player_box.center.z =
+						static_cast<float>(collision.z)
+							+ (0.5f + player_box.dimensions.z / 2.0f + 0.0001f);
 				}
-				player_box.center.z =
-					static_cast<float>(collision.z)
-						+ (0.5f + player_box.dimensions.z / 2.0f + 0.0001f);
-			}
-			else if (raw_force.z < 0.0f)
-			{
-				if (player_motion.z > 0.0f)
+				else if (raw_force.z < 0.0f)
 				{
-					player_motion.z = 0.0f;
+					if (player_motion_step.z > 0.0f)
+					{
+						player_motion_step.z = 0.0f;
+					}
+					player_box.center.z =
+						static_cast<float>(collision.z)
+							- (0.5f + player_box.dimensions.z / 2.0f + 0.0001f);
 				}
-				player_box.center.z =
-					static_cast<float>(collision.z)
-						- (0.5f + player_box.dimensions.z / 2.0f + 0.0001f);
 			}
 		}
 
@@ -719,11 +761,12 @@ int main(int argc, char** argv)
 			player_camera.set_position(player_camera_position);
 		}
 
-		sun_position.x = 500.0f * std::cos(time / 8.0f);
-		sun_position.y = 500.0f * std::sin(time / 8.0f);
+		sun_position.x = 500.0f * std::cos(time / 40.0f);
+		sun_position.y = 500.0f * std::sin(time / 40.0f);
 		sun_position.z = 300.0f;
+		sun_position += player_position;
 		sun_camera.set_position(sun_position);
-		sun_camera.set_target_position(glm::vec3{0.0f, 0.0f, 0.0f});
+		sun_camera.set_target_position(player_position);
 		if (see_from_sun)
 		{
 			uniform_values.user_camera_matrix = sun_camera.matrix;
@@ -741,16 +784,19 @@ int main(int argc, char** argv)
 		/* Render the world from the sun camera to get its depth buffer for shadow rendering.
 		 * Face culling is reversed here to make some shadowy artifacts appear in the shadows
 		 * (instead of on the bright faces lit by sunlight) where they remain mostly unseen. */
-		shader_program_shadow.update_uniforms(uniform_values);
-		glViewport(0, 0, shadow_framebuffer_side, shadow_framebuffer_side);
-		glBindFramebuffer(GL_FRAMEBUFFER, shadow_framebuffer_openglid);
-		glClear(GL_DEPTH_BUFFER_BIT);
-		glCullFace(GL_BACK);
-		for (auto const& [chunk_coords, chunk] : chunk_grid.table)
+		if (render_shadows)
 		{
-			if (not chunk->mesh.vertex_data.empty())
+			shader_program_shadow.update_uniforms(uniform_values);
+			glViewport(0, 0, shadow_framebuffer_side, shadow_framebuffer_side);
+			glBindFramebuffer(GL_FRAMEBUFFER, shadow_framebuffer_openglid);
+			glClear(GL_DEPTH_BUFFER_BIT);
+			glCullFace(GL_BACK);
+			for (auto const& [chunk_coords, chunk] : chunk_grid.table)
 			{
-				shader_program_shadow.draw(chunk->mesh);
+				if (not chunk->mesh.vertex_data.empty())
+				{
+					shader_program_shadow.draw(chunk->mesh);
+				}
 			}
 		}
 		glCullFace(GL_FRONT);
@@ -758,7 +804,14 @@ int main(int argc, char** argv)
 		/* Render the world from the player camera. */
 		shader_program_classic.update_uniforms(uniform_values);
 		auto const [window_width, window_height] = window_width_height();
-		glViewport(0, 0, window_width, window_height);
+		if (see_from_sun)
+		{
+			glViewport(0, 0, window_height, window_height);
+		}
+		else
+		{
+			glViewport(0, 0, window_width, window_height);
+		}
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glClearColor(0.0f, 0.7f, 0.9f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -779,7 +832,14 @@ int main(int argc, char** argv)
 		if (see_boxes)
 		{	
 			shader_program_line.update_uniforms(uniform_values);
-			glViewport(0, 0, window_width, window_height);
+			if (see_from_sun)
+			{
+				glViewport(0, 0, window_height, window_height);
+			}
+			else
+			{
+				glViewport(0, 0, window_width, window_height);
+			}
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 			std::array<std::pair<AlignedBox, glm::vec3>, 2> const box_array{

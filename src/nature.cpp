@@ -160,7 +160,7 @@ static float generator_value(NoiseGenerator& noise_generator, BlockCoords coords
 		(coords.x - hole_x) * (coords.x - hole_x) +
 		(coords.y - hole_y) * (coords.y - hole_y));
 
-	if (hole_dist > 15.0f && coords.z <= 0.0f)
+	if (15.0f < hole_dist && (hole_dist < 150.0f || coords.x < 0) && coords.z <= 0.0f)
 	{
 		return -FLT_MAX;
 	}
@@ -185,6 +185,7 @@ static float generator_value(NoiseGenerator& noise_generator, BlockCoords coords
 
 void WorldGenerator::generate_chunk_content([[maybe_unused]] Nature const& nature, Chunk& chunk)
 {
+	chunk.is_all_air = true;
 	for (BlockCoords const& walker : chunk.rect)
 	{
 		Block& block = chunk.block(walker);
@@ -194,6 +195,7 @@ void WorldGenerator::generate_chunk_content([[maybe_unused]] Nature const& natur
 		if (value < 0.0f)
 		{
 			block.is_air = false;
+			chunk.is_all_air = false;
 
 			BlockCoords neighbour_above = walker;
 			neighbour_above.z++;

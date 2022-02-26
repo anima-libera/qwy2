@@ -355,21 +355,31 @@ Mesh<VertexDataType>::Mesh():
 
 template<typename VertexDataType>
 Mesh<VertexDataType>::Mesh(GLenum opengl_buffer_usage):
-	opengl_buffer_usage{opengl_buffer_usage}
+	opengl_buffer_usage{opengl_buffer_usage}, openglid{0}
 {
+	#if 0
 	glGenBuffers(1, &this->openglid);
 	assert(this->openglid != 0);
+	#endif
 }
 
 template<typename VertexDataType>
 Mesh<VertexDataType>::~Mesh()
 {
-	glDeleteBuffers(1, &this->openglid);
+	if (this->openglid != 0)
+	{
+		glDeleteBuffers(1, &this->openglid);
+	}
 }
 
 template<typename VertexDataType>
 void Mesh<VertexDataType>::update_opengl_data()
 {
+	if (this->openglid == 0)
+	{
+		glGenBuffers(1, &this->openglid);
+		assert(this->openglid != 0);
+	}
 	glBindBuffer(GL_ARRAY_BUFFER, this->openglid);
 	glBufferData(GL_ARRAY_BUFFER, 
 		this->vertex_data.size() * sizeof(VertexDataType),
@@ -382,12 +392,15 @@ template class Mesh<VertexDataClassic>;
 template class Mesh<VertexDataLine>;
 
 Chunk::Chunk(Nature& nature, BlockRect rect):
-	rect(rect)
+	rect{rect}
 {
 	this->block_grid.resize(rect.volume());
 	nature.world_generator.generate_chunk_content(nature, *this);
 
-	this->recompute_mesh(nature);
+	if (this->is_all_air == false)
+	{
+		this->recompute_mesh(nature);
+	}
 }
 
 Block& Chunk::block(BlockCoords const& coords)
@@ -420,10 +433,7 @@ void Chunk::recompute_mesh(Nature const& nature)
 		}
 	}
 
-	glBindBuffer(GL_ARRAY_BUFFER, this->mesh.openglid);
-	glBufferData(GL_ARRAY_BUFFER, 
-		this->mesh.vertex_data.size() * sizeof(decltype(this->mesh.vertex_data)::value_type),
-		this->mesh.vertex_data.data(), GL_DYNAMIC_DRAW);
+	this->mesh.update_opengl_data();
 }
 
 void Chunk::add_common_faces_to_mesh(Nature const& nature,
@@ -459,10 +469,7 @@ void Chunk::add_common_faces_to_mesh(Nature const& nature,
 		}
 	}
 
-	glBindBuffer(GL_ARRAY_BUFFER, this->mesh.openglid);
-	glBufferData(GL_ARRAY_BUFFER, 
-		this->mesh.vertex_data.size() * sizeof(decltype(this->mesh.vertex_data)::value_type),
-		this->mesh.vertex_data.data(), GL_DYNAMIC_DRAW);
+	this->mesh.update_opengl_data();
 }
 
 ChunkGrid::ChunkGrid(int chunk_side):
