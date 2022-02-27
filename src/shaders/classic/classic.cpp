@@ -47,6 +47,20 @@ void ShaderProgramClassic::update_uniforms(UniformValues const& uniform_values)
 		uniform_values.user_camera_direction.z);
 
 	glUniform1f(6, uniform_values.atlas_side);
+
+	glUniform3f(7,
+		uniform_values.user_coords.x,
+		uniform_values.user_coords.y,
+		uniform_values.user_coords.z);
+
+	glUniform3f(8,
+		uniform_values.fog_color.x,
+		uniform_values.fog_color.y,
+		uniform_values.fog_color.z);
+
+	glUniform1f(9, uniform_values.fog_distance_inf);
+
+	glUniform1f(10, uniform_values.fog_distance_sup);
 }
 
 void ShaderProgramClassic::draw(Mesh<VertexDataClassic> const& mesh)

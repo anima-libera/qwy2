@@ -139,12 +139,20 @@ int main(int argc, char** argv)
 		chunk_grid.generate_chunk(nature, walker);
 	}
 
+	
+	float loaded_radius = 100.0f;//210.0f;
+
+	glm::vec3 sky_color{0.0f, 0.7f, 0.9f};
+	uniform_values.fog_color = sky_color;
+	uniform_values.fog_distance_inf = loaded_radius * 0.5f;
+	uniform_values.fog_distance_sup = loaded_radius * 0.9f;
+
 
 	auto const [width, height] = window_width_height();
 	float const aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
 	Camera<PerspectiveProjection> player_camera{
 		PerspectiveProjection{TAU / 8.0f, aspect_ratio},
-		0.1f, 300.0f};
+		0.1f, loaded_radius * 2.5f};
 
 	glm::vec3 player_position{0.0f, 0.0f, 0.0f};
 	float player_horizontal_angle = TAU / 2.0f;
@@ -416,7 +424,9 @@ int main(int argc, char** argv)
 		[[maybe_unused]] Chunk* player_chunk = chunk_grid.containing_chunk(player_position);
 
 		/* Generate chunks around the player. */
-		ChunkRect const around_chunk_rect = ChunkRect{player_chunk_coords, 9};
+		unsigned int chunk_loaded_radius = 1 +
+			static_cast<unsigned int>(loaded_radius / static_cast<float>(chunk_grid.chunk_side));
+		ChunkRect const around_chunk_rect = ChunkRect{player_chunk_coords, chunk_loaded_radius};
 		std::vector<ChunkCoords> around_chunk_vec;
 		for (ChunkCoords const& walker : around_chunk_rect)
 		{
@@ -753,6 +763,7 @@ int main(int argc, char** argv)
 			player_vertical_angle, player_horizontal_right);
 
 		glm::vec3 player_camera_position = player_position + glm::vec3{0.0f, 0.0f, 1.5f};
+		uniform_values.user_coords = player_camera_position;
 		player_camera.set_position(player_camera_position);
 		player_camera.set_direction(player_direction);
 		if (see_from_behind)
@@ -813,7 +824,7 @@ int main(int argc, char** argv)
 			glViewport(0, 0, window_width, window_height);
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glClearColor(0.0f, 0.7f, 0.9f, 1.0f);
+		glClearColor(sky_color.x, sky_color.y, sky_color.z, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		if (see_through_walls)
 		{

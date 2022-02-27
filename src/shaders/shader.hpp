@@ -20,6 +20,10 @@ public:
 	glm::mat4 sun_camera_matrix;
 	glm::vec3 sun_camera_direction;
 	unsigned int shadow_depth_texture_openglid;
+	glm::vec3 user_coords;
+	glm::vec3 fog_color;
+	float fog_distance_inf;
+	float fog_distance_sup;
 };
 
 class ShaderProgram
