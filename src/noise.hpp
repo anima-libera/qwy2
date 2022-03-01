@@ -20,12 +20,12 @@ public:
 	NoiseGenerator(SeedType seed);
 
 public:
-	float base_noise(int x);
-	float base_noise(int x, int y);
-	float base_noise(int x, int y, int z);
-	float base_noise(float x);
-	float base_noise(float x, float y);
-	float base_noise(float x, float y, float z);
+	float base_noise(int x) const;
+	float base_noise(int x, int y) const;
+	float base_noise(int x, int y, int z) const;
+	float base_noise(float x) const;
+	float base_noise(float x, float y) const;
+	float base_noise(float x, float y, float z) const;
 	/* TODO: Overload base_noise with block-level coords types,
 	 * and with template parameter packs. */
 };

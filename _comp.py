@@ -209,6 +209,7 @@ if False:
 if option_opengl_notifs:
 	build_command_args.append("-DENABLE_OPENGL_NOTIFICATIONS")
 build_command_args.append("-lGL")
+build_command_args.append("-lpthread")
 if option_use_glew:
 	build_command_args.append("-DGLEW_STATIC") # Doesn't seem to be enough ><
 	build_command_args.append("-lGLEW")

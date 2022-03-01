@@ -22,17 +22,36 @@
 #include <cstring>
 #include <algorithm>
 #include <unordered_set>
+#include <sstream>
+#include <thread>
+#include <future>
+
+using namespace qwy2;
 
 int main(int argc, char** argv)
 {
-	using namespace qwy2;
-
 	bool capture_cursor = true;
+	float loaded_radius = 160.0f;
+	unsigned int chunk_side = 45;
 	for (unsigned int i = 1; i < static_cast<unsigned int>(argc); i++)
 	{
 		if (std::strcmp(argv[i], "--no-cursor-capture") == 0)
 		{
 			capture_cursor = false;
+		}
+		else if (std::strcmp(argv[i], "--loaded-radius") == 0)
+		{
+			i++;
+			assert(static_cast<int>(i) < argc);
+			std::stringstream arg{argv[i]};
+			arg >> loaded_radius;
+		}
+		else if (std::strcmp(argv[i], "--chunk-side") == 0)
+		{
+			i++;
+			assert(static_cast<int>(i) < argc);
+			std::stringstream arg{argv[i]};
+			arg >> chunk_side;
 		}
 		else
 		{
@@ -132,15 +151,18 @@ int main(int argc, char** argv)
 	}
 
 
-	ChunkGrid chunk_grid{15};
+	ChunkGrid chunk_grid{static_cast<int>(chunk_side)};
 	ChunkRect const loading_chunk_rect = ChunkRect{ChunkCoords{0, 0, 0}, 1};
 	for (ChunkCoords const& walker : loading_chunk_rect)
 	{
 		chunk_grid.generate_chunk(nature, walker);
 	}
 
-	
-	float loaded_radius = 100.0f;//210.0f;
+	ChunkCoords generating_chunk_coords{1, -1, 0};
+	std::future<GeneratingChunk*> generating_chunk =
+		std::async(std::launch::async, generate_chunk,
+			generating_chunk_coords, chunk_grid.chunk_rect(generating_chunk_coords), std::cref(nature));
+
 
 	glm::vec3 sky_color{0.0f, 0.7f, 0.9f};
 	uniform_values.fog_color = sky_color;
@@ -199,7 +221,7 @@ int main(int argc, char** argv)
 	[[maybe_unused]] bool one_second_pulse = false;
 
 
-	unsigned int const chunks_to_load_each_frame = 1;
+	[[maybe_unused]] unsigned int const chunks_to_load_each_frame = 1;
 
 
 	bool see_from_sun = false;
@@ -212,6 +234,8 @@ int main(int argc, char** argv)
 	bool running = true;
 	while (running)
 	{
+		auto const clock_time_before_iteration = clock::now();
+
 		previous_time = time;
 		time = std::chrono::duration<float>(clock::now() - clock_time_beginning).count();
 		one_second_pulse = std::floor(previous_time) < std::floor(time);
@@ -453,6 +477,7 @@ int main(int argc, char** argv)
 				float const right_distance = glm::distance(player_position, right_center_position);
 				return left_distance < right_distance;
 			});
+		#if 0
 		unsigned int chunks_to_load = chunks_to_load_each_frame;
 		for (ChunkCoords const& chunk_coords : around_chunk_vec)
 		{
@@ -460,9 +485,24 @@ int main(int argc, char** argv)
 			{
 				break;
 			}
+
 			chunk_grid.generate_chunk(nature, chunk_coords);
 			chunks_to_load--;
 		}
+		#else
+		using namespace std::chrono_literals;
+		if (generating_chunk.wait_for(0s) == std::future_status::ready)
+		{
+			chunk_grid.add_generated_chunk(generating_chunk.get(), generating_chunk_coords, nature);
+			if (not around_chunk_vec.empty())
+			{
+				generating_chunk_coords = around_chunk_vec[0];
+				generating_chunk =
+					std::async(std::launch::async, generate_chunk,
+						generating_chunk_coords, chunk_grid.chunk_rect(generating_chunk_coords), std::cref(nature));
+			}
+		}
+		#endif
 
 
 		player_motion *= falling ? falling_friction_factor : floor_friction_factor;
@@ -492,7 +532,9 @@ int main(int argc, char** argv)
 			 * It is still broken somehow (there is a starecase effect on some faces
 			 * when moving in diagonal). */
 			/* Ideas to fix it:
-			 * - iterate over colliding faces instead of colliding blocks (remake it from scratch)
+			 * - try to see which of the 6 directions makes a colliding block encounter
+			     the OLD player block rect after a step of length 1, and this is the direction
+				 towards which the colliding block is pushing.
 			 * ..err that is all for now. */
 			falling = true;
 			player_box.center = player_position + glm::vec3{0.0f, 0.0f, 1.0f};
@@ -792,9 +834,19 @@ int main(int argc, char** argv)
 		uniform_values.sun_camera_direction = sun_camera.get_direction();
 
 
+		for (auto& [chunk_coords, chunk] : chunk_grid.table)
+		{
+			if (chunk->mesh.needs_update_opengl_data)
+			{
+				chunk->mesh.update_opengl_data();
+			}
+		}
+
+
 		/* Render the world from the sun camera to get its depth buffer for shadow rendering.
 		 * Face culling is reversed here to make some shadowy artifacts appear in the shadows
 		 * (instead of on the bright faces lit by sunlight) where they remain mostly unseen. */
+		auto const clock_time_before_sun_shadows = clock::now();
 		if (render_shadows)
 		{
 			shader_program_shadow.update_uniforms(uniform_values);
@@ -804,15 +856,19 @@ int main(int argc, char** argv)
 			glCullFace(GL_BACK);
 			for (auto const& [chunk_coords, chunk] : chunk_grid.table)
 			{
-				if (not chunk->mesh.vertex_data.empty())
+				if (chunk->mesh.openglid != 0)
 				{
 					shader_program_shadow.draw(chunk->mesh);
 				}
 			}
 		}
 		glCullFace(GL_FRONT);
+		auto const clock_time_after_sun_shadows = clock::now();
+		[[maybe_unused]] auto const duration_sun_shadows =
+			(clock_time_after_sun_shadows - clock_time_before_sun_shadows).count();
 
 		/* Render the world from the player camera. */
+		auto const clock_time_before_user_rendering = clock::now();
 		shader_program_classic.update_uniforms(uniform_values);
 		auto const [window_width, window_height] = window_width_height();
 		if (see_from_sun)
@@ -832,12 +888,15 @@ int main(int argc, char** argv)
 		}
 		for (auto const& [chunk_coords, chunk] : chunk_grid.table)
 		{
-			if (not chunk->mesh.vertex_data.empty())
+			if (chunk->mesh.openglid != 0)
 			{
 				shader_program_classic.draw(chunk->mesh);
 			}
 		}
 		glCullFace(GL_FRONT);
+		auto const clock_time_after_user_rendering = clock::now();
+		[[maybe_unused]] auto const duration_user_rendering =
+			(clock_time_after_user_rendering - clock_time_before_user_rendering).count();
 
 		
 		if (see_boxes)
@@ -867,7 +926,25 @@ int main(int argc, char** argv)
 		}
 
 
+		auto const clock_time_before_swapping_buffers = clock::now();
 		SDL_GL_SwapWindow(g_window);
+		auto const clock_time_after_swapping_buffers = clock::now();
+		[[maybe_unused]] auto const duration_swapping_buffers =
+			(clock_time_after_swapping_buffers - clock_time_before_swapping_buffers).count();
+
+
+		auto const clock_time_after_iteration = clock::now();
+		[[maybe_unused]] auto const duration_iteration =
+			(clock_time_after_iteration - clock_time_before_iteration).count();
+
+		#if 0
+		std::cout
+			<< chunk_grid.table.size() << "\t"
+			<< duration_sun_shadows << "\t"
+			<< duration_user_rendering << "\t" 
+			<< duration_swapping_buffers << "\t"
+			<< duration_iteration << std::endl;
+		#endif
 	}
 
 	cleanup_window_graphics();

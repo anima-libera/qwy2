@@ -87,6 +87,7 @@ public:
 };
 
 class Chunk;
+class GeneratingChunk;
 class Nature;
 
 using BlockTypeId = unsigned int;
@@ -101,6 +102,7 @@ public:
 public:
 	WorldGenerator(NoiseGenerator::SeedType seed);
 	void generate_chunk_content(Nature const& nature, Chunk& chunk);
+	void generate_chunk_content(Nature const& nature, GeneratingChunk& chunk) const;
 };
 
 class NatureGenerator

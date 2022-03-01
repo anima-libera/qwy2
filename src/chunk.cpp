@@ -10,6 +10,13 @@ namespace qwy2
 {
 
 template<CoordsLevel L>
+CoordsInt<L>::CoordsInt():
+	x{0}, y{0}, z{0}
+{
+	;
+}
+
+template<CoordsLevel L>
 CoordsInt<L>::CoordsInt(int x, int y, int z):
 	x{x}, y{y}, z{z}
 {
@@ -70,6 +77,13 @@ template std::ostream& operator<<(std::ostream& out_stream,
 	CoordsInt<CoordsLevel::BLOCK> const& coords);
 template std::ostream& operator<<(std::ostream& out_stream,
 	CoordsInt<CoordsLevel::CHUNK> const& coords);
+
+template<CoordsLevel L>
+RectInt<L>::RectInt():
+	coords_min{0, 0, 0}, coords_max{0, 0, 0}
+{
+	;
+}
 
 template<CoordsLevel L>
 RectInt<L>::RectInt(CoordsInt<L> coords_min, CoordsInt<L> coords_max):
@@ -385,15 +399,65 @@ void Mesh<VertexDataType>::update_opengl_data()
 		this->vertex_data.size() * sizeof(VertexDataType),
 		this->vertex_data.data(),
 		this->opengl_buffer_usage);
-	/* TODO: Optimize. */
+	/* TODO: Optimize, maybe using glBufferSubData. */
+
+	this->needs_update_opengl_data = false;
 }
 
 template class Mesh<VertexDataClassic>;
 template class Mesh<VertexDataLine>;
 
-Chunk::Chunk(Nature& nature, BlockRect rect):
-	rect{rect}
+GeneratingChunk* generate_chunk(ChunkCoords chunk_coords, BlockRect rect, Nature const& nature)
 {
+	GeneratingChunk* chunk = new GeneratingChunk();
+	chunk->chunk_coords = chunk_coords;
+	chunk->rect = rect;
+	chunk->is_all_air = false;
+	chunk->block_grid.resize(chunk->rect.volume());
+
+	/* Generate content. */
+	nature.world_generator.generate_chunk_content(nature, *chunk);
+
+	/* Generate mesh data. */
+	for (BlockCoords const& walker : chunk->rect)
+	{
+		Block& block = chunk->block_grid[chunk->rect.to_index(walker)];
+		if (not block.is_air)
+		{
+			for (Axis axis : {Axis::X, Axis::Y, Axis::Z})
+			for (bool negativeward : {false, true})
+			{
+				BlockCoords neighbor = walker;
+				neighbor[static_cast<int>(axis)] += negativeward ? -1 : 1;
+				if (chunk->rect.contains(neighbor) &&
+					chunk->block_grid[chunk->rect.to_index(neighbor)].is_air)
+				{
+					block.generate_face(nature,
+						BlockFace{walker, axis, negativeward},
+						chunk->vertex_data);
+				}
+			}
+		}
+	}
+
+	return chunk;
+}
+
+Chunk::Chunk(BlockRect rect):
+	rect{rect}, is_generated{false}, is_just_generated{false}
+{
+	;
+}
+
+Block& Chunk::block(BlockCoords const& coords)
+{
+	assert(this->rect.contains(coords));
+	return this->block_grid[this->rect.to_index(coords)];
+}
+
+void Chunk::generate(Nature& nature)
+{
+	assert(not this->is_generated);
 	this->block_grid.resize(rect.volume());
 	nature.world_generator.generate_chunk_content(nature, *this);
 
@@ -401,12 +465,6 @@ Chunk::Chunk(Nature& nature, BlockRect rect):
 	{
 		this->recompute_mesh(nature);
 	}
-}
-
-Block& Chunk::block(BlockCoords const& coords)
-{
-	assert(this->rect.contains(coords));
-	return this->block_grid[this->rect.to_index(coords)];
 }
 
 void Chunk::recompute_mesh(Nature const& nature)
@@ -433,7 +491,8 @@ void Chunk::recompute_mesh(Nature const& nature)
 		}
 	}
 
-	this->mesh.update_opengl_data();
+	//this->mesh.update_opengl_data();
+	this->mesh.needs_update_opengl_data = true;
 }
 
 void Chunk::add_common_faces_to_mesh(Nature const& nature,
@@ -469,7 +528,8 @@ void Chunk::add_common_faces_to_mesh(Nature const& nature,
 		}
 	}
 
-	this->mesh.update_opengl_data();
+	//this->mesh.update_opengl_data();
+	this->mesh.needs_update_opengl_data = true;
 }
 
 ChunkGrid::ChunkGrid(int chunk_side):
@@ -553,7 +613,37 @@ Chunk* ChunkGrid::containing_chunk(glm::vec3 coords)
 
 Chunk* ChunkGrid::generate_chunk(Nature& nature, ChunkCoords chunk_coords)
 {
-	Chunk* chunk = this->table[chunk_coords] = new Chunk{nature, this->chunk_rect(chunk_coords)};
+	Chunk* chunk = this->table[chunk_coords] = new Chunk{this->chunk_rect(chunk_coords)};
+	chunk->generate(nature);
+
+	for (Axis axis : {Axis::X, Axis::Y, Axis::Z})
+	for (bool negativeward : {false, true})
+	{
+		ChunkFace chunk_face{chunk_coords, axis, negativeward};
+		Chunk* touching_chunk = this->chunk(chunk_face.external_coords());
+		if (touching_chunk != nullptr)
+		{
+			chunk->add_common_faces_to_mesh(nature, chunk_face, *touching_chunk);
+
+			ChunkFace chunk_face_mirror{chunk_face.external_coords(), axis, not negativeward};
+			touching_chunk->add_common_faces_to_mesh(nature, chunk_face_mirror, *chunk);
+		}
+	}
+
+	return chunk;
+}
+
+Chunk* ChunkGrid::add_generated_chunk(GeneratingChunk* generating_chunk, ChunkCoords chunk_coords,
+	Nature const& nature)
+{
+	Chunk* chunk = this->table[chunk_coords] = new Chunk{generating_chunk->rect};
+	chunk->is_generated = true;
+	chunk->is_just_generated = true;
+
+	chunk->block_grid = std::move(generating_chunk->block_grid);
+
+	chunk->mesh.vertex_data = std::move(generating_chunk->vertex_data);
+	chunk->mesh.needs_update_opengl_data = true;
 
 	for (Axis axis : {Axis::X, Axis::Y, Axis::Z})
 	for (bool negativeward : {false, true})

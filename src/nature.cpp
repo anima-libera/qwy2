@@ -142,7 +142,7 @@ WorldGenerator::WorldGenerator(NoiseGenerator::SeedType seed):
 	;
 }
 
-static float generator_value(NoiseGenerator& noise_generator, BlockCoords coords)
+static float generator_value(NoiseGenerator const& noise_generator, BlockCoords coords)
 {
 	if (std::abs(coords.x) == 10 && std::abs(coords.y) == 10 && coords.z == 2)
 	{
@@ -189,6 +189,32 @@ void WorldGenerator::generate_chunk_content([[maybe_unused]] Nature const& natur
 	for (BlockCoords const& walker : chunk.rect)
 	{
 		Block& block = chunk.block(walker);
+		block.type_index = this->primary_block_type;
+
+		float value = generator_value(this->noise_generator, walker);
+		if (value < 0.0f)
+		{
+			block.is_air = false;
+			chunk.is_all_air = false;
+
+			BlockCoords neighbour_above = walker;
+			neighbour_above.z++;
+			float value_above = generator_value(this->noise_generator, neighbour_above);
+			if (value_above >= 0.0f)
+			{
+				block.type_index = this->surface_block_type;
+			}
+		}
+	}
+}
+
+void WorldGenerator::generate_chunk_content([[maybe_unused]] Nature const& nature,
+	GeneratingChunk& chunk) const
+{
+	chunk.is_all_air = true;
+	for (BlockCoords const& walker : chunk.rect)
+	{
+		Block& block = chunk.block_grid[chunk.rect.to_index(walker)];
 		block.type_index = this->primary_block_type;
 
 		float value = generator_value(this->noise_generator, walker);

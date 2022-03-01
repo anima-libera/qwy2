@@ -50,6 +50,7 @@ public:
 	int x, y, z;
 
 public:
+	CoordsInt();
 	CoordsInt(int x, int y, int z);
 	int& operator[](int index);
 	int const& operator[](int index) const;
@@ -80,6 +81,7 @@ public:
 	CoordsInt<L> coords_max; /* Included. */
 
 public:
+	RectInt();
 	RectInt(CoordsInt<L> coords_min, CoordsInt<L> coords_max);
 	RectInt(CoordsInt<L> coords_center, unsigned int radius);
 	RectInt(CoordsInt<L> coords_center,
@@ -165,6 +167,7 @@ public:
 	std::vector<VertexDataType> vertex_data;
 	GLenum opengl_buffer_usage;
 	GLuint openglid;
+	bool needs_update_opengl_data;
 
 public:
 	Mesh();
@@ -179,23 +182,39 @@ using ChunkCoords = CoordsInt<CoordsLevel::CHUNK>;
 using ChunkRect = RectInt<CoordsLevel::CHUNK>;
 using ChunkFace = FaceInt<CoordsLevel::CHUNK>;
 
+class GeneratingChunk
+{
+public:
+	ChunkCoords chunk_coords;
+	BlockRect rect;
+	std::vector<Block> block_grid;
+	bool is_all_air;
+	std::vector<VertexDataClassic> vertex_data;
+};
+
+GeneratingChunk* generate_chunk(ChunkCoords chunk_coords, BlockRect rect, Nature const& nature);
+
 class Chunk
 {
 public:
 	Mesh<VertexDataClassic> mesh;
 	BlockRect rect;
 	bool is_all_air;
+	bool is_generated;
+	bool is_just_generated;
 private:
 	std::vector<Block> block_grid;
 
 public:
-	Chunk(Nature& nature, BlockRect rect);
+	Chunk(BlockRect rect);
 	Block& block(BlockCoords const& coords);
+	void generate(Nature& nature);
 	void recompute_mesh(Nature const& nature);
 	void add_common_faces_to_mesh(Nature const& nature,
 		ChunkFace chunk_face, Chunk& touching_chunk);
 
 	//friend class Generator;
+	friend class ChunkGrid;
 };
 
 class ChunkGrid
@@ -219,6 +238,8 @@ public:
 	Chunk* containing_chunk(glm::vec3 coords);
 
 	Chunk* generate_chunk(Nature& nature, ChunkCoords chunk_coords);
+	Chunk* add_generated_chunk(GeneratingChunk* generating_chunk, ChunkCoords chunk_coords,
+		Nature const& nature);
 
 	bool block_is_air_or_not_generated(BlockCoords coords);
 };

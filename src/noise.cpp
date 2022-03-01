@@ -28,14 +28,14 @@ NoiseGenerator::NoiseGenerator(SeedType seed):
 	;
 }
 
-float NoiseGenerator::base_noise(int x)
+float NoiseGenerator::base_noise(int x) const
 {
 	float const value =
 		std::cos(static_cast<float>(x ^ 5467218 ^ this->seed) * 4561.3f);
 	return value - std::floor(value);
 }
 
-float NoiseGenerator::base_noise(int x, int y)
+float NoiseGenerator::base_noise(int x, int y) const
 {
 	float const value =
 		std::cos(static_cast<float>(x ^ 6522762 ^ this->seed) * 4521.3f) +
@@ -44,7 +44,7 @@ float NoiseGenerator::base_noise(int x, int y)
 	return value - std::floor(value);
 }
 
-float NoiseGenerator::base_noise(int x, int y, int z)
+float NoiseGenerator::base_noise(int x, int y, int z) const
 {
 	float const value =
 		std::cos(static_cast<float>(x ^ 8133983 ^ this->seed) * 4531.3f) +
@@ -54,7 +54,7 @@ float NoiseGenerator::base_noise(int x, int y, int z)
 	return value - std::floor(value);
 }
 
-float NoiseGenerator::base_noise(float x)
+float NoiseGenerator::base_noise(float x) const
 {
 	int const xi = static_cast<int>(std::floor(x));
 
@@ -66,7 +66,7 @@ float NoiseGenerator::base_noise(float x)
 	return value_x;
 }
 
-float NoiseGenerator::base_noise(float x, float y)
+float NoiseGenerator::base_noise(float x, float y) const
 {
 	int const xi = static_cast<int>(std::floor(x));
 	int const yi = static_cast<int>(std::floor(y));
@@ -84,7 +84,7 @@ float NoiseGenerator::base_noise(float x, float y)
 	return value_x_y;
 }
 
-float NoiseGenerator::base_noise(float x, float y, float z)
+float NoiseGenerator::base_noise(float x, float y, float z) const
 {
 	int const xi = static_cast<int>(std::floor(x));
 	int const yi = static_cast<int>(std::floor(y));
