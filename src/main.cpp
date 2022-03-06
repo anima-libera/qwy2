@@ -491,7 +491,7 @@ int main(int argc, char** argv)
 		}
 		#else
 		using namespace std::chrono_literals;
-		if (generating_chunk.wait_for(0s) == std::future_status::ready)
+		if (generating_chunk.valid() && generating_chunk.wait_for(0s) == std::future_status::ready)
 		{
 			chunk_grid.add_generated_chunk(generating_chunk.get(), generating_chunk_coords, nature);
 			if (not around_chunk_vec.empty())
@@ -516,7 +516,8 @@ int main(int argc, char** argv)
 		}
 
 		glm::vec3 player_motion_remaining = player_motion;
-		glm::vec3 player_motion_nonfinal_step = glm::normalize(player_motion) * 0.05f;
+		float step_max_length = 0.05f;
+		glm::vec3 player_motion_nonfinal_step = glm::normalize(player_motion) * step_max_length;
 		BlockRect player_rect = player_box.containing_block_rect();
 		while (glm::dot(player_motion_remaining, player_motion_nonfinal_step) > 0.0f)
 		{
@@ -534,7 +535,7 @@ int main(int argc, char** argv)
 			/* Ideas to fix it:
 			 * - try to see which of the 6 directions makes a colliding block encounter
 			     the OLD player block rect after a step of length 1, and this is the direction
-				 towards which the colliding block is pushing.
+			     towards which the colliding block is pushing.
 			 * ..err that is all for now. */
 			falling = true;
 			player_box.center = player_position + glm::vec3{0.0f, 0.0f, 1.0f};
@@ -687,105 +688,138 @@ int main(int argc, char** argv)
 					}
 				}
 
-				/* Only keep the biggest axis-aligned component so that block faces push in
-				 * an axis-aligned way (good) and not in some diagonalish directions (bad). */
-				if (std::abs(raw_force.x) > std::abs(raw_force.y))
+
+				for (unsigned int h = 0; h < 3; h++)
 				{
-					raw_force.y = 0.0f;
-					if (std::abs(raw_force.x) > std::abs(raw_force.z))
+					glm::vec3 raw_force_try = raw_force;
+
+					/* Only keep the biggest axis-aligned component so that block faces push in
+					* an axis-aligned way (good) and not in some diagonalish directions (bad). */
+					if (std::abs(raw_force_try.x) > std::abs(raw_force_try.y))
 					{
-						raw_force.z = 0.0f;
+						raw_force_try.y = 0.0f;
+						if (std::abs(raw_force_try.x) > std::abs(raw_force_try.z))
+						{
+							raw_force_try.z = 0.0f;
+						}
+						else
+						{
+							raw_force_try.x = 0.0f;
+						}
 					}
 					else
 					{
-						raw_force.x = 0.0f;
+						raw_force_try.x = 0.0f;
+						if (std::abs(raw_force_try.y) > std::abs(raw_force_try.z))
+						{
+							raw_force_try.z = 0.0f;
+						}
+						else
+						{
+							raw_force_try.y = 0.0f;
+						}
 					}
-				}
-				else
-				{
-					raw_force.x = 0.0f;
-					if (std::abs(raw_force.y) > std::abs(raw_force.z))
+
+					if (raw_force_try == glm::vec3{0.0f, 0.0f, 0.0f})
 					{
-						raw_force.z = 0.0f;
+						/* This collision doesn't seem to be of any use, all of its relevant faces
+						* are probably untouchable. Hopefully more useful collisions will follow. */
+						collision_blacklist.insert(collision);
+						goto continue_collisions;
+					}
+					raw_force_try /= glm::length(raw_force_try); /* Useless normalization xd. */
+
+
+					glm::vec3 new_center{player_box.center};
+
+					/* Push the player out of the colliding block,
+					* also stopping motion towards the colliding block as it bonked. */
+					unsigned int axis_index;
+					if (raw_force_try.x > 0.0f)
+					{
+						axis_index = static_cast<unsigned int>(Axis::X);
+						if (player_motion_step.x < 0.0f)
+						{
+							player_motion_step.x = 0.0f;
+						}
+						new_center.x =
+							static_cast<float>(collision.x)
+								+ (0.5f + player_box.dimensions.x / 2.0f + 0.0001f);
+					}
+					else if (raw_force_try.x < 0.0f)
+					{
+						axis_index = static_cast<unsigned int>(Axis::X);
+						if (player_motion_step.x > 0.0f)
+						{
+							player_motion_step.x = 0.0f;
+						}
+						new_center.x =
+							static_cast<float>(collision.x)
+								- (0.5f + player_box.dimensions.x / 2.0f + 0.0001f);
+					}
+					if (raw_force_try.y > 0.0f)
+					{
+						axis_index = static_cast<unsigned int>(Axis::Y);
+						if (player_motion_step.y < 0.0f)
+						{
+							player_motion_step.y = 0.0f;
+						}
+						new_center.y =
+							static_cast<float>(collision.y)
+								+ (0.5f + player_box.dimensions.y / 2.0f + 0.0001f);
+					}
+					else if (raw_force_try.y < 0.0f)
+					{
+						axis_index = static_cast<unsigned int>(Axis::Y);
+						if (player_motion_step.y > 0.0f)
+						{
+							player_motion_step.y = 0.0f;
+						}
+						new_center.y =
+							static_cast<float>(collision.y)
+								- (0.5f + player_box.dimensions.y / 2.0f + 0.0001f);
+					}
+					if (raw_force_try.z > 0.0f)
+					{
+						axis_index = static_cast<unsigned int>(Axis::Z);
+						falling = false; /* The player is on the ground, stop falling. */
+						if (player_motion_step.z < 0.0f)
+						{
+							player_motion_step.z = 0.0f;
+						}
+						new_center.z =
+							static_cast<float>(collision.z)
+								+ (0.5f + player_box.dimensions.z / 2.0f + 0.0001f);
+					}
+					else if (raw_force_try.z < 0.0f)
+					{
+						axis_index = static_cast<unsigned int>(Axis::Z);
+						if (player_motion_step.z > 0.0f)
+						{
+							player_motion_step.z = 0.0f;
+						}
+						new_center.z =
+							static_cast<float>(collision.z)
+								- (0.5f + player_box.dimensions.z / 2.0f + 0.0001f);
+					}
+
+					/* Dirty fix to forbid wierd displacements that happen in some cases. */
+					//if (glm::distance(new_center, player_box.center) > step_max_length)
+					if (false)
+					{
+						std::cout << "Faulty displacement along " << axis_index << std::endl;
+						std::cout << player_box.center[axis_index] << " -> " << new_center[axis_index] << std::endl;
+						raw_force[axis_index] = 0.0f;
 					}
 					else
 					{
-						raw_force.y = 0.0f;
+						player_box.center = new_center;
+						player_position = player_box.center - glm::vec3{0.0f, 0.0f, 1.0f};
+						break;
 					}
 				}
 
-				if (raw_force == glm::vec3{0.0f, 0.0f, 0.0f})
-				{
-					/* This collision doesn't seem to be of any use, all of its relevant faces
-					 * are probably untouchable. Hopefully more useful collisions will follow. */
-					collision_blacklist.insert(collision);
-					continue;
-				}
-				raw_force /= glm::length(raw_force); /* Useless normalization xd. */
-
-				/* Push the player out of the colliding block,
-				 * also stopping motion towards the colliding block as it bonked. */
-				if (raw_force.x > 0.0f)
-				{
-					if (player_motion_step.x < 0.0f)
-					{
-						player_motion_step.x = 0.0f;
-					}
-					player_box.center.x =
-						static_cast<float>(collision.x)
-							+ (0.5f + player_box.dimensions.x / 2.0f + 0.0001f);
-				}
-				else if (raw_force.x < 0.0f)
-				{
-					if (player_motion_step.x > 0.0f)
-					{
-						player_motion_step.x = 0.0f;
-					}
-					player_box.center.x =
-						static_cast<float>(collision.x)
-							- (0.5f + player_box.dimensions.x / 2.0f + 0.0001f);
-				}
-				if (raw_force.y > 0.0f)
-				{
-					if (player_motion_step.y < 0.0f)
-					{
-						player_motion_step.y = 0.0f;
-					}
-					player_box.center.y =
-						static_cast<float>(collision.y)
-							+ (0.5f + player_box.dimensions.y / 2.0f + 0.0001f);
-				}
-				else if (raw_force.y < 0.0f)
-				{
-					if (player_motion_step.y > 0.0f)
-					{
-						player_motion_step.y = 0.0f;
-					}
-					player_box.center.y =
-						static_cast<float>(collision.y)
-							- (0.5f + player_box.dimensions.y / 2.0f + 0.0001f);
-				}
-				if (raw_force.z > 0.0f)
-				{
-					falling = false; /* The player is on the ground, stop falling. */
-					if (player_motion_step.z < 0.0f)
-					{
-						player_motion_step.z = 0.0f;
-					}
-					player_box.center.z =
-						static_cast<float>(collision.z)
-							+ (0.5f + player_box.dimensions.z / 2.0f + 0.0001f);
-				}
-				else if (raw_force.z < 0.0f)
-				{
-					if (player_motion_step.z > 0.0f)
-					{
-						player_motion_step.z = 0.0f;
-					}
-					player_box.center.z =
-						static_cast<float>(collision.z)
-							- (0.5f + player_box.dimensions.z / 2.0f + 0.0001f);
-				}
+				continue_collisions:;
 			}
 		}
 
