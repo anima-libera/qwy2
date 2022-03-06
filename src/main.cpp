@@ -25,6 +25,7 @@
 #include <sstream>
 #include <thread>
 #include <future>
+#include <optional>
 
 using namespace qwy2;
 
@@ -158,10 +159,23 @@ int main(int argc, char** argv)
 		chunk_grid.generate_chunk(nature, walker);
 	}
 
-	ChunkCoords generating_chunk_coords{1, -1, 0};
-	std::future<GeneratingChunk*> generating_chunk =
-		std::async(std::launch::async, generate_chunk,
-			generating_chunk_coords, chunk_grid.chunk_rect(generating_chunk_coords), std::cref(nature));
+	class GeneratingChunkWrapper
+	{
+	public:
+		ChunkCoords chunk_coords;
+		std::future<GeneratingChunk*> future;
+	public:
+		GeneratingChunkWrapper(ChunkCoords chunk_coords, BlockRect block_rect, Nature const& nature):
+			chunk_coords{chunk_coords},
+			future{std::async(std::launch::async, generate_chunk,
+				chunk_coords, block_rect, std::cref(nature))}
+		{
+			;
+		}
+	};
+
+	std::vector<std::optional<GeneratingChunkWrapper>> generating_chunk_table;
+	generating_chunk_table.resize(3);
 
 
 	glm::vec3 sky_color{0.0f, 0.7f, 0.9f};
@@ -227,6 +241,7 @@ int main(int argc, char** argv)
 	bool see_from_sun = false;
 	bool see_through_walls = false;
 	bool see_boxes = false;
+	bool see_chunk_borders = false;
 	bool see_from_behind = false;
 	bool render_shadows = true;
 
@@ -359,6 +374,15 @@ int main(int argc, char** argv)
 							}
 						break;
 
+						case SDLK_g:
+							if (event.type == SDL_KEYDOWN)
+							{
+								see_chunk_borders = not see_chunk_borders;
+								std::cout << "[B] See chunk borders "
+									<< (see_chunk_borders ? "enabled" : "disabled") << std::endl;
+							}
+						break;
+
 						case SDLK_v:
 							if (event.type == SDL_KEYDOWN)
 							{
@@ -475,7 +499,11 @@ int main(int argc, char** argv)
 					right.z * chunk_side,
 				};
 				float const right_distance = glm::distance(player_position, right_center_position);
+				#if 0
 				return left_distance < right_distance;
+				#else
+				return left_distance > right_distance;
+				#endif
 			});
 		#if 0
 		unsigned int chunks_to_load = chunks_to_load_each_frame;
@@ -489,7 +517,7 @@ int main(int argc, char** argv)
 			chunk_grid.generate_chunk(nature, chunk_coords);
 			chunks_to_load--;
 		}
-		#else
+		#elif 0
 		using namespace std::chrono_literals;
 		if (generating_chunk.valid() && generating_chunk.wait_for(0s) == std::future_status::ready)
 		{
@@ -500,6 +528,35 @@ int main(int argc, char** argv)
 				generating_chunk =
 					std::async(std::launch::async, generate_chunk,
 						generating_chunk_coords, chunk_grid.chunk_rect(generating_chunk_coords), std::cref(nature));
+			}
+		}
+		#else
+		for (std::optional<GeneratingChunkWrapper>& wrapper_opt : generating_chunk_table)
+		{
+			if (wrapper_opt.has_value())
+			{
+				using namespace std::chrono_literals;
+				GeneratingChunkWrapper& wrapper = wrapper_opt.value();
+				if (wrapper.future.valid() &&
+					wrapper.future.wait_for(0s) == std::future_status::ready)
+				{
+					chunk_grid.add_generated_chunk(wrapper.future.get(),
+						wrapper.chunk_coords, nature);
+					wrapper_opt.reset();
+					//std::cout << "Got " << wrapper.chunk_coords.x << ", "
+					//	<< wrapper.chunk_coords.y << ", "
+					//	<< wrapper.chunk_coords.z << std::endl;
+				}
+			}
+			if ((not wrapper_opt.has_value()) && (not around_chunk_vec.empty()))
+			{
+				ChunkCoords chunk_coords = around_chunk_vec.back();
+				around_chunk_vec.pop_back();
+				wrapper_opt = GeneratingChunkWrapper{
+					chunk_coords, chunk_grid.chunk_rect(chunk_coords), std::cref(nature)};
+				//std::cout << "Asked " << chunk_coords.x << ", "
+				//	<< chunk_coords.y << ", "
+				//	<< chunk_coords.z << std::endl;
 			}
 		}
 		#endif
@@ -949,13 +1006,56 @@ int main(int argc, char** argv)
 			std::array<std::pair<AlignedBox, glm::vec3>, 2> const box_array{
 				std::make_pair(player_box, glm::vec3{0.0f, 0.0f, 0.7f}),
 				std::make_pair(player_box_blocks, glm::vec3{0.7f, 0.0f, 0.0f})};
-			
 			for (auto const& [box, color] : box_array)
 			{
 				line_rect_drawer.color = color;
 				line_rect_drawer.set_box(box);
-				
 				shader_program_line.draw(line_rect_drawer.mesh);
+			}
+		}
+
+		if (see_chunk_borders)
+		{
+			shader_program_line.update_uniforms(uniform_values);
+			if (see_from_sun)
+			{
+				glViewport(0, 0, window_height, window_height);
+			}
+			else
+			{
+				glViewport(0, 0, window_width, window_height);
+			}
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+			line_rect_drawer.color = glm::vec3{0.0f, 0.4f, 0.8f};
+			for (auto const& [chunk_coords, chunk] : chunk_grid.table)
+			{
+				BlockRect chunk_rect = chunk->rect;
+				glm::vec3 coords_min =
+					chunk_rect.coords_min.to_float_coords() - glm::vec3{0.5f, 0.5f, 0.5f};
+				glm::vec3 coords_max =
+					chunk_rect.coords_max.to_float_coords() + glm::vec3{0.5f, 0.5f, 0.5f};
+				line_rect_drawer.set_box(AlignedBox{
+					(coords_min + coords_max) / 2.0f, coords_max - coords_min});
+				shader_program_line.draw(line_rect_drawer.mesh);
+			}
+
+			line_rect_drawer.color = glm::vec3{1.0f, 0.0f, 0.0f};
+			for (std::optional<GeneratingChunkWrapper> const& wrapper_opt :
+				generating_chunk_table)
+			{
+				if (wrapper_opt.has_value())
+				{
+					BlockRect chunk_rect = chunk_grid.chunk_rect(
+						wrapper_opt.value().chunk_coords);
+					glm::vec3 coords_min =
+						chunk_rect.coords_min.to_float_coords() - glm::vec3{0.5f, 0.5f, 0.5f};
+					glm::vec3 coords_max =
+						chunk_rect.coords_max.to_float_coords() + glm::vec3{0.5f, 0.5f, 0.5f};
+					line_rect_drawer.set_box(AlignedBox{
+						(coords_min + coords_max) / 2.0f, coords_max - coords_min});
+					shader_program_line.draw(line_rect_drawer.mesh);
+				}
 			}
 		}
 
