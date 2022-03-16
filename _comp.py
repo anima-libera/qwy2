@@ -87,7 +87,7 @@ option_debug = cmdline_has_option(False, "-d", "--debug")
 option_compiler = cmdline_has_option(True, "-c", "--compiler")
 if option_compiler == None:
 	option_compiler = "g++"
-if option_compiler not in ("g++", ):
+if option_compiler not in ("g++", "clang"):
 	print_error("Cmdline", f"The \"{option_compiler}\" compiler " +
 		"is not supported.")
 	sys.exit(-1)
@@ -193,6 +193,7 @@ build_command_args.append("-pedantic")
 #if option_compiler == "gcc":
 #	build_command_args.append("-Wno-maybe-uninitialized")
 if option_debug:
+	build_command_args.append("-fsanitize=undefined")
 	build_command_args.append("-DDEBUG")
 	build_command_args.append("-g")
 	build_command_args.append("-Og")
@@ -208,8 +209,10 @@ if False:
 	build_command_args.append("-Wl,-v")
 if option_opengl_notifs:
 	build_command_args.append("-DENABLE_OPENGL_NOTIFICATIONS")
-build_command_args.append("-lGL")
+build_command_args.append("-lm")
+build_command_args.append("-lstdc++")
 build_command_args.append("-lpthread")
+build_command_args.append("-lGL")
 if option_use_glew:
 	build_command_args.append("-DGLEW_STATIC") # Doesn't seem to be enough ><
 	build_command_args.append("-lGLEW")

@@ -4,7 +4,7 @@
 
 #include "chunk.hpp"
 #include "line.hpp"
-#include "object.hpp"
+#include "coords.hpp"
 
 namespace qwy2
 {

@@ -209,7 +209,7 @@ void WorldGenerator::generate_chunk_content([[maybe_unused]] Nature const& natur
 }
 
 void WorldGenerator::generate_chunk_content([[maybe_unused]] Nature const& nature,
-	GeneratingChunk& chunk) const
+	IsolatedChunk& chunk) const
 {
 	chunk.is_all_air = true;
 	for (BlockCoords const& walker : chunk.rect)

@@ -7,7 +7,7 @@
 namespace qwy2
 {
 
-static inline unsigned int get_time_as_integer()
+[[maybe_unused]] static inline unsigned int get_time_as_integer()
 {
 	using namespace std::chrono;
 	auto not_an_integer = high_resolution_clock::now().time_since_epoch();
@@ -15,11 +15,22 @@ static inline unsigned int get_time_as_integer()
 	return integer;
 }
 
-/* Interpolates in the sense that x = 0 returns inf and x = 1 returns sup. */
-static inline float interpolate_sin(float x, float inf, float sup)
+static inline float interpolate_ratio_trig(float x)
 {
-	float const ratio = (std::cos(x * TAU / 2) + 1.0f) / 2.0f;
-	return inf * ratio + sup * (1.0f - ratio);
+	return (std::cos((1.0f - x) * TAU / 2) + 1.0f) / 2.0f;
+}
+
+static inline float interpolate_ratio_smoothstep(float x)
+{
+	return 3.0f * x * x - 2.0f * x * x * x;
+}
+
+/* Interpolates in the sense that x = 0 returns inf and x = 1 returns sup. */
+static inline float interpolate(float x, float inf, float sup)
+{
+	float const ratio = interpolate_ratio_trig(x);
+	//float const ratio = interpolate_ratio_smoothstep(x);
+	return inf * (1.0f - ratio) + sup * ratio;
 }
 
 NoiseGenerator::NoiseGenerator(SeedType seed):
@@ -61,7 +72,7 @@ float NoiseGenerator::base_noise(float x) const
 	float const noise_i = this->base_noise(xi + 0);
 	float const noise_s = this->base_noise(xi + 1);
 
-	float const value_x = interpolate_sin(x - std::floor(x), noise_i, noise_s);
+	float const value_x = interpolate(x - std::floor(x), noise_i, noise_s);
 
 	return value_x;
 }
@@ -76,10 +87,10 @@ float NoiseGenerator::base_noise(float x, float y) const
 	float const noise_s_i = this->base_noise(xi + 1, yi + 0);
 	float const noise_s_s = this->base_noise(xi + 1, yi + 1);
 
-	float const value_x_i = interpolate_sin(x - std::floor(x), noise_i_i, noise_s_i);
-	float const value_x_s = interpolate_sin(x - std::floor(x), noise_i_s, noise_s_s);
+	float const value_x_i = interpolate(x - std::floor(x), noise_i_i, noise_s_i);
+	float const value_x_s = interpolate(x - std::floor(x), noise_i_s, noise_s_s);
 
-	float const value_x_y = interpolate_sin(y - std::floor(y), value_x_i, value_x_s);
+	float const value_x_y = interpolate(y - std::floor(y), value_x_i, value_x_s);
 
 	return value_x_y;
 }
@@ -99,15 +110,15 @@ float NoiseGenerator::base_noise(float x, float y, float z) const
 	float const noise_s_s_i = this->base_noise(xi + 1, yi + 1, zi + 0);
 	float const noise_s_s_s = this->base_noise(xi + 1, yi + 1, zi + 1);
 
-	float const value_x_i_i = interpolate_sin(x - std::floor(x), noise_i_i_i, noise_s_i_i);
-	float const value_x_i_s = interpolate_sin(x - std::floor(x), noise_i_i_s, noise_s_i_s);
-	float const value_x_s_i = interpolate_sin(x - std::floor(x), noise_i_s_i, noise_s_s_i);
-	float const value_x_s_s = interpolate_sin(x - std::floor(x), noise_i_s_s, noise_s_s_s);
+	float const value_x_i_i = interpolate(x - std::floor(x), noise_i_i_i, noise_s_i_i);
+	float const value_x_i_s = interpolate(x - std::floor(x), noise_i_i_s, noise_s_i_s);
+	float const value_x_s_i = interpolate(x - std::floor(x), noise_i_s_i, noise_s_s_i);
+	float const value_x_s_s = interpolate(x - std::floor(x), noise_i_s_s, noise_s_s_s);
 
-	float const value_x_y_i = interpolate_sin(y - std::floor(y), value_x_i_i, value_x_s_i);
-	float const value_x_y_s = interpolate_sin(y - std::floor(y), value_x_i_s, value_x_s_s);
+	float const value_x_y_i = interpolate(y - std::floor(y), value_x_i_i, value_x_s_i);
+	float const value_x_y_s = interpolate(y - std::floor(y), value_x_i_s, value_x_s_s);
 
-	float const value_x_y_z = interpolate_sin(z - std::floor(z), value_x_y_i, value_x_y_s);
+	float const value_x_y_z = interpolate(z - std::floor(z), value_x_y_i, value_x_y_s);
 
 	return value_x_y_z;
 }
