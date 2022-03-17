@@ -18,17 +18,26 @@ ErrorCode ShaderProgramShadow::init()
 		"shadow vert", nullptr, "shadow frag", "shadow");
 }	
 
-void ShaderProgramShadow::update_uniforms(UniformValues const& uniform_values)
+void ShaderProgramShadow::update_uniform(Uniform uniform, UniformValue value)
 {
 	glUseProgram(this->openglid);
-	int active_texture = 0;
 
-	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(uniform_values.sun_camera_matrix));
+	switch (uniform)
+	{
+		case Uniform::SUN_CAMERA_MATRIX:
+			glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(std::get<glm::mat4>(value)));
+		break;
 
-	glActiveTexture(GL_TEXTURE0 + active_texture);
-	glBindTexture(GL_TEXTURE_2D, uniform_values.atlas_texture_openglid);
-	glUniform1i(1, active_texture);
-	active_texture++;
+		case Uniform::ATLAS_TEXTURE_IMAGE_UNIT_OPENGLID:
+		{
+			glUniform1i(1, std::get<unsigned int>(value));
+		}
+		break;
+
+		default:
+			;
+		break;
+	}
 }
 
 void ShaderProgramShadow::draw(Mesh<VertexDataClassic> const& mesh)

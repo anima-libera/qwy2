@@ -17,12 +17,20 @@ ErrorCode ShaderProgramLine::init()
 		"line vert", nullptr, "line frag", "line");
 }	
 
-void ShaderProgramLine::update_uniforms(UniformValues const& uniform_values)
+void ShaderProgramLine::update_uniform(Uniform uniform, UniformValue value)
 {
 	glUseProgram(this->openglid);
-	[[maybe_unused]] int active_texture = 0;
 
-	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(uniform_values.user_camera_matrix));
+	switch (uniform)
+	{
+		case Uniform::USER_CAMERA_MATRIX:
+			glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(std::get<glm::mat4>(value)));
+		break;
+
+		default:
+			;
+		break;
+	}
 }
 
 void ShaderProgramLine::draw(Mesh<VertexDataLine> const& mesh)

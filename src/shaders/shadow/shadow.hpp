@@ -18,7 +18,7 @@ class ShaderProgramShadow: public ShaderProgram
 {
 public:
 	virtual ErrorCode init() override;
-	virtual void update_uniforms(UniformValues const& uniform_values) override;
+	virtual void update_uniform(Uniform uniform, UniformValue value) override;
 	void draw(Mesh<VertexDataClassic> const& mesh);
 };
 

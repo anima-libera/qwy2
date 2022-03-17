@@ -4,27 +4,29 @@
 
 #include "opengl.hpp"
 #include "utils.hpp"
+#include <vector>
+#include <variant>
 #include <glm/glm.hpp>
 
 namespace qwy2
 {
 
-/* A set of values that are to be assigned to some uniforms of some shader programs. */
-class UniformValues
+enum class Uniform
 {
-public:
-	unsigned int atlas_texture_openglid;
-	float atlas_side;
-	glm::mat4 user_camera_matrix;
-	glm::vec3 user_camera_direction;
-	glm::mat4 sun_camera_matrix;
-	glm::vec3 sun_camera_direction;
-	unsigned int shadow_depth_texture_openglid;
-	glm::vec3 user_coords;
-	glm::vec3 fog_color;
-	float fog_distance_inf;
-	float fog_distance_sup;
+	ATLAS_TEXTURE_IMAGE_UNIT_OPENGLID,
+	ATLAS_SIDE,
+	USER_CAMERA_MATRIX,
+	USER_CAMERA_DIRECTION,
+	SUN_CAMERA_MATRIX,
+	SUN_CAMERA_DIRECTION,
+	SHADOW_DEPTH_TEXTURE_IMAGE_UNIT_OPENGLID,
+	USER_COORDS,
+	FOG_COLOR,
+	FOG_DISTANCE_INF,
+	FOG_DISTANCE_SUP,
 };
+
+using UniformValue = std::variant<unsigned int, float, glm::vec3, glm::mat4>;
 
 class ShaderProgram
 {
@@ -39,7 +41,7 @@ protected:
 public:
 	virtual ErrorCode init() = 0;
 	void cleanup();
-	virtual void update_uniforms(UniformValues const& uniform_values) = 0;
+	virtual void update_uniform(Uniform uniform, UniformValue value) = 0;
 };
 
 } /* qwy2 */

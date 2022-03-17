@@ -107,7 +107,7 @@ void Block::generate_face(Nature const& nature, BlockFace const& face,
 
 IsolatedChunk* generate_chunk(ChunkCoords chunk_coords, BlockRect rect, Nature const& nature)
 {
-	IsolatedChunk* chunk = new IsolatedChunk();
+	IsolatedChunk* chunk = new IsolatedChunk{};
 	chunk->chunk_coords = chunk_coords;
 	chunk->rect = rect;
 	chunk->is_all_air = false;

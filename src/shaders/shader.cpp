@@ -7,10 +7,13 @@
 namespace qwy2
 {
 
+namespace
+{
+
 /* Creates an OpenGL shader object with the given GLSL source code, then
  * compiles it and returns its id.
  * Returns 0 if compilation fails, debug_info being included in the error message. */
-static GLuint shader_src_compile(char const* shader_src, GLuint shader_type,
+GLuint shader_src_compile(char const* shader_src, GLuint shader_type,
 	char const* debug_info)
 {
 	GLuint shader_openglid = glCreateShader(shader_type);
@@ -59,7 +62,7 @@ static GLuint shader_src_compile(char const* shader_src, GLuint shader_type,
  * it, then links it and returns its id.
  * The src_geom parameter can be nullptr as a geometry shader is optional in the
  * OpenGL rendering pipeline. */
-static GLuint shader_program_build(
+GLuint shader_program_build(
 	char const* src_vert, char const* src_geom, char const* src_frag,
 	char const* debug_info_vert, char const* debug_info_geom, char const* debug_info_frag,
 	char const* debug_info)
@@ -159,6 +162,8 @@ static GLuint shader_program_build(
 	glDeleteShader(shader_frag_openglid);
 	return shader_program_openglid;
 }
+
+} /* anonymous namespace */
 
 ErrorCode ShaderProgram::compile_given_src(
 	char const* src_vert, char const* src_geom, char const* src_frag,

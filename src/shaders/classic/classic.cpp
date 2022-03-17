@@ -4,6 +4,7 @@
 #include "chunk.hpp"
 #include <glm/gtc/type_ptr.hpp>
 #include <cstddef>
+#include <cassert>
 
 namespace qwy2
 {
@@ -17,50 +18,88 @@ ErrorCode ShaderProgramClassic::init()
 		"classic vert", nullptr, "classic frag", "classic");
 }	
 
-void ShaderProgramClassic::update_uniforms(UniformValues const& uniform_values)
+void ShaderProgramClassic::update_uniform(Uniform uniform, UniformValue value)
 {
 	glUseProgram(this->openglid);
-	int active_texture = 0;
 
-	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(uniform_values.user_camera_matrix));
-	
-	glActiveTexture(GL_TEXTURE0 + active_texture);
-	glBindTexture(GL_TEXTURE_2D, uniform_values.atlas_texture_openglid);
-	glUniform1i(1, active_texture);
-	active_texture++;
+	switch (uniform)
+	{
+		case Uniform::USER_CAMERA_MATRIX:
+			glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(std::get<glm::mat4>(value)));
+		break;
 
-	glUniformMatrix4fv(2, 1, GL_FALSE, glm::value_ptr(uniform_values.sun_camera_matrix));
-	
-	glActiveTexture(GL_TEXTURE0 + active_texture);
-	glBindTexture(GL_TEXTURE_2D, uniform_values.shadow_depth_texture_openglid);
-	glUniform1i(3, active_texture);
-	active_texture++;
+		case Uniform::ATLAS_TEXTURE_IMAGE_UNIT_OPENGLID:
+		{
+			glUniform1i(1, std::get<unsigned int>(value));
+		}
+		break;
 
-	glUniform3f(4,
-		uniform_values.sun_camera_direction.x,
-		uniform_values.sun_camera_direction.y,
-		uniform_values.sun_camera_direction.z);
+		case Uniform::SUN_CAMERA_MATRIX:
+			glUniformMatrix4fv(2, 1, GL_FALSE, glm::value_ptr(std::get<glm::mat4>(value)));
+		break;
 
-	glUniform3f(5,
-		uniform_values.user_camera_direction.x,
-		uniform_values.user_camera_direction.y,
-		uniform_values.user_camera_direction.z);
+		case Uniform::SHADOW_DEPTH_TEXTURE_IMAGE_UNIT_OPENGLID:
+		{
+			glUniform1i(3, std::get<unsigned int>(value));
+		}
+		break;
 
-	glUniform1f(6, uniform_values.atlas_side);
+		case Uniform::SUN_CAMERA_DIRECTION:
+		{
+			glm::vec3 const sun_camera_direction = std::get<glm::vec3>(value);
+			glUniform3f(4,
+				sun_camera_direction.x,
+				sun_camera_direction.y,
+				sun_camera_direction.z);
+		}
+		break;
 
-	glUniform3f(7,
-		uniform_values.user_coords.x,
-		uniform_values.user_coords.y,
-		uniform_values.user_coords.z);
+		case Uniform::USER_CAMERA_DIRECTION:
+		{
+			glm::vec3 const user_camera_direction = std::get<glm::vec3>(value);
+			glUniform3f(5,
+				user_camera_direction.x,
+				user_camera_direction.y,
+				user_camera_direction.z);
+		}
+		break;
 
-	glUniform3f(8,
-		uniform_values.fog_color.x,
-		uniform_values.fog_color.y,
-		uniform_values.fog_color.z);
+		case Uniform::ATLAS_SIDE:
+			glUniform1f(6, std::get<float>(value));
+		break;
 
-	glUniform1f(9, uniform_values.fog_distance_inf);
+		case Uniform::USER_COORDS:
+		{
+			glm::vec3 const user_coords = std::get<glm::vec3>(value);
+			glUniform3f(7,
+				user_coords.x,
+				user_coords.y,
+				user_coords.z);
+		}
+		break;
 
-	glUniform1f(10, uniform_values.fog_distance_sup);
+		case Uniform::FOG_COLOR:
+		{
+			glm::vec3 const fog_color = std::get<glm::vec3>(value);
+			glUniform3f(8,
+				fog_color.x,
+				fog_color.y,
+				fog_color.z);
+		}
+		break;
+
+		case Uniform::FOG_DISTANCE_INF:
+			glUniform1f(9, std::get<float>(value));
+		break;
+
+		case Uniform::FOG_DISTANCE_SUP:
+			glUniform1f(10, std::get<float>(value));
+		break;
+
+		default:
+			;
+		break;
+	}
 }
 
 void ShaderProgramClassic::draw(Mesh<VertexDataClassic> const& mesh)

@@ -6,12 +6,13 @@
 #include "shaders/line/line.hpp"
 #include "shaders/line/line_rect.hpp"
 #include "shaders/shadow/shadow.hpp"
+#include "shaders/table.hpp"
 #include "camera.hpp"
 #include "chunk.hpp"
 #include "coords.hpp"
 #include "nature.hpp"
 #include "noise.hpp"
-#include "gameloop.hpp"
+#include "bitmap.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
@@ -51,26 +52,41 @@ void Game::loop(Config const& config)
 	glCullFace(GL_FRONT);
 	glFrontFace(GL_CW);
 
+	LineRectDrawer line_rect_drawer;
+
+	ShaderTable shader_table;
+	shader_table.init();
+
 
 	NoiseGenerator::SeedType const seed = 8 + 1;
-
 	Nature nature{seed};
-	UniformValues uniform_values;
 
 	nature.world_generator.surface_block_type =
 		nature.nature_generator.generate_block_type(nature);
 	nature.world_generator.primary_block_type =
 		nature.nature_generator.generate_block_type(nature);
 
-	uniform_values.atlas_texture_openglid = nature.atlas.texture_openglid;
-	uniform_values.atlas_side = nature.atlas.side;
+
+	/* The texture image unit of id 0 is used as the default active unit so that binding
+	 * textures around does not disturb the texture bound in non-zero units that are
+	 * given to shaders as uniforms. */
+	unsigned int next_texture_image_unit_openglid = 1;
+
+	unsigned int const atlas_texture_image_unit_openglid = next_texture_image_unit_openglid++;
+	glActiveTexture(GL_TEXTURE0 + atlas_texture_image_unit_openglid);
+	glBindTexture(GL_TEXTURE_2D, nature.atlas.texture_openglid);
+	shader_table.update_uniform(Uniform::ATLAS_TEXTURE_IMAGE_UNIT_OPENGLID,
+		atlas_texture_image_unit_openglid);
+	shader_table.update_uniform(Uniform::ATLAS_SIDE, static_cast<float>(nature.atlas.side));
+	glActiveTexture(GL_TEXTURE0 + 0);
+
+	//emit_bitmap(nature.atlas.data, nature.atlas.side, nature.atlas.side, "atlas.bmp");
 
 
 	glm::vec3 sun_position{100.0f, 500.0f, 1000.0f};
 	Camera<OrthographicProjection> sun_camera{
 		OrthographicProjection{300.0f, 300.0f},
 		10.0f, 2000.0f};
-	uniform_values.sun_camera_matrix = sun_camera.matrix;
 
 	unsigned int shadow_framebuffer_openglid;
 	glGenFramebuffers(1, &shadow_framebuffer_openglid);
@@ -92,7 +108,7 @@ void Game::loop(Config const& config)
 		0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
+	
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
 		shadow_depth_texture_openglid, 0);
 	glDrawBuffer(GL_NONE);
@@ -104,31 +120,12 @@ void Game::loop(Config const& config)
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	uniform_values.shadow_depth_texture_openglid = shadow_depth_texture_openglid;
-
-	ShaderProgramShadow shader_program_shadow;
-	if (shader_program_shadow.init() == ErrorCode::ERROR)
-	{
-		std::cerr << "Error occured during shader compilation" << std::endl;
-		std::exit(EXIT_FAILURE);
-	}
-
-
-	ShaderProgramLine shader_program_line;
-	if (shader_program_line.init() == ErrorCode::ERROR)
-	{
-		std::cerr << "Error occured during shader compilation" << std::endl;
-		std::exit(EXIT_FAILURE);
-	}
-	LineRectDrawer line_rect_drawer;
-
-
-	ShaderProgramClassic shader_program_classic;
-	if (shader_program_classic.init() == ErrorCode::ERROR)
-	{
-		std::cerr << "Error occured during shader compilation" << std::endl;
-		std::exit(EXIT_FAILURE);
-	}
+	unsigned int const shadow_depth_texture_image_unit_openglid = next_texture_image_unit_openglid++;
+	glActiveTexture(GL_TEXTURE0 + shadow_depth_texture_image_unit_openglid);
+	glBindTexture(GL_TEXTURE_2D, shadow_depth_texture_openglid);
+	shader_table.update_uniform(Uniform::SHADOW_DEPTH_TEXTURE_IMAGE_UNIT_OPENGLID,
+		shadow_depth_texture_image_unit_openglid);
+	glActiveTexture(GL_TEXTURE0 + 0);
 
 
 	ChunkGrid chunk_grid{static_cast<int>(chunk_side)};
@@ -158,9 +155,9 @@ void Game::loop(Config const& config)
 
 
 	glm::vec3 sky_color{0.0f, 0.7f, 0.9f};
-	uniform_values.fog_color = sky_color;
-	uniform_values.fog_distance_inf = loaded_radius * 0.5f;
-	uniform_values.fog_distance_sup = loaded_radius * 0.9f;
+	shader_table.update_uniform(Uniform::FOG_COLOR, sky_color);
+	shader_table.update_uniform(Uniform::FOG_DISTANCE_INF, loaded_radius * 0.5f);
+	shader_table.update_uniform(Uniform::FOG_DISTANCE_SUP, loaded_radius * 0.9f);
 
 
 	auto const [width, height] = window_width_height();
@@ -492,9 +489,6 @@ void Game::loop(Config const& config)
 					chunk_grid.add_generated_chunk(wrapper.future.get(),
 						wrapper.chunk_coords, nature);
 					wrapper_opt.reset();
-					//std::cout << "Got " << wrapper.chunk_coords.x << ", "
-					//	<< wrapper.chunk_coords.y << ", "
-					//	<< wrapper.chunk_coords.z << std::endl;
 				}
 			}
 			if ((not wrapper_opt.has_value()) && (not around_chunk_vec.empty()))
@@ -503,9 +497,6 @@ void Game::loop(Config const& config)
 				around_chunk_vec.pop_back();
 				wrapper_opt = GeneratingChunkWrapper{
 					chunk_coords, chunk_grid.chunk_rect(chunk_coords), std::cref(nature)};
-				//std::cout << "Asked " << chunk_coords.x << ", "
-				//	<< chunk_coords.y << ", "
-				//	<< chunk_coords.z << std::endl;
 			}
 		}
 
@@ -534,14 +525,6 @@ void Game::loop(Config const& config)
 			player_position += player_motion_step;
 
 			/* Handle collisions with blocks. */
-			/* TODO: Make it work once and for all!
-			 * It is still broken somehow (there is a starecase effect on some faces
-			 * when moving in diagonal). */
-			/* Ideas to fix it:
-			 * - try to see which of the 6 directions makes a colliding block encounter
-			     the OLD player block rect after a step of length 1, and this is the direction
-			     towards which the colliding block is pushing.
-			 * ..err that is all for now. */
 			falling = true;
 			player_box.center = player_position + glm::vec3{0.0f, 0.0f, 1.0f};
 			player_rect = player_box.containing_block_rect();
@@ -844,7 +827,7 @@ void Game::loop(Config const& config)
 			player_vertical_angle, player_horizontal_right);
 
 		glm::vec3 player_camera_position = player_position + glm::vec3{0.0f, 0.0f, 1.5f};
-		uniform_values.user_coords = player_camera_position;
+		shader_table.update_uniform(Uniform::USER_COORDS, player_camera_position);
 		player_camera.set_position(player_camera_position);
 		player_camera.set_direction(player_direction);
 		if (see_from_behind)
@@ -861,16 +844,19 @@ void Game::loop(Config const& config)
 		sun_camera.set_target_position(player_position);
 		if (see_from_sun)
 		{
-			uniform_values.user_camera_matrix = sun_camera.matrix;
-			uniform_values.user_camera_direction = sun_camera.get_direction();
+			shader_table.update_uniform(Uniform::USER_CAMERA_MATRIX, sun_camera.matrix);
+			shader_table.update_uniform(Uniform::USER_CAMERA_DIRECTION,
+				sun_camera.get_direction());
 		}
 		else
 		{
-			uniform_values.user_camera_matrix = player_camera.matrix;
-			uniform_values.user_camera_direction = player_camera.get_direction();
+			shader_table.update_uniform(Uniform::USER_CAMERA_MATRIX, player_camera.matrix);
+			shader_table.update_uniform(Uniform::USER_CAMERA_DIRECTION,
+				player_camera.get_direction());
 		}
-		uniform_values.sun_camera_matrix = sun_camera.matrix;
-		uniform_values.sun_camera_direction = sun_camera.get_direction();
+		shader_table.update_uniform(Uniform::SUN_CAMERA_MATRIX, sun_camera.matrix);
+		shader_table.update_uniform(Uniform::SUN_CAMERA_DIRECTION,
+			sun_camera.get_direction());
 
 
 		for (auto& [chunk_coords, chunk] : chunk_grid.table)
@@ -888,7 +874,6 @@ void Game::loop(Config const& config)
 		auto const clock_time_before_sun_shadows = clock::now();
 		if (render_shadows)
 		{
-			shader_program_shadow.update_uniforms(uniform_values);
 			glViewport(0, 0, shadow_framebuffer_side, shadow_framebuffer_side);
 			glBindFramebuffer(GL_FRAMEBUFFER, shadow_framebuffer_openglid);
 			glClear(GL_DEPTH_BUFFER_BIT);
@@ -897,7 +882,7 @@ void Game::loop(Config const& config)
 			{
 				if (chunk->mesh.openglid != 0)
 				{
-					shader_program_shadow.draw(chunk->mesh);
+					shader_table.shadow().draw(chunk->mesh);
 				}
 			}
 		}
@@ -908,7 +893,6 @@ void Game::loop(Config const& config)
 
 		/* Render the world from the player camera. */
 		auto const clock_time_before_user_rendering = clock::now();
-		shader_program_classic.update_uniforms(uniform_values);
 		auto const [window_width, window_height] = window_width_height();
 		if (see_from_sun)
 		{
@@ -929,7 +913,7 @@ void Game::loop(Config const& config)
 		{
 			if (chunk->mesh.openglid != 0)
 			{
-				shader_program_classic.draw(chunk->mesh);
+				shader_table.classic().draw(chunk->mesh);
 			}
 		}
 		glCullFace(GL_FRONT);
@@ -940,7 +924,6 @@ void Game::loop(Config const& config)
 		
 		if (see_boxes)
 		{	
-			shader_program_line.update_uniforms(uniform_values);
 			if (see_from_sun)
 			{
 				glViewport(0, 0, window_height, window_height);
@@ -958,13 +941,12 @@ void Game::loop(Config const& config)
 			{
 				line_rect_drawer.color = color;
 				line_rect_drawer.set_box(box);
-				shader_program_line.draw(line_rect_drawer.mesh);
+				shader_table.line().draw(line_rect_drawer.mesh);
 			}
 		}
 
 		if (see_chunk_borders)
 		{
-			shader_program_line.update_uniforms(uniform_values);
 			if (see_from_sun)
 			{
 				glViewport(0, 0, window_height, window_height);
@@ -985,7 +967,7 @@ void Game::loop(Config const& config)
 					static_cast<glm::vec3>(chunk_rect.coords_max) + glm::vec3{0.5f, 0.5f, 0.5f};
 				line_rect_drawer.set_box(AlignedBox{
 					(coords_min + coords_max) / 2.0f, coords_max - coords_min});
-				shader_program_line.draw(line_rect_drawer.mesh);
+				shader_table.line().draw(line_rect_drawer.mesh);
 			}
 
 			line_rect_drawer.color = glm::vec3{1.0f, 0.0f, 0.0f};
@@ -1002,7 +984,7 @@ void Game::loop(Config const& config)
 						static_cast<glm::vec3>(chunk_rect.coords_max) + glm::vec3{0.5f, 0.5f, 0.5f};
 					line_rect_drawer.set_box(AlignedBox{
 						(coords_min + coords_max) / 2.0f, coords_max - coords_min});
-					shader_program_line.draw(line_rect_drawer.mesh);
+					shader_table.line().draw(line_rect_drawer.mesh);
 				}
 			}
 		}
