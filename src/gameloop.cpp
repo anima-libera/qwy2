@@ -120,7 +120,8 @@ void Game::loop(Config const& config)
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	unsigned int const shadow_depth_texture_image_unit_openglid = next_texture_image_unit_openglid++;
+	unsigned int const shadow_depth_texture_image_unit_openglid =
+		next_texture_image_unit_openglid++;
 	glActiveTexture(GL_TEXTURE0 + shadow_depth_texture_image_unit_openglid);
 	glBindTexture(GL_TEXTURE_2D, shadow_depth_texture_openglid);
 	shader_table.update_uniform(Uniform::SHADOW_DEPTH_TEXTURE_IMAGE_UNIT_OPENGLID,
@@ -141,7 +142,9 @@ void Game::loop(Config const& config)
 		ChunkCoords chunk_coords;
 		std::future<IsolatedChunk*> future;
 	public:
-		GeneratingChunkWrapper(ChunkCoords chunk_coords, BlockRect block_rect, Nature const& nature):
+		GeneratingChunkWrapper(ChunkCoords chunk_coords,
+			BlockRect block_rect, Nature const& nature)
+		:
 			chunk_coords{chunk_coords},
 			future{std::async(std::launch::async, generate_chunk,
 				chunk_coords, block_rect, std::cref(nature))}
@@ -712,7 +715,8 @@ void Game::loop(Config const& config)
 					if (raw_force_try == glm::vec3{0.0f, 0.0f, 0.0f})
 					{
 						/* This collision doesn't seem to be of any use, all of its relevant faces
-						* are probably untouchable. Hopefully more useful collisions will follow. */
+						 * are probably untouchable.
+						 * Hopefully more useful collisions will follow. */
 						collision_blacklist.insert(collision);
 						goto continue_collisions;
 					}
@@ -722,7 +726,7 @@ void Game::loop(Config const& config)
 					glm::vec3 new_center{player_box.center};
 
 					/* Push the player out of the colliding block,
-					* also stopping motion towards the colliding block as it bonked. */
+					 * also stopping motion towards the colliding block as it bonked. */
 					unsigned int axis_index;
 					if (raw_force_try.x > 0.0f)
 					{
@@ -796,7 +800,8 @@ void Game::loop(Config const& config)
 					if (glm::distance(new_center, player_box.center) > 0.5f)
 					{
 						//std::cout << "Faulty displacement along " << axis_index << std::endl;
-						//std::cout << player_box.center[axis_index] << " -> " << new_center[axis_index] << std::endl;
+						//std::cout << player_box.center[axis_index] << " -> "
+						//	<< new_center[axis_index] << std::endl;
 						raw_force[axis_index] = 0.0f;
 					}
 					else
@@ -979,9 +984,11 @@ void Game::loop(Config const& config)
 					BlockRect chunk_rect = chunk_grid.chunk_rect(
 						wrapper_opt.value().chunk_coords);
 					glm::vec3 coords_min =
-						static_cast<glm::vec3>(chunk_rect.coords_min) - glm::vec3{0.5f, 0.5f, 0.5f};
+						static_cast<glm::vec3>(chunk_rect.coords_min)
+							- glm::vec3{0.5f, 0.5f, 0.5f};
 					glm::vec3 coords_max =
-						static_cast<glm::vec3>(chunk_rect.coords_max) + glm::vec3{0.5f, 0.5f, 0.5f};
+						static_cast<glm::vec3>(chunk_rect.coords_max)
+							+ glm::vec3{0.5f, 0.5f, 0.5f};
 					line_rect_drawer.set_box(AlignedBox{
 						(coords_min + coords_max) / 2.0f, coords_max - coords_min});
 					shader_table.line().draw(line_rect_drawer.mesh);

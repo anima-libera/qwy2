@@ -9,7 +9,7 @@ Options:
   -h   --help       Prints this docstring and halts.
   -l   --launch     Executes the bin if compiled, with what follows as args.
   -d   --debug      Standard debuging build, defines DEBUG, launches with -d.
-  -c=X --compiler=X Use the X compiler, where X is g++ or clang (TODO).
+  -c=X --compiler=X Use the X compiler, where X is g++ or clang.
   --sdl2-static     Statically link to the SDL2, default is dynamic.
   --use-glew        Use the GLEW OpenGL extention loader.
   --opengl-notifs   Enables OpenGL notifications.
@@ -85,7 +85,7 @@ def cmdline_has_option(expects_value, *option_names):
 option_help = cmdline_has_option(False, "-h", "--help")
 option_debug = cmdline_has_option(False, "-d", "--debug")
 option_compiler = cmdline_has_option(True, "-c", "--compiler")
-if option_compiler == None:
+if option_compiler == None or option_compiler == "gcc":
 	option_compiler = "g++"
 if option_compiler not in ("g++", "clang"):
 	print_error("Cmdline", f"The \"{option_compiler}\" compiler " +
