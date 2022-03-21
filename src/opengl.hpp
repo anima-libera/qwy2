@@ -10,7 +10,7 @@
 	#define GL_GLEXT_PROTOTYPES
 	#include <GL/gl.h>
 	#include <GL/glext.h>
-	#include <GL/glx.h>
+	//#include <GL/glx.h>
 #endif
 
 static_assert(sizeof(float) == sizeof(GLfloat));

@@ -329,6 +329,9 @@ def build_translation_unit(src_file_path):
 # If one header has changed, since it could be included in all the source files, 
 # then we have to recompile every source file.
 # If not, we can only recompile the modified source files.
+# Note: This could be optimized by scanning the header and source files for #include directives
+# and obtain a file dependency graph to use to reduce the set of effectively changed source files
+# when some header files are changed. It could be nice to implement that some day.
 src_files_to_build = src_file_paths if there_are_new_header_files else new_src_file_paths
 if option_verbose:
 	if there_are_new_header_files:
@@ -378,15 +381,16 @@ link_command_args.append(bin_path)
 link_command_args.append("-std=c++17")
 #link_command_args.append("-pipe")
 if option_debug:
-	link_command_args.append("-fsanitize=undefined")
-	link_command_args.append("-DDEBUG")
-	link_command_args.append("-g")
-	link_command_args.append("-Og")
+	pass
+#	link_command_args.append("-fsanitize=undefined")
+#	link_command_args.append("-DDEBUG")
+#	link_command_args.append("-g")
+#	link_command_args.append("-Og")
 else:
-	link_command_args.append("-DNDEBUG") # Should discard asserts.
-	link_command_args.append("-O3")
-	link_command_args.append("-no-pie")
-	link_command_args.append("-fno-stack-protector")
+#	link_command_args.append("-DNDEBUG") # Should discard asserts.
+#	link_command_args.append("-O3")
+#	link_command_args.append("-no-pie")
+#	link_command_args.append("-fno-stack-protector")
 	link_command_args.append("-flto")
 	link_command_args.append("-s")
 if False:
@@ -422,7 +426,7 @@ if link_exit_status != 0 and option_verbose:
 ## LAUNCH
 
 if option_launch:
-	print(f"Running {bin_name} from {bin_dir}:")
+	print(f"Running {bin_name} from \"{bin_dir}\":")
 	launch_command_args = ["./" + bin_name]
 	if option_debug:
 		launch_command_args.append("-d")
