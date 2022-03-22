@@ -36,9 +36,12 @@ namespace qwy2
 
 void Game::loop(Config const& config)
 {
-	bool capture_cursor = config.capture_cursor;
-	float loaded_radius = config.loaded_radius;
-	unsigned int chunk_side = config.chunk_side;
+	using namespace std::literals::string_view_literals;
+
+	bool const capture_cursor = config.get<bool>("capture_cursor"sv);
+	float const loaded_radius = config.get<float>("loaded_radius"sv);
+	unsigned int const chunk_side = config.get<int>("chunk_side"sv);
+	int const seed = config.get<int>("seed"sv);
 
 
 	if (init_window_graphics() == ErrorCode::ERROR)
@@ -58,7 +61,7 @@ void Game::loop(Config const& config)
 	shader_table.init();
 
 
-	NoiseGenerator::SeedType const seed = 8 + 1;
+	//NoiseGenerator::SeedType const seed = seed;
 	Nature nature{seed};
 
 	nature.world_generator.surface_block_type =

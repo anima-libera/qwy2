@@ -15,6 +15,8 @@ Qwy2 is a [C++17](https://en.cppreference.com/w/cpp/compiler_support/17) project
 
 C++ compilers tested and supported by the build system include [GCC](https://gcc.gnu.org/) (`g++`) and [Clang](https://clang.llvm.org/) (`clang`). The build system itself is a [Python 3](https://www.python.org/downloads/) (`python3`) script (Python 3.6 or higher should do (but not older versions as this script uses f-strings)).
 
+The building process has only been tested on Linux (Ubuntu 18.04 LTS) yet, it is likely to fail on very different systems for now.
+
 ### Build
 
 The build system is the `_comp.py` Python 3 script at the root of the project directory.
