@@ -73,7 +73,7 @@ GLuint shader_program_build(
 	{
 		return 0;
 	}
-	GLuint shader_geom_openglid;
+	GLuint shader_geom_openglid = 0;
 	if (src_geom != nullptr)
 	{
 		shader_geom_openglid =

@@ -402,8 +402,7 @@ link_command_args.append("-std=c++17")
 #link_command_args.append("-pedantic")
 #link_command_args.append("-pipe")
 if option_debug:
-	pass
-#	link_command_args.append("-fsanitize=undefined")
+	link_command_args.append("-fsanitize=undefined") # Needed here as GCC uses a runtime lib.
 #	link_command_args.append("-DDEBUG")
 #	link_command_args.append("-g")
 #	link_command_args.append("-Og")

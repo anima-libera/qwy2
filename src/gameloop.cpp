@@ -38,10 +38,11 @@ void Game::loop(Config const& config)
 {
 	using namespace std::literals::string_view_literals;
 
-	bool const capture_cursor = config.get<bool>("capture_cursor"sv);
+	bool const cursor_capture = config.get<bool>("cursor_capture"sv);
 	float const loaded_radius = config.get<float>("loaded_radius"sv);
 	unsigned int const chunk_side = config.get<int>("chunk_side"sv);
 	int const seed = config.get<int>("seed"sv);
+	unsigned int const loading_threads = config.get<int>("loading_threads"sv);
 
 
 	if (init_window_graphics() == ErrorCode::ERROR)
@@ -103,6 +104,7 @@ void Game::loop(Config const& config)
 		static_cast<unsigned int>(max_framebuffer_width));
 	shadow_framebuffer_side = std::min(shadow_framebuffer_side,
 		static_cast<unsigned int>(max_framebuffer_height));
+	std::cout << "shadow_framebuffer_side = " << shadow_framebuffer_side << std::endl;
 	unsigned int shadow_depth_texture_openglid;
 	glGenTextures(1, &shadow_depth_texture_openglid);
 	glBindTexture(GL_TEXTURE_2D, shadow_depth_texture_openglid);
@@ -157,7 +159,7 @@ void Game::loop(Config const& config)
 	};
 
 	std::vector<std::optional<GeneratingChunkWrapper>> generating_chunk_table;
-	generating_chunk_table.resize(1);
+	generating_chunk_table.resize(loading_threads);
 
 
 	glm::vec3 sky_color{0.0f, 0.7f, 0.9f};
@@ -202,7 +204,7 @@ void Game::loop(Config const& config)
 	bool allow_infinite_jumps = false;
 
 
-	if (capture_cursor)
+	if (cursor_capture)
 	{
 		SDL_SetRelativeMouseMode(SDL_TRUE);
 	}

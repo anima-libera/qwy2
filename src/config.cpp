@@ -12,10 +12,11 @@ Config::Config()
 {
 	using namespace std::literals::string_view_literals;
 
-	this->parameter_table.insert({"capture_cursor"sv, true});
+	this->parameter_table.insert({"cursor_capture"sv, true});
 	this->parameter_table.insert({"loaded_radius"sv, 160.0f});
 	this->parameter_table.insert({"chunk_side"sv, 45});
 	this->parameter_table.insert({"seed"sv, 9});
+	this->parameter_table.insert({"loading_threads"sv, 2});
 }
 
 ErrorCode Config::parse_command_line(int argc, char const* const* argv)
