@@ -12,6 +12,7 @@ Options:
   -c=X --compiler=X Uses the X compiler, where X is g++ or clang.
   -v   --verbose    Prints details during building.
   --clear           Erases results and data from previous builds.
+  --dont-build      Refrains from building anything (useful with --clear).
   --sdl2-static     Statically link to the SDL2, default is dynamic.
   --use-glew        Uses the GLEW OpenGL extention loader.
   --opengl-notifs   Enables OpenGL notifications.
@@ -99,6 +100,7 @@ if option_compiler not in ("g++", "clang"):
 if option_debug:
 	print(f"Using compiler {option_compiler}")
 option_clear = cmdline_has_option(False, "--clear")
+option_dont_build = cmdline_has_option(False, "--dont-build")
 option_verbose = cmdline_has_option(False, "-v", "--verbose")
 option_sdl2_static = cmdline_has_option(False, "--sdl2-static")
 option_use_glew = cmdline_has_option(False, "--use-glew")
@@ -127,13 +129,29 @@ bin_dir = "bin"
 build_dir = "build"
 obj_dir = os.path.join(build_dir, "obj")
 
+bin_name_release = "Qwy2"
+bin_name_debug = "Qwy2-debug"
+
 if option_clear:
 	if option_verbose:
 		print("Clearing previous build results and data.")
-	shutil.rmtree(bin_dir)
-	shutil.rmtree(build_dir)
+	if os.path.exists(build_dir):
+		if option_verbose:
+			print(f"Deleting the directory \"{build_dir}\".")
+		shutil.rmtree(build_dir)
+	bin_path_release = os.path.join(bin_dir, bin_name_release)
+	bin_path_debug = os.path.join(bin_dir, bin_name_debug)
+	if os.path.exists(bin_path_release):
+		os.remove(bin_path_release)
+	if os.path.exists(bin_path_debug):
+		os.remove(bin_path_debug)
 
-bin_name = "Qwy2" if not option_debug else "Qwy2-debug"
+if option_dont_build:
+	if option_verbose:
+		print("Not building anything.")
+	sys.exit()
+
+bin_name = bin_name_debug if option_debug else bin_name_release
 print(f"{'Debug' if option_debug else 'Release'} build.")
 
 ## PRESISTENT BUILD DATA
@@ -312,9 +330,9 @@ def build_translation_unit(src_file_path):
 		build_command_args.append("-g")
 		build_command_args.append("-Og")
 	else:
-		build_command_args.append("-DNDEBUG") # Should discard asserts
+		build_command_args.append("-DNDEBUG") # Should discard asserts.
 		build_command_args.append("-O3")
-		build_command_args.append("-no-pie")
+	#	build_command_args.append("-no-pie")
 		build_command_args.append("-fno-stack-protector")
 	if False:
 		build_command_args.append("-v")
@@ -379,6 +397,9 @@ for src_file_path in src_file_paths:
 link_command_args.append("-o")
 link_command_args.append(bin_path)
 link_command_args.append("-std=c++17")
+#link_command_args.append("-Wall")
+#link_command_args.append("-Wextra")
+#link_command_args.append("-pedantic")
 #link_command_args.append("-pipe")
 if option_debug:
 	pass

@@ -13,7 +13,7 @@ Qwy2 uses the [OpenGL](https://www.khronos.org/opengl/wiki/FAQ#What_is_OpenGL.3F
 
 Qwy2 is a [C++17](https://en.cppreference.com/w/cpp/compiler_support/17) project that uses the C++ standard library, which is thus a dependency (an implementation of which should be installed by default, but in case it is not then any recent implementation should do).
 
-C++ compilers tested and supported by the build system include [GCC](https://gcc.gnu.org/) (`g++`) and [Clang](https://clang.llvm.org/) (`clang`). The build system itself is a [Python 3](https://www.python.org/downloads/) (`python3`) script (Python 3.6 or higher should do).
+C++ compilers tested and supported by the build system include [GCC](https://gcc.gnu.org/) (`g++`) and [Clang](https://clang.llvm.org/) (`clang`). The build system itself is a [Python 3](https://www.python.org/downloads/) (`python3`) script (Python 3.6 or higher should do (but not older versions as this script uses f-strings)).
 
 ### Build
 
