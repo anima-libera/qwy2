@@ -4,7 +4,8 @@
 
 #include "opengl.hpp"
 #include "noise.hpp"
-#include <glm/glm.hpp>
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
 #include <vector>
 #include <cstdint>
 
@@ -58,6 +59,8 @@ public:
 	AtlasRect atlas_rect() const;
 };
 
+/* Texture atlas, a big texture conaining a lot of small textures in it to allow using
+ * numerous textures without having to switch the bound OpenGL textures. */
 class Atlas
 {
 public:
@@ -96,12 +99,13 @@ class WorldGenerator
 {
 public:
 	NoiseGenerator noise_generator;
-	BlockTypeId primary_block_type;
+	NoiseGenerator noise_generator_2;
 	BlockTypeId surface_block_type;
+	BlockTypeId primary_block_type;
+	BlockTypeId secondary_block_type;
 
 public:
 	WorldGenerator(NoiseGenerator::SeedType seed);
-	void generate_chunk_content(Nature const& nature, Chunk& chunk);
 	void generate_chunk_content(Nature const& nature, IsolatedChunk& chunk) const;
 };
 

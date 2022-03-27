@@ -2,7 +2,7 @@
 #ifndef QWY2_HEADER_NOISE_
 #define QWY2_HEADER_NOISE_
 
-#include <glm/glm.hpp>
+#include <glm/vec3.hpp>
 #include <cstdint>
 
 namespace qwy2

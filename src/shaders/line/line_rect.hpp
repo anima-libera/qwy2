@@ -9,7 +9,7 @@
 namespace qwy2
 {
 
-/* TODO: Remove this unoptimized temporary solution. Use instancing or something. */
+/* Temporary solution to generate a mesh representing the edges of a 3D rectangle. */
 class LineRectDrawer
 {
 public:

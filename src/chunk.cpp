@@ -153,16 +153,10 @@ Block& Chunk::block(BlockCoords const& coords)
 	return this->block_grid[this->rect.to_index(coords)];
 }
 
-void Chunk::generate(Nature& nature)
+Block const& Chunk::block(BlockCoords const& coords) const
 {
-	assert(not this->is_generated);
-	this->block_grid.resize(rect.volume());
-	nature.world_generator.generate_chunk_content(nature, *this);
-
-	if (this->is_all_air == false)
-	{
-		this->recompute_mesh(nature);
-	}
+	assert(this->rect.contains(coords));
+	return this->block_grid[this->rect.to_index(coords)];
 }
 
 void Chunk::recompute_mesh(Nature const& nature)
@@ -230,6 +224,11 @@ void Chunk::add_common_faces_to_mesh(Nature const& nature,
 	this->mesh.needs_update_opengl_data = true;
 }
 
+ChunkGrid::ChunkGrid()
+{
+	;
+}
+
 ChunkGrid::ChunkGrid(int chunk_side):
 	chunk_side{chunk_side}
 {
@@ -292,10 +291,32 @@ Chunk* ChunkGrid::chunk(ChunkCoords chunk_coords)
 	}
 }
 
+Chunk const* ChunkGrid::chunk(ChunkCoords chunk_coords) const
+{
+	auto chunk_maybe = this->table.find(chunk_coords);
+	if (chunk_maybe == this->table.end())
+	{
+		return nullptr;
+	}
+	else
+	{
+		Chunk const* chunk = chunk_maybe->second;
+		return chunk;
+	}
+}
+
 Chunk* ChunkGrid::containing_chunk(BlockCoords coords)
 {
 	ChunkCoords const chunk_coords = this->containing_chunk_coords(coords);
 	Chunk* chunk = this->chunk(chunk_coords);
+	assert(chunk == nullptr || chunk->rect.contains(coords));
+	return chunk;
+}
+
+Chunk const* ChunkGrid::containing_chunk(BlockCoords coords) const
+{
+	ChunkCoords const chunk_coords = this->containing_chunk_coords(coords);
+	Chunk const* chunk = this->chunk(chunk_coords);
 	assert(chunk == nullptr || chunk->rect.contains(coords));
 	return chunk;
 }
@@ -309,26 +330,13 @@ Chunk* ChunkGrid::containing_chunk(glm::vec3 coords)
 	return this->containing_chunk(coords_int);
 }
 
-Chunk* ChunkGrid::generate_chunk(Nature& nature, ChunkCoords chunk_coords)
+Chunk const* ChunkGrid::containing_chunk(glm::vec3 coords) const
 {
-	Chunk* chunk = this->table[chunk_coords] = new Chunk{this->chunk_rect(chunk_coords)};
-	chunk->generate(nature);
-
-	for (Axis axis : {Axis::X, Axis::Y, Axis::Z})
-	for (bool negativeward : {false, true})
-	{
-		ChunkFace chunk_face{chunk_coords, axis, negativeward};
-		Chunk* touching_chunk = this->chunk(chunk_face.external_coords());
-		if (touching_chunk != nullptr)
-		{
-			chunk->add_common_faces_to_mesh(nature, chunk_face, *touching_chunk);
-
-			ChunkFace chunk_face_mirror{chunk_face.external_coords(), axis, not negativeward};
-			touching_chunk->add_common_faces_to_mesh(nature, chunk_face_mirror, *chunk);
-		}
-	}
-
-	return chunk;
+	BlockCoords const coords_int{
+		static_cast<int>(std::round(coords.x)),
+		static_cast<int>(std::round(coords.y)),
+		static_cast<int>(std::round(coords.z))};
+	return this->containing_chunk(coords_int);
 }
 
 Chunk* ChunkGrid::add_generated_chunk(IsolatedChunk* generating_chunk, ChunkCoords chunk_coords,
@@ -360,9 +368,9 @@ Chunk* ChunkGrid::add_generated_chunk(IsolatedChunk* generating_chunk, ChunkCoor
 	return chunk;
 }
 
-bool ChunkGrid::block_is_air_or_not_generated(BlockCoords coords)
+bool ChunkGrid::block_is_air_or_not_generated(BlockCoords coords) const
 {
-	Chunk* chunk = this->containing_chunk(coords);
+	Chunk const* chunk = this->containing_chunk(coords);
 	if (chunk == nullptr)
 	{
 		return true;

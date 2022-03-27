@@ -17,6 +17,7 @@ ErrorCode ShaderTable::init()
 	this->table[count++, ShaderTable::SHADOW] = new ShaderProgramShadow{};
 	assert(count == ShaderTable::SHADER_COUNT);
 
+	/* Compile all the shaders. */
 	for (unsigned int i = 0; i < ShaderTable::SHADER_COUNT; i++)
 	{
 		if (this->table[i]->init() == ErrorCode::ERROR)
@@ -33,18 +34,9 @@ void ShaderTable::update_uniform(Uniform uniform, UniformValue value)
 {
 	for (unsigned int i = 0; i < ShaderTable::SHADER_COUNT; i++)
 	{
-		//std::cerr << static_cast<unsigned int>(uniform) << " [" << std::endl;
 		this->table[i]->update_uniform(uniform, value);
-		//std::cerr << "]" << std::endl;
 	}
 }
-
-#if 0
-ShaderProgram& ShaderTable::operator[](unsigned int shader_index)
-{
-	return *this->table[shader_index];
-}
-#endif
 
 ShaderProgramClassic& ShaderTable::classic()
 {

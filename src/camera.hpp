@@ -2,7 +2,8 @@
 #ifndef QWY2_HEADER_CAMERA_
 #define QWY2_HEADER_CAMERA_
 
-#include <glm/glm.hpp>
+#include <glm/vec3.hpp>
+#include <glm/mat4x4.hpp>
 #include "utils.hpp"
 
 namespace qwy2

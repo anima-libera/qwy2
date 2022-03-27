@@ -7,7 +7,7 @@
 #include "coords.hpp"
 #include "mesh.hpp"
 #include "shaders/classic/classic.hpp"
-#include <glm/glm.hpp>
+#include <glm/vec3.hpp>
 #include <vector>
 #include <array>
 #include <unordered_map>
@@ -42,8 +42,6 @@ public:
 
 IsolatedChunk* generate_chunk(ChunkCoords chunk_coords, BlockRect rect, Nature const& nature);
 
-class ChunkGrid;
-
 class Chunk
 {
 public:
@@ -58,12 +56,11 @@ private:
 public:
 	Chunk(BlockRect rect);
 	Block& block(BlockCoords const& coords);
-	void generate(Nature& nature);
+	Block const& block(BlockCoords const& coords) const;
 	void recompute_mesh(Nature const& nature);
 	void add_common_faces_to_mesh(Nature const& nature,
 		ChunkFace chunk_face, Chunk& touching_chunk);
 
-	//friend class Generator;
 	friend class ChunkGrid;
 };
 
@@ -74,6 +71,7 @@ public:
 	std::unordered_map<ChunkCoords, Chunk*, ChunkCoords::Hash> table; /* Center to chunk. */
 
 public:
+	ChunkGrid();
 	ChunkGrid(int chunk_side);
 
 	ChunkCoords containing_chunk_coords(BlockCoords coords) const;
@@ -84,14 +82,16 @@ public:
 	BlockRect containing_chunk_rect(glm::vec3 coords) const;
 
 	Chunk* chunk(ChunkCoords chunk_coords);
+	Chunk const* chunk(ChunkCoords chunk_coords) const;
 	Chunk* containing_chunk(BlockCoords coords);
+	Chunk const* containing_chunk(BlockCoords coords) const;
 	Chunk* containing_chunk(glm::vec3 coords);
+	Chunk const* containing_chunk(glm::vec3 coords) const;
 
-	Chunk* generate_chunk(Nature& nature, ChunkCoords chunk_coords);
 	Chunk* add_generated_chunk(IsolatedChunk* generating_chunk, ChunkCoords chunk_coords,
 		Nature const& nature);
 
-	bool block_is_air_or_not_generated(BlockCoords coords);
+	bool block_is_air_or_not_generated(BlockCoords coords) const;
 };
 
 } /* qwy2 */

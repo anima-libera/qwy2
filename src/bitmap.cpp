@@ -38,7 +38,7 @@ public:
 	std::uint32_t important_color_count; /* Can be 0. */
 };
 
-} /* anonymous namespace */
+} /* Anonymous namespace. */
 
 void emit_bitmap(
 	PixelData const* pixel_grid_data,

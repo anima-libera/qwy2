@@ -163,7 +163,7 @@ GLuint shader_program_build(
 	return shader_program_openglid;
 }
 
-} /* anonymous namespace */
+} /* Anonymous namespace. */
 
 ErrorCode ShaderProgram::compile_given_src(
 	char const* src_vert, char const* src_geom, char const* src_frag,

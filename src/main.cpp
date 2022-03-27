@@ -13,8 +13,8 @@ int main(int argc, char const* const* argv)
 		return EXIT_FAILURE;
 	}
 
-	Game game{};
-	game.loop(config);
+	Game game{config};
+	game.loop();
 
 	return 0;
 }

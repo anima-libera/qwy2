@@ -13,6 +13,7 @@
 namespace qwy2
 {
 
+/* Holds all the shader programs used by the game. */
 class ShaderTable
 {
 public:
@@ -29,9 +30,15 @@ public:
 	};
 
 public:
+	/* Initializes the table and compiles all the shaders. */
 	ErrorCode init();
+
+	/* Updates the value of the designated uniform to the given value,
+	 * across all the shaders (those who are not concerned will ignore this). */
 	void update_uniform(Uniform uniform, UniformValue value);
-	//ShaderProgram& operator[](unsigned int shader_index);
+
+	/* Getters for the contained shaders.
+	 * TODO: Refactor these in some more elegant way (maybe using templates). */
 	ShaderProgramClassic& classic();
 	ShaderProgramLine& line();
 	ShaderProgramShadow& shadow();
