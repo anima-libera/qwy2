@@ -185,6 +185,16 @@ void InputEventHandler::handle_events(Game& game)
 							glClear(GL_DEPTH_BUFFER_BIT);
 						}
 					break;
+
+					case SDLK_t:
+						if (event.type == SDL_KEYDOWN)
+						{
+							game.keep_generating_chunks = not game.keep_generating_chunks;
+							std::cout << "[T] Chunk generation "
+								<< (game.keep_generating_chunks ? "enabled" : "disabled")
+								<< std::endl;
+						}
+					break;
 				}
 			break;
 

@@ -7,6 +7,7 @@ in vec2 v_atlas_coords_max;
 in vec3 v_normal;
 in vec3 v_sun_camera_space_coords;
 in vec3 v_coords;
+in float v_ambient_occlusion;
 
 layout(location =  1) uniform sampler2D u_atlas;
 layout(location =  6) uniform float u_atlas_side;
@@ -38,12 +39,13 @@ void main()
 	float light = -dot(v_normal, normalize(u_sun_camera_direction));
 	const float shadow_depth = texture(u_shadow_depth, v_sun_camera_space_coords.xy).r;
 	const bool is_in_shadow = v_sun_camera_space_coords.z > shadow_depth;
-	if (is_in_shadow || light < 0)
+	if (is_in_shadow || light < 0.0)
 	{
-		light = 0;
+		light *= 0.0;
 	}
 	const float shadow_ratio = 0.7; /* How dark can it get in the shadows. */
 	out_color.rgb *= light * shadow_ratio + (1.0 - shadow_ratio);
+	out_color.rgb *= v_ambient_occlusion * 0.5 + 0.5;
 
 	/* Fog effect. */
 	const float distance_to_user = distance(v_coords, u_user_coords);

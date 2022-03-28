@@ -105,7 +105,7 @@ void ShaderProgramClassic::update_uniform(Uniform uniform, UniformValue value)
 void ShaderProgramClassic::draw(Mesh<VertexDataClassic> const& mesh)
 {
 	glUseProgram(this->openglid);
-	constexpr unsigned int vertex_attrib_number = 5;
+	constexpr unsigned int vertex_attrib_number = 6;
 	for (unsigned int i = 0; i < vertex_attrib_number; i++)
 	{
 		glEnableVertexAttribArray(i);
@@ -123,6 +123,8 @@ void ShaderProgramClassic::draw(Mesh<VertexDataClassic> const& mesh)
 		reinterpret_cast<void*>(offsetof(VertexDataClassic, atlas_coords_min)));
 	glVertexAttribPointer(attrib_index++, 2, GL_FLOAT, GL_FALSE, sizeof(VertexDataClassic),
 		reinterpret_cast<void*>(offsetof(VertexDataClassic, atlas_coords_max)));
+	glVertexAttribPointer(attrib_index++, 1, GL_FLOAT, GL_FALSE, sizeof(VertexDataClassic),
+		reinterpret_cast<void*>(offsetof(VertexDataClassic, ambiant_occlusion)));
 	assert(attrib_index == vertex_attrib_number);
 
 	glDrawArrays(GL_TRIANGLES, 0, mesh.vertex_data.size());

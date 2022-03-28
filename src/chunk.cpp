@@ -61,6 +61,7 @@ void Block::generate_face(Nature const& nature, BlockFace const& face,
 	nn.atlas_coords.y = atlas_rect.atlas_coords_min.y;
 	nn.atlas_coords_min = atlas_coords_min_real;
 	nn.atlas_coords_max = atlas_coords_max_real;
+	nn.ambiant_occlusion = 1.0f;
 	VertexDataClassic np;
 	np.coords = coords_nn;
 	np.coords[index_a] += 0.0f;
@@ -70,6 +71,7 @@ void Block::generate_face(Nature const& nature, BlockFace const& face,
 	np.atlas_coords.y = atlas_rect.atlas_coords_max.y;
 	np.atlas_coords_min = atlas_coords_min_real;
 	np.atlas_coords_max = atlas_coords_max_real;
+	np.ambiant_occlusion = 1.0f;
 	VertexDataClassic pn;
 	pn.coords = coords_nn;
 	pn.coords[index_a] += 1.0f;
@@ -79,6 +81,7 @@ void Block::generate_face(Nature const& nature, BlockFace const& face,
 	pn.atlas_coords.y = atlas_rect.atlas_coords_min.y;
 	pn.atlas_coords_min = atlas_coords_min_real;
 	pn.atlas_coords_max = atlas_coords_max_real;
+	pn.ambiant_occlusion = 1.0f;
 	VertexDataClassic pp;
 	pp.coords = coords_nn;
 	pp.coords[index_a] += 1.0f;
@@ -88,6 +91,7 @@ void Block::generate_face(Nature const& nature, BlockFace const& face,
 	pp.atlas_coords.y = atlas_rect.atlas_coords_max.y;
 	pp.atlas_coords_min = atlas_coords_min_real;
 	pp.atlas_coords_max = atlas_coords_max_real;
+	pp.ambiant_occlusion = 1.0f;
 
 	std::array<VertexDataClassic, 6> const vertex_data_sequence{nn, pn, pp, nn, pp, np};
 	/* Does std::copy preallocate the appropriate size ? Probably...

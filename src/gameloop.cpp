@@ -142,6 +142,7 @@ Game::Game(Config const& config)
 	/* Initialize the grid of chunks and related fields. */
 	this->chunk_grid = new ChunkGrid{config.get<int>("chunk_side"sv)};
 	this->generating_chunk_table.resize(config.get<int>("loading_threads"sv));
+	this->keep_generating_chunks = true;
 	this->loaded_radius = config.get<float>("loaded_radius"sv);
 
 	/* Define the sky color and make the fog correspond to it. */
@@ -257,7 +258,8 @@ void Game::loop()
 					wrapper_opt.reset();
 				}
 			}
-			if ((not wrapper_opt.has_value()) && (not around_chunk_vec.empty()))
+			if (this->keep_generating_chunks &&
+				(not wrapper_opt.has_value()) && (not around_chunk_vec.empty()))
 			{
 				/* There is a slot for generating a chunk, and there is a chunk that
 				 * we would like to see generated, thus the latter is asked to be generated. */

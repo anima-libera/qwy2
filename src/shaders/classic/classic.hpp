@@ -21,6 +21,8 @@ public:
 	glm::vec2 atlas_coords_min;
 	glm::vec2 atlas_coords_max;
 
+	float ambiant_occlusion;
+
 	/* TODO: Make all this packed and smaller in memory! */
 };
 

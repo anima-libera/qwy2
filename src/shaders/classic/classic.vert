@@ -6,6 +6,7 @@ layout(location = 1) in vec3 in_normal;
 layout(location = 2) in vec2 in_atlas_coords;
 layout(location = 3) in vec2 in_atlas_coords_min;
 layout(location = 4) in vec2 in_atlas_coords_max;
+layout(location = 5) in float in_ambient_occlusion;
 
 layout(location = 0) uniform mat4 u_user_camera;
 layout(location = 5) uniform vec3 u_user_camera_direction;
@@ -17,6 +18,7 @@ out vec2 v_atlas_coords_max;
 out vec3 v_normal;
 out vec3 v_sun_camera_space_coords;
 out vec3 v_coords;
+out float v_ambient_occlusion;
 
 void main()
 {
@@ -36,4 +38,6 @@ void main()
 	v_sun_camera_space_coords.xyz = (v_sun_camera_space_coords.xyz + 1.0) / 2.0;
 
 	v_coords = in_coords;
+
+	v_ambient_occlusion = in_ambient_occlusion;
 }
