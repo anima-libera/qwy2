@@ -16,6 +16,90 @@
 namespace qwy2
 {
 
+/* TODO: Comment. */
+
+template<typename ValueType>
+class ChunkField
+{
+public:
+	using ValueType = ValueType;
+
+public:
+	BlockRect rect;
+private:
+	ValueType* data;
+
+public:
+	ValueType& operator[](BlockCoords coords);
+	ValueType const& operator[](BlockCoords coords) const;
+};
+
+using ChunkPTGField = ChunkField<int>;
+
+using BlockTypeId = unsigned int;
+using ChunkPTTField = ChunkField<BlockTypeId>;
+
+class Block
+{
+public:
+	BlockTypeId type_id;
+};
+using ChunkBField = ChunkField<Block>;
+
+template<typename ChunkFieldType>
+class ChunkNeighborhood
+{
+public:
+	using FieldType = ChunkFieldType;
+	using ValueType = FieldType::ValueType;
+
+private:
+	ChunkFieldType field_table[3*3*3];
+
+public:
+	ValueType& operator[](BlockCoords coords);
+	ValueType const& operator[](BlockCoords coords) const;
+};
+
+using ChunkMeshData = std::vector<VertexDataClassic>;
+
+/* Can be called in isolation. */
+ChunkPTGField generate_chunk_PTG_field(
+	BlockRect rect,
+	Nature const& nature);
+
+/* Can be called in isolation. */
+ChunkPTTField generate_chunk_PTT_field(
+	BlockRect rect,
+	ChunkNeighborhood<ChunkPTGField> const chunk_neighborhood_PTG_field,
+	Nature const& nature);
+
+/* Can be called in isolation. */
+ChunkBField generate_chunk_B_field(
+	BlockRect rect,
+	ChunkNeighborhood<ChunkPTTField> const chunk_neighborhood_PTT_field,
+	Nature const& nature);
+
+/* Can be called in isolation. */
+ChunkMeshData generate_chunk_isolated_mesh(
+	BlockRect rect,
+	ChunkNeighborhood<ChunkBField> const chunk_neighborhood_B_field,
+	Nature const& nature);
+
+template <typename ComponentType>
+using ChunkComponentGrid = std::unordered_map<ChunkCoords, ComponentType, ChunkCoords::Hash>;
+
+class ChunkGrid
+{
+public:
+	ChunkComponentGrid<ChunkPTGField> PTG_field_table;
+	ChunkComponentGrid<ChunkPTTField> PTT_field_table;
+	ChunkComponentGrid<ChunkBField> B_field_table;
+	ChunkComponentGrid<Mesh<VertexDataClassic>> mesh_table;
+};
+
+#if 0
+
 /* Describes the state of one voxel in a grid of voxels. */
 class Block
 {
@@ -93,6 +177,8 @@ public:
 
 	bool block_is_air_or_not_generated(BlockCoords coords) const;
 };
+
+#endif
 
 } /* qwy2 */
 

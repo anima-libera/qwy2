@@ -9,6 +9,8 @@
 namespace qwy2
 {
 
+#if 0
+
 Block::Block():
 	is_air{true}
 {
@@ -382,5 +384,7 @@ bool ChunkGrid::block_is_air_or_not_generated(BlockCoords coords) const
 		return chunk->block(coords).is_air;
 	}
 }
+
+#endif
 
 } /* Qwy2 */
