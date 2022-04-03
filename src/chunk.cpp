@@ -18,9 +18,7 @@ Block::Block():
 void Block::generate_face(Nature const& nature, BlockFace const& face,
 	std::vector<VertexDataClassic>& dst) const
 {
-	unsigned int const index_axis = static_cast<int>(face.axis);
-	unsigned int const index_a = index_axis == 0 ? 1 : 0;
-	unsigned int const index_b = index_axis == 2 ? 1 : 2;
+	auto const [index_axis, index_a, index_b] = face.indices_axis_a_b();
 
 	BlockType const& type = nature.block_type_table[this->type_index];
 	AtlasRect atlas_rect = face.axis == Axis::Z ?

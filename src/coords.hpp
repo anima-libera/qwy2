@@ -4,6 +4,7 @@
 
 #include <utility>
 #include <iostream>
+#include <tuple>
 #include <glm/vec3.hpp>
 
 namespace qwy2
@@ -128,7 +129,7 @@ public:
 };
 
 /* Represents an oriented face, the "interior" of which is at the internal_coords,
- * and the "exterior" of which is at the external_coords that are the internal_coords but
+ * and the "exterior" of which is at the external coords that are the internal_coords but
  * moved (of one length unit) along the given axis in the given negativewardness. */
 template<CoordsLevel L>
 class FaceInt
@@ -141,6 +142,10 @@ public:
 public:
 	FaceInt(CoordsInt<L> internal_coords, Axis axis, bool negativeward);
 	CoordsInt<L> external_coords() const;
+	
+	/* The first index returned corresponds to the axis of this face.
+	 * The other two are the other two indices in {0, 1, 2}. */
+	std::tuple<unsigned int, unsigned int, unsigned int> indices_axis_a_b() const;
 };
 
 using BlockCoords = CoordsInt<CoordsLevel::BLOCK>;

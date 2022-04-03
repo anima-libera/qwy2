@@ -4,6 +4,7 @@
 #include "utils.hpp"
 #include <SDL2/SDL.h>
 #include <tuple>
+#include <iostream>
 
 namespace qwy2
 {
@@ -65,6 +66,7 @@ ErrorCode init_window_graphics()
 	glEnable(GL_MULTISAMPLE);
 	if (SDL_GL_SetSwapInterval(-1) != 0)
 	{
+		std::cout << "SDL_GL_SetSwapInterval(-1) is not supported" << std::endl;
 		SDL_GL_SetSwapInterval(1);
 	}
 	glGenVertexArrays(1, &s_vao_id);

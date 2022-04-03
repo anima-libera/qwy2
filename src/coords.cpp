@@ -259,6 +259,15 @@ CoordsInt<L> FaceInt<L>::external_coords() const
 	return coords;
 }
 
+template<CoordsLevel L>
+std::tuple<unsigned int, unsigned int, unsigned int> FaceInt<L>::indices_axis_a_b() const
+{
+	unsigned int const index_axis = static_cast<int>(this->axis);
+	unsigned int const index_a = index_axis == 0 ? 1 : 0;
+	unsigned int const index_b = index_axis == 2 ? 1 : 2;
+	return std::make_tuple(index_axis, index_a, index_b);
+}
+
 template class FaceInt<CoordsLevel::BLOCK>;
 template class FaceInt<CoordsLevel::CHUNK>;
 

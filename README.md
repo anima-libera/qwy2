@@ -9,7 +9,7 @@ Very early alpha indev work-in-progress v0.0.0 state, there is not much to see y
 
 For now, Qwy2 depends on [GLM](http://glm.g-truc.net/0.9.8/index.html) (`libglm-dev`) and [SDL2](https://www.libsdl.org/download-2.0.php) (`libsdl2-dev`).
 
-Qwy2 uses the [OpenGL](https://www.khronos.org/opengl/wiki/FAQ#What_is_OpenGL.3F) 4.3 graphics API, there should be nothing to install on Linux for this (except maybe some drivers in case the game does not work) (). [GLEW](http://glew.sourceforge.net/) (a cross-platform OpenGL extention loader) can be linked and used in Qwy2, but this is disabled by default, and Qwy2 does not make use of OpenGL extentions (and does not plan to), thus this is not a dependency.
+Qwy2 uses the [OpenGL](https://www.khronos.org/opengl/wiki/FAQ#What_is_OpenGL.3F) 4.3 graphics API, there should be nothing to install on Linux for this (except maybe some drivers in case the game does not work). [GLEW](http://glew.sourceforge.net/) (a cross-platform OpenGL extention loader) can be linked and used in Qwy2, but this is disabled by default, and Qwy2 does not make use of OpenGL extentions (and does not plan to), thus this is not a dependency.
 
 Qwy2 is a [C++17](https://en.cppreference.com/w/cpp/compiler_support/17) project that uses the C++ standard library, which is thus a dependency (an implementation of which should be installed by default, but in case it is not then any recent implementation should do).
 
