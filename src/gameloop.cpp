@@ -196,79 +196,10 @@ void Game::loop()
 
 		/* Apply controls, motion and collisions to the player. */
 		this->player.apply_motion(*this->chunk_grid, this->player_controls);
+		this->chunk_generation_manager.generation_center = this->player.box.center;
 
 		/* Generate chunks around the player. */
 		this->chunk_generation_manager.manage(*this->nature);
-		#if 0
-		unsigned int const chunk_loaded_radius = 1 + static_cast<unsigned int>(
-			this->loaded_radius / static_cast<float>(this->chunk_grid->chunk_side));
-		BlockCoords const player_coords_int{
-			static_cast<int>(std::round(this->player.box.center.x)),
-			static_cast<int>(std::round(this->player.box.center.y)),
-			static_cast<int>(std::round(this->player.box.center.z))};
-		ChunkCoords const player_chunk_coords =
-			this->chunk_grid->containing_chunk_coords(player_coords_int);
-		ChunkRect const around_chunk_rect = ChunkRect{player_chunk_coords, chunk_loaded_radius};
-		std::vector<ChunkCoords> around_chunk_vec;
-		for (ChunkCoords const& walker : around_chunk_rect)
-		{
-			if (this->chunk_grid->chunk(walker) == nullptr)
-			{
-				around_chunk_vec.push_back(walker);
-			}
-		}
-		std::sort(around_chunk_vec.begin(), around_chunk_vec.end(),
-			[
-				chunk_side = this->chunk_grid->chunk_side,
-				player_position = this->player.box.center
-			](
-				ChunkCoords const& left, ChunkCoords const& right
-			){
-				glm::vec3 const left_center_position{
-					left.x * chunk_side,
-					left.y * chunk_side,
-					left.z * chunk_side,
-				};
-				float const left_distance = glm::distance(player_position, left_center_position);
-				glm::vec3 const right_center_position{
-					right.x * chunk_side,
-					right.y * chunk_side,
-					right.z * chunk_side,
-				};
-				float const right_distance = glm::distance(player_position, right_center_position);
-				/* Note: Make sure that this order is strict (ie that it returns false when
-				 * left and right are equal) or else std::sort will proceed to perform some
-				 * undefined behavior (that corrupts memory on my machine ><). */
-				return left_distance > right_distance;
-			});
-		for (std::optional<GeneratingChunkWrapper>& wrapper_opt : this->generating_chunk_table)
-		{
-			if (wrapper_opt.has_value())
-			{
-				using namespace std::chrono_literals;
-				GeneratingChunkWrapper& wrapper = wrapper_opt.value();
-				if (wrapper.future.valid() &&
-					wrapper.future.wait_for(0s) == std::future_status::ready)
-				{
-					/* The examined isolated chunk's generation is completed,
-					 * it can safely be given added to the chunk grid. */
-					this->chunk_grid->add_generated_chunk(wrapper.future.get(),
-						wrapper.chunk_coords, *this->nature);
-					wrapper_opt.reset();
-				}
-			}
-			if (this->keep_generating_chunks &&
-				(not wrapper_opt.has_value()) && (not around_chunk_vec.empty()))
-			{
-				/* There is a slot for generating a chunk, and there is a chunk that
-				 * we would like to see generated, thus the latter is asked to be generated. */
-				ChunkCoords const chunk_coords = around_chunk_vec.back();
-				around_chunk_vec.pop_back();
-				wrapper_opt = GeneratingChunkWrapper{chunk_coords,
-					this->chunk_grid->chunk_rect(chunk_coords), std::cref(*this->nature)};
-			}
-		}
-		#endif
 
 		/* Handle the player's camera. */
 		glm::vec3 player_camera_position =
