@@ -37,16 +37,6 @@
 namespace qwy2
 {
 
-GeneratingChunkWrapper::GeneratingChunkWrapper(ChunkCoords chunk_coords,
-	BlockRect block_rect, Nature const& nature)
-:
-	chunk_coords{chunk_coords},
-	future{std::async(std::launch::async, generate_chunk,
-		chunk_coords, block_rect, std::cref(nature))}
-{
-	;
-}
-
 using namespace std::literals::string_view_literals;
 
 Game::Game(Config const& config)
@@ -66,10 +56,15 @@ Game::Game(Config const& config)
 
 	/* Generate the laws of nature. */
 	this->nature = new Nature{config.get<int>("seed"sv)};
+	/* Block type id 0 is air. */
+	this->nature->nature_generator.generate_block_type(*this->nature);
+	/* Block type id 1 is dirt covered with grass. */
 	this->nature->world_generator.surface_block_type =
 		this->nature->nature_generator.generate_block_type(*this->nature);
+	/* Block type id 2 is plain dirt. */
 	this->nature->world_generator.primary_block_type =
 		this->nature->nature_generator.generate_block_type(*this->nature);
+	/* Block type id 3 is plain rock. */
 	this->nature->world_generator.secondary_block_type =
 		this->nature->nature_generator.generate_block_type(*this->nature);
 	#if 0
@@ -140,10 +135,12 @@ Game::Game(Config const& config)
 	glActiveTexture(GL_TEXTURE0 + 0);
 
 	/* Initialize the grid of chunks and related fields. */
-	this->chunk_grid = new ChunkGrid{config.get<int>("chunk_side"sv)};
-	this->generating_chunk_table.resize(config.get<int>("loading_threads"sv));
+	g_chunk_side = config.get<int>("chunk_side"sv);
+	this->chunk_grid = new ChunkGrid{};
+	this->chunk_generation_manager.chunk_grid = this->chunk_grid;
 	this->keep_generating_chunks = true;
 	this->loaded_radius = config.get<float>("loaded_radius"sv);
+	this->chunk_generation_manager.generation_radius = this->loaded_radius;
 
 	/* Define the sky color and make the fog correspond to it. */
 	this->sky_color = glm::vec3{0.0f, 0.7f, 0.9f};
@@ -201,6 +198,8 @@ void Game::loop()
 		this->player.apply_motion(*this->chunk_grid, this->player_controls);
 
 		/* Generate chunks around the player. */
+		this->chunk_generation_manager.manage(*this->nature);
+		#if 0
 		unsigned int const chunk_loaded_radius = 1 + static_cast<unsigned int>(
 			this->loaded_radius / static_cast<float>(this->chunk_grid->chunk_side));
 		BlockCoords const player_coords_int{
@@ -269,6 +268,7 @@ void Game::loop()
 					this->chunk_grid->chunk_rect(chunk_coords), std::cref(*this->nature)};
 			}
 		}
+		#endif
 
 		/* Handle the player's camera. */
 		glm::vec3 player_camera_position =
@@ -310,11 +310,11 @@ void Game::loop()
 			this->sun_camera.get_direction());
 
 		/* Make sure that all chunk's mesh data are synchronized on the GPU's side. */
-		for (auto& [chunk_coords, chunk] : this->chunk_grid->table)
+		for (auto& [chunk_coords, mesh] : this->chunk_grid->mesh)
 		{
-			if (chunk->mesh.needs_update_opengl_data)
+			if (mesh.needs_update_opengl_data)
 			{
-				chunk->mesh.update_opengl_data();
+				mesh.update_opengl_data();
 			}
 		}
 
@@ -328,11 +328,11 @@ void Game::loop()
 			glBindFramebuffer(GL_FRAMEBUFFER, this->shadow_framebuffer_openglid);
 			glClear(GL_DEPTH_BUFFER_BIT);
 			glCullFace(GL_BACK);
-			for (auto const& [chunk_coords, chunk] : this->chunk_grid->table)
+			for (auto const& [chunk_coords, mesh] : this->chunk_grid->mesh)
 			{
-				if (chunk->mesh.openglid != 0)
+				if (mesh.openglid != 0)
 				{
-					this->shader_table.shadow().draw(chunk->mesh);
+					this->shader_table.shadow().draw(mesh);
 				}
 			}
 		}
@@ -359,11 +359,11 @@ void Game::loop()
 		{
 			glCullFace(GL_BACK);
 		}
-		for (auto const& [chunk_coords, chunk] : this->chunk_grid->table)
+		for (auto const& [chunk_coords, mesh] : this->chunk_grid->mesh)
 		{
-			if (chunk->mesh.openglid != 0)
+			if (mesh.openglid != 0)
 			{
-				this->shader_table.classic().draw(chunk->mesh);
+				this->shader_table.classic().draw(mesh);
 			}
 		}
 		glCullFace(GL_FRONT);
@@ -397,6 +397,7 @@ void Game::loop()
 		/* Render chunk boarders if enabled. */
 		if (this->see_chunk_borders)
 		{
+			#if 0
 			if (this->see_from_sun)
 			{
 				glViewport(0, 0, window_height, window_height);
@@ -438,6 +439,7 @@ void Game::loop()
 					this->shader_table.line().draw(this->line_rect_drawer.mesh);
 				}
 			}
+			#endif
 		}
 
 		/* Apply what was drawn to what is displayed on the screen. */

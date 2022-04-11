@@ -106,7 +106,9 @@ public:
 
 public:
 	WorldGenerator(NoiseGenerator::SeedType seed);
+	#if 0
 	void generate_chunk_content(Nature const& nature, IsolatedChunk& chunk) const;
+	#endif
 };
 
 class NatureGenerator

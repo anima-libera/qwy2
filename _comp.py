@@ -396,7 +396,7 @@ for src_file_path in src_file_paths:
 	link_command_args.append(obj_file_path)
 link_command_args.append("-o")
 link_command_args.append(bin_path)
-link_command_args.append("-std=c++17")
+#link_command_args.append("-std=c++17")
 #link_command_args.append("-Wall")
 #link_command_args.append("-Wextra")
 #link_command_args.append("-pedantic")

@@ -68,10 +68,13 @@ void InputEventHandler::handle_events(Game& game)
 						if (event.type == SDL_KEYDOWN)
 						{
 							std::cout << "[P] Recompute meshes" << std::endl;
+							#if 0
 							for (auto const& [chunk_coords, chunk] : game.chunk_grid->table)
 							{
 								chunk->recompute_mesh(*game.nature);
 							}
+							#endif
+							std::cout << "TODO: reimplement" << std::endl;
 						}
 					break;
 
@@ -119,12 +122,15 @@ void InputEventHandler::handle_events(Game& game)
 						if (event.type == SDL_KEYDOWN)
 						{
 							std::cout << "[N] Unloading "
-								<< game.chunk_grid->table.size() << " chunks" << std::endl;
+								<< game.chunk_grid->mesh.size() << " chunks" << std::endl;
+							#if 0
 							for (auto const& [chunk_coords, chunk] : game.chunk_grid->table)
 							{
 								delete chunk;
 							}
 							game.chunk_grid->table.clear();
+							#endif
+							std::cout << "TODO: reimplement" << std::endl;
 						}
 					break;
 

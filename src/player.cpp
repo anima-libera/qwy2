@@ -61,8 +61,6 @@ void Player::apply_motion(ChunkGrid const& chunk_grid, PlayerControls const& con
 			this->allowed_fast_and_infinite_jumps ? floor_moving_factor_fast :
 			floor_moving_factor_normal);
 
-	Chunk const* chunk = chunk_grid.containing_chunk(this->box.center);
-
 
 	this->motion *= this->is_falling ? falling_friction_factor : floor_friction_factor;
 	this->motion.z -= falling_factor;
@@ -73,9 +71,10 @@ void Player::apply_motion(ChunkGrid const& chunk_grid, PlayerControls const& con
 	}
 
 	glm::vec3 motion_remaining = this->motion;
-	if (chunk == nullptr)
+	if (not chunk_grid.has_complete_mesh(containing_chunk_coords(this->box.center)))
 	{
-		motion_remaining.z = 0.0f; /* Prevents falling through unloaded floor. */
+		/* Prevents falling through unloaded floor. */
+		motion_remaining.z = 0.0f;
 	}
 	float step_max_length = 0.05f;
 	glm::vec3 motion_nonfinal_step = glm::normalize(this->motion) * step_max_length;
@@ -109,7 +108,7 @@ void Player::apply_motion(ChunkGrid const& chunk_grid, PlayerControls const& con
 			std::vector<BlockCoords> collisions;
 			for (BlockCoords coords : rect)
 			{
-				if ((not chunk_grid.block_is_air_or_not_generated(coords)) &&
+				if ((not chunk_grid.block_is_air_or_unloaded(coords)) &&
 					(collision_blacklist.find(coords) == collision_blacklist.end()))
 				{
 					collisions.push_back(coords);
@@ -196,7 +195,7 @@ void Player::apply_motion(ChunkGrid const& chunk_grid, PlayerControls const& con
 			{
 				BlockCoords neighboor = collision;
 				neighboor.x++;
-				if (not chunk_grid.block_is_air_or_not_generated(neighboor))
+				if (not chunk_grid.block_is_air_or_unloaded(neighboor))
 				{
 					raw_force.x = 0.0f;
 				}
@@ -205,7 +204,7 @@ void Player::apply_motion(ChunkGrid const& chunk_grid, PlayerControls const& con
 			{
 				BlockCoords neighboor = collision;
 				neighboor.x--;
-				if (not chunk_grid.block_is_air_or_not_generated(neighboor))
+				if (not chunk_grid.block_is_air_or_unloaded(neighboor))
 				{
 					raw_force.x = 0.0f;
 				}
@@ -214,7 +213,7 @@ void Player::apply_motion(ChunkGrid const& chunk_grid, PlayerControls const& con
 			{
 				BlockCoords neighboor = collision;
 				neighboor.y++;
-				if (not chunk_grid.block_is_air_or_not_generated(neighboor))
+				if (not chunk_grid.block_is_air_or_unloaded(neighboor))
 				{
 					raw_force.y = 0.0f;
 				}
@@ -223,7 +222,7 @@ void Player::apply_motion(ChunkGrid const& chunk_grid, PlayerControls const& con
 			{
 				BlockCoords neighboor = collision;
 				neighboor.y--;
-				if (not chunk_grid.block_is_air_or_not_generated(neighboor))
+				if (not chunk_grid.block_is_air_or_unloaded(neighboor))
 				{
 					raw_force.y = 0.0f;
 				}
@@ -232,7 +231,7 @@ void Player::apply_motion(ChunkGrid const& chunk_grid, PlayerControls const& con
 			{
 				BlockCoords neighboor = collision;
 				neighboor.z++;
-				if (not chunk_grid.block_is_air_or_not_generated(neighboor))
+				if (not chunk_grid.block_is_air_or_unloaded(neighboor))
 				{
 					raw_force.z = 0.0f;
 				}
@@ -241,7 +240,7 @@ void Player::apply_motion(ChunkGrid const& chunk_grid, PlayerControls const& con
 			{
 				BlockCoords neighboor = collision;
 				neighboor.z--;
-				if (not chunk_grid.block_is_air_or_not_generated(neighboor))
+				if (not chunk_grid.block_is_air_or_unloaded(neighboor))
 				{
 					raw_force.z = 0.0f;
 				}

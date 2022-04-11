@@ -55,6 +55,8 @@ public:
 	operator glm::vec3() const;
 	bool operator==(CoordsInt const& other) const;
 	bool operator!=(CoordsInt const& other) const;
+	CoordsInt operator+(CoordsInt other) const;
+	CoordsInt operator-(CoordsInt other) const;
 
 public:
 	/* Callable hash that allows CoordsInt values to be used as keys

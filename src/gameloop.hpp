@@ -19,17 +19,6 @@
 namespace qwy2
 {
 
-/* TODO: Move this in some more relevant file. */
-class GeneratingChunkWrapper
-{
-public:
-	ChunkCoords chunk_coords;
-	std::future<IsolatedChunk*> future;
-public:
-	GeneratingChunkWrapper(ChunkCoords chunk_coords,
-		BlockRect block_rect, Nature const& nature);
-};
-
 /* TODO: Refactor in some way that make it easy to find and tinker with any component.
  * That includes (but is not limited to) organizing the member variables. */
 class Game
@@ -45,7 +34,7 @@ public:
 	Camera<OrthographicProjection> sun_camera;
 	unsigned int shadow_framebuffer_openglid;
 	unsigned int shadow_framebuffer_side;
-	std::vector<std::optional<GeneratingChunkWrapper>> generating_chunk_table;
+	ChunkGenerationManager chunk_generation_manager;
 	bool keep_generating_chunks;
 	glm::vec3 sky_color;
 	Camera<PerspectiveProjection> player_camera;

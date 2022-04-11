@@ -147,6 +147,7 @@ WorldGenerator::WorldGenerator(NoiseGenerator::SeedType seed):
 namespace
 {
 
+[[maybe_unused]]
 float generator_value(NoiseGenerator const& noise_generator, BlockCoords coords)
 {
 	if (std::abs(coords.x) == 10 && std::abs(coords.y) == 10 && coords.z == 2)
@@ -190,6 +191,7 @@ float generator_value(NoiseGenerator const& noise_generator, BlockCoords coords)
 
 } /* Anonymous namespace. */
 
+#if 0
 void WorldGenerator::generate_chunk_content([[maybe_unused]] Nature const& nature,
 	IsolatedChunk& chunk) const
 {
@@ -232,6 +234,7 @@ void WorldGenerator::generate_chunk_content([[maybe_unused]] Nature const& natur
 		}
 	}
 }
+#endif
 
 
 NatureGenerator::NatureGenerator(NoiseGenerator::SeedType seed):

@@ -52,6 +52,18 @@ bool CoordsInt<L>::operator!=(CoordsInt const& other) const
 }
 
 template<CoordsLevel L>
+CoordsInt<L> CoordsInt<L>::operator+(CoordsInt other) const
+{
+	return CoordsInt<L>{this->x + other.x, this->y + other.y, this->z + other.z};
+}
+
+template<CoordsLevel L>
+CoordsInt<L> CoordsInt<L>::operator-(CoordsInt other) const
+{
+	return CoordsInt<L>{this->x - other.x, this->y - other.y, this->z - other.z};
+}
+
+template<CoordsLevel L>
 std::size_t CoordsInt<L>::Hash::operator()(CoordsInt const& coords) const noexcept
 {
 	return
