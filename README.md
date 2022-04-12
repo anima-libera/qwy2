@@ -1,6 +1,8 @@
 
 # Qwy2 - A wannabe Minecraft-like game
 
+<p align="center"><img src="./pics/band.png" height=100px/></>
+
 Very early alpha indev work-in-progress v0.0.0 state, there is not much to see yet. For now all you can do here is move around in a voxel world.
 
 ## Build and run on Linux
