@@ -19,7 +19,6 @@
 - **Feature (gameplay):** Allow placing and breaking blocks.
 - **Feature (gameplay):** When in first-person view, select a block via a raycast.
 - **Feature (visual):** Display some sort of star in the sun's direction.
-- **Feature (visual):** Ambient occlusion-like effect on the voxels.
 - **Feature (visual):** God rays.
 - **Feature:** Block face texture generator that can be tested without lauching the whole game to allow eaiser tweaking and debugging of this specific feature.
 
