@@ -178,6 +178,14 @@ Game::Game(Config const& config)
 	this->see_from_behind = false;
 	this->render_shadows = true;
 	this->loop_running = true;
+
+	/* Temporary note. */
+	std::cout << "Game loop ready.\n"
+		<< "Please wait a bit, rendering the first chunk requires a bit of generation first.\n"
+		<< "Press [G] to stop displaying the chunk boarders.\n"
+		<< "Press [M] to toggle the view from the sun's point of view.\n"
+		<< "Use [ZQSD] to walk around and [right-click] to jump.\n"
+		<< "Other controls are available, try mashing the keyboard." << std::endl;
 }
 
 void Game::loop()
