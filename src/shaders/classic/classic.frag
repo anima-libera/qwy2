@@ -45,7 +45,8 @@ void main()
 	}
 	const float shadow_ratio = 0.7; /* How dark can it get in the shadows. */
 	out_color.rgb *= light * shadow_ratio + (1.0 - shadow_ratio);
-	out_color.rgb *= v_ambient_occlusion * 0.5 + 0.5;
+	const float ao_ratio = 0.7; /* How dark can it get in corners (ambiant occlusion). */
+	out_color.rgb *= v_ambient_occlusion * ao_ratio + (1.0 - ao_ratio);
 
 	/* Fog effect. */
 	const float distance_to_user = distance(v_coords, u_user_coords);

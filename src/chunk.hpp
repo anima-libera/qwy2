@@ -142,10 +142,10 @@ using ChunkComponentGrid = std::unordered_map<ChunkCoords, ComponentType, ChunkC
 class ChunkGrid
 {
 private:
+public:
 	ChunkComponentGrid<ChunkPtgField> ptg_field;
 	ChunkComponentGrid<ChunkPttField> ptt_field;
 	ChunkComponentGrid<ChunkBField> b_field;
-public:
 	ChunkComponentGrid<Mesh<VertexDataClassic>> mesh;
 
 public:

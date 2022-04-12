@@ -153,7 +153,16 @@ ChunkPtgField generate_chunk_ptg_field(
 	ChunkPtgField ptg_field{chunk_coords};
 	for (BlockCoords coords : chunk_rect(chunk_coords))
 	{
-		ptg_field[coords] = coords.z <= 0 ? 1 : 0;
+		float const value = nature.world_generator.noise_generator.base_noise(
+			static_cast<float>(coords.x) / 15.0f,
+			static_cast<float>(coords.y) / 15.0f,
+			static_cast<float>(coords.z) / 15.0f);
+		float const dist =
+			glm::distance(glm::vec2(coords.x, coords.y), glm::vec2(0.0f, 0.0f));
+		float const crazy =
+			dist < 20.0f ? 2.0f :
+			(dist - 20.0f + 2.0f) * 3.0f;
+		ptg_field[coords] = ((value - 0.5f) * crazy > coords.z) ? 1 : 0;
 	}
 	return ptg_field;
 }
@@ -209,6 +218,7 @@ namespace
 void generate_block_face_in_mesh(
 	BlockFace const& face,
 	Block const& block,
+	ChunkNeighborhood<ChunkBField> const chunk_neighborhood_b_field,
 	Nature const& nature,
 	ChunkMeshData& mesh)
 {
@@ -244,6 +254,48 @@ void generate_block_face_in_mesh(
 		static_cast<glm::vec3>(face.internal_coords) - glm::vec3{0.5f, 0.5f, 0.5f};
 	coords_nn[index_axis] += face.negativeward ? 0.0f : 1.0f;
 
+	/* The ambiant occlusion trick used here was taken from 
+	 * https://0fps.net/2013/07/03/ambient-occlusion-for-minecraft-like-worlds/
+	 * this cool blog post seem to be famous in the voxel engine scene. */
+
+	auto const vertex_ambiant_occlusion = []
+		(bool side_a, bool side_b, bool corner_ab)
+		{
+			if (side_a && side_b)
+			{
+				return 0;
+			}
+			else
+			{
+				int const sum =
+					static_cast<int>(side_a) +
+					static_cast<int>(side_b) +
+					static_cast<int>(corner_ab);
+				return 3 - sum;
+			}
+		};
+	auto const vertex_ambiant_occlusion_TODO =
+		/* TODO: Make all this less... wierdly presented? */
+		[vertex_ambiant_occlusion, chunk_neighborhood_b_field, face,
+			index_a=index_a, index_b=index_b]
+		(int a, int b)
+		{
+			BlockCoords const external_coords = face.external_coords();
+			BlockCoords coords;
+			coords = external_coords;
+			coords[index_a] += a;
+			bool const side_a = not chunk_neighborhood_b_field[coords].is_air();
+			coords = external_coords;
+			coords[index_b] += b;
+			bool const side_b = not chunk_neighborhood_b_field[coords].is_air();
+			coords = external_coords;
+			coords[index_a] += a;
+			coords[index_b] += b;
+			bool const corner_ab = not chunk_neighborhood_b_field[coords].is_air();
+			int const value = vertex_ambiant_occlusion(side_a, side_b, corner_ab);
+			return static_cast<float>(value) / 3.0f;
+		};
+
 	VertexDataClassic nn;
 	nn.coords = coords_nn;
 	nn.coords[index_a] += 0.0f;
@@ -253,7 +305,7 @@ void generate_block_face_in_mesh(
 	nn.atlas_coords.y = atlas_rect.atlas_coords_min.y;
 	nn.atlas_coords_min = atlas_coords_min_real;
 	nn.atlas_coords_max = atlas_coords_max_real;
-	nn.ambiant_occlusion = 1.0f;
+	nn.ambiant_occlusion = vertex_ambiant_occlusion_TODO(-1, -1);
 	VertexDataClassic np;
 	np.coords = coords_nn;
 	np.coords[index_a] += 0.0f;
@@ -263,7 +315,7 @@ void generate_block_face_in_mesh(
 	np.atlas_coords.y = atlas_rect.atlas_coords_max.y;
 	np.atlas_coords_min = atlas_coords_min_real;
 	np.atlas_coords_max = atlas_coords_max_real;
-	np.ambiant_occlusion = 1.0f;
+	np.ambiant_occlusion = vertex_ambiant_occlusion_TODO(-1, +1);
 	VertexDataClassic pn;
 	pn.coords = coords_nn;
 	pn.coords[index_a] += 1.0f;
@@ -273,7 +325,7 @@ void generate_block_face_in_mesh(
 	pn.atlas_coords.y = atlas_rect.atlas_coords_min.y;
 	pn.atlas_coords_min = atlas_coords_min_real;
 	pn.atlas_coords_max = atlas_coords_max_real;
-	pn.ambiant_occlusion = 1.0f;
+	pn.ambiant_occlusion = vertex_ambiant_occlusion_TODO(+1, -1);
 	VertexDataClassic pp;
 	pp.coords = coords_nn;
 	pp.coords[index_a] += 1.0f;
@@ -283,11 +335,20 @@ void generate_block_face_in_mesh(
 	pp.atlas_coords.y = atlas_rect.atlas_coords_max.y;
 	pp.atlas_coords_min = atlas_coords_min_real;
 	pp.atlas_coords_max = atlas_coords_max_real;
-	pp.ambiant_occlusion = 1.0f;
+	pp.ambiant_occlusion = vertex_ambiant_occlusion_TODO(+1, +1);
 
-	/* TODO: Add a local ambiant occlusion trick! */
-
-	std::array<VertexDataClassic, 6> const vertex_data_sequence{nn, pn, pp, nn, pp, np};
+	/* The four vertices currently corming a square are now being given as two triangles.
+	 * The diagonal of the square (nn-pp or np-pn) that will be the "cut" in the square
+	 * to form triangles is selected based on the ambiant occlusion values of the vertices.
+	 * Depending on the diagonal picked, the ambiant occlusion behaves differently on the face,
+	 * and we make sure that this behavior is consistent. */
+	bool const other_triangle_cut =
+		nn.ambiant_occlusion + pp.ambiant_occlusion <= np.ambiant_occlusion + pn.ambiant_occlusion;
+	std::array<VertexDataClassic, 6> const vertex_data_sequence =
+		other_triangle_cut ?
+			std::array<VertexDataClassic, 6>{np, nn, pn, np, pn, pp} :
+			std::array<VertexDataClassic, 6>{nn, pn, pp, nn, pp, np};
+	
 	/* Does std::copy preallocate the appropriate size ? Probably...
 	 * TODO: Find out and remove this std::vector::reserve call if redundant. */
 	mesh.reserve(mesh.size() + vertex_data_sequence.size());
@@ -334,6 +395,7 @@ ChunkMeshData* generate_chunk_complete_mesh(
 			generate_block_face_in_mesh(
 				BlockFace{coords_interior, axis, negativeward},
 				block_interior,
+				chunk_neighborhood_b_field,
 				nature,
 				*mesh_data);
 		}
@@ -482,7 +544,7 @@ ChunkGenerationManager::ChunkGenerationManager():
 	generation_center{0.0f, 0.0f, 0.0f},
 	generation_radius{50.0f}
 {
-	this->generating_data_vector.resize(1);
+	this->generating_data_vector.resize(2);
 }
 
 void ChunkGenerationManager::manage(Nature const& nature)

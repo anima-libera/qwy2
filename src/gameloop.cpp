@@ -97,7 +97,7 @@ Game::Game(Config const& config)
 	 * cast shadows on the user's rendering of the world. */
 	glGenFramebuffers(1, &this->shadow_framebuffer_openglid);
 	glBindFramebuffer(GL_FRAMEBUFFER, this->shadow_framebuffer_openglid);
-	this->shadow_framebuffer_side = 4096;// * 8;
+	this->shadow_framebuffer_side = 4096 * 8; /* TODO: Make this configurable. */
 	GLint max_framebuffer_width, max_framebuffer_height;
 	glGetIntegerv(GL_MAX_FRAMEBUFFER_WIDTH, &max_framebuffer_width);
 	glGetIntegerv(GL_MAX_FRAMEBUFFER_HEIGHT, &max_framebuffer_height);
@@ -136,6 +136,7 @@ Game::Game(Config const& config)
 
 	/* Initialize the grid of chunks and related fields. */
 	g_chunk_side = config.get<int>("chunk_side"sv);
+	std::cout << "Chunk side: " << g_chunk_side << std::endl;
 	this->chunk_grid = new ChunkGrid{};
 	this->chunk_generation_manager.chunk_grid = this->chunk_grid;
 	this->keep_generating_chunks = true;
@@ -173,7 +174,7 @@ Game::Game(Config const& config)
 	this->see_from_sun = false;
 	this->see_through_walls = false;
 	this->see_boxes = false;
-	this->see_chunk_borders = false;
+	this->see_chunk_borders = true;
 	this->see_from_behind = false;
 	this->render_shadows = true;
 	this->loop_running = true;
@@ -328,7 +329,6 @@ void Game::loop()
 		/* Render chunk boarders if enabled. */
 		if (this->see_chunk_borders)
 		{
-			#if 0
 			if (this->see_from_sun)
 			{
 				glViewport(0, 0, window_height, window_height);
@@ -340,17 +340,19 @@ void Game::loop()
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 			this->line_rect_drawer.color = glm::vec3{0.0f, 0.4f, 0.8f};
-			for (auto const& [chunk_coords, chunk] : this->chunk_grid->table)
+			for (auto const& [chunk_coords, chunk_ptg_field] : this->chunk_grid->ptg_field)
 			{
+				BlockRect const rect = chunk_rect(chunk_coords);
 				glm::vec3 const coords_min =
-					static_cast<glm::vec3>(chunk->rect.coords_min) - glm::vec3{0.5f, 0.5f, 0.5f};
+					static_cast<glm::vec3>(rect.coords_min) - glm::vec3{0.5f, 0.5f, 0.5f};
 				glm::vec3 const coords_max =
-					static_cast<glm::vec3>(chunk->rect.coords_max) + glm::vec3{0.5f, 0.5f, 0.5f};
+					static_cast<glm::vec3>(rect.coords_max) + glm::vec3{0.5f, 0.5f, 0.5f};
 				this->line_rect_drawer.set_box(AlignedBox{
 					(coords_min + coords_max) / 2.0f, coords_max - coords_min});
 				this->shader_table.line().draw(this->line_rect_drawer.mesh);
 			}
 
+			#if 0
 			this->line_rect_drawer.color = glm::vec3{1.0f, 0.0f, 0.0f};
 			for (std::optional<GeneratingChunkWrapper> const& wrapper_opt :
 				this->generating_chunk_table)

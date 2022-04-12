@@ -330,13 +330,13 @@ BlockTypeId NatureGenerator::generate_block_type(Nature& nature)
 	PixelRect pixel_rect_vertical = nature.atlas.allocate_rect(16, 16);
 	PixelRect pixel_rect_bottom = nature.atlas.allocate_rect(16, 16);
 
-	if (block_type_index == 0)
+	if (block_type_index == 1)
 	{
 		paint_grass_top(this->noise_generator, pixel_rect_top);
 		paint_grass_vertical(this->noise_generator, pixel_rect_vertical);
 		paint_dirt(this->noise_generator, pixel_rect_bottom);
 	}
-	else if (block_type_index == 1)
+	else if (block_type_index == 2)
 	{
 		paint_dirt(this->noise_generator, pixel_rect_top);
 		paint_dirt(this->noise_generator, pixel_rect_vertical);
