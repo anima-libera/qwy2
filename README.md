@@ -11,7 +11,7 @@ Very early alpha indev work-in-progress v0.0.0 state, there is not much to see y
 
 For now, Qwy2 depends on [GLM](http://glm.g-truc.net/0.9.8/index.html) (`libglm-dev`) and [SDL2](https://www.libsdl.org/download-2.0.php) (`libsdl2-dev`).
 
-Qwy2 uses the [OpenGL](https://www.khronos.org/opengl/wiki/FAQ#What_is_OpenGL.3F) 4.3 graphics API, there should be nothing to install on Linux for this (except maybe some drivers in case the game does not work). [GLEW](http://glew.sourceforge.net/) (a cross-platform OpenGL extention loader) can be linked and used in Qwy2, but this is disabled by default, and Qwy2 does not make use of OpenGL extentions (and does not plan to), thus this is not a dependency.
+Qwy2 uses the [OpenGL](https://www.khronos.org/opengl/wiki/FAQ#What_is_OpenGL.3F) 4.3 graphics API, there should be nothing to install on Linux for this (except maybe some drivers in case the game does not work). [GLEW](http://glew.sourceforge.net/) (a cross-platform OpenGL extension loader) can be linked and used in Qwy2, but this is disabled by default, and Qwy2 does not make use of OpenGL extensions (and does not plan to), thus this is not a dependency.
 
 Qwy2 is a [C++17](https://en.cppreference.com/w/cpp/compiler_support/17) project that uses the C++ standard library, which is thus a dependency (an implementation of which should be installed by default, but in case it is not then any recent implementation should do).
 
@@ -37,7 +37,7 @@ The *release build* compiled binary will be `bin/Qwy2` and the *debug build* com
 
 The `-l` command line argument given to `_comp.py` will make it run the compiled binary (from `bin`) if the compilation is successful, and arguments that follow `-l` are forwarded to the compiled binary.
 
-Thus the most useful command durring development is the followig:
+Thus the most useful command during development is the following:
 
 ```sh
 python3 _comp.py -l
@@ -53,8 +53,70 @@ At the time of writing this README (that may not be quite kept in sync with the 
 
 ### What this project will become (if my motivation does not disappear into the void too soon)?
 
+<details>
+<summary>Bottom text</summary>
+
 Minecraft is very cool, but like all games that generate the world (or anything) procedurally, we eventually grow accustomed to what does not change (the block types, the biomes, the entities, the interface, etc.). I used to install a lot of mods to add content to the world generation, new entities, etc. to keep alive the possibility of discovering new content when exploring and experimenting. This is what turns me on: discovering new, unexpected stuff. Qwy2 is meant to eventually get a powerful procedural generation that will be able to generate new biome types, new block types, new entities, new laws of physics, new dimensions, new structures, new items, etc. Imagine how cool would that be! Obviously, some stuff would sill have to be hardcoded, but I want the hardcoded border to be one level farther than Minecraft's about a lot of in-game concepts to make Qwy2 worlds and parts of worlds feel more unique.
+</details>
 
 Also the build height limits are extremely frustrating, so Qwy2 has infinite world generating in all 3 axis (6 directions).
 
-Note: For now, these are nothing more than hopes and dreams that everyone could have. I hope the Force will help me keep focucing on this project until these become fully implemented features!
+Note: For now, these are nothing more than hopes and dreams that everyone could have. I hope the Force will help me keep focusing on this project until these become fully implemented features!
+
+A [TODO list](TODO.md) is available and contains some entries for both short-term implementation details as well as long-term dream features.
+
+## FAQ
+
+### Why C++? Why not in Rust?!
+
+I know I know. Don't get me wrong: Rust is awesome. But I need to know C++ better to get more precise arguments against it. If there is ever a Qwy3, it will be in Rust.
+
+### Why C++17? Why not C++20 or even newer?!
+
+I know I know. Don't get me wrong: C++20 seems better than C++17. But the language server that my setup uses crashes when certain features of C++20 are used... It is probably too young for proper tooling, and C++17 is good enough for now. (This was written in April 2022.)
+
+### Why OpenGL? Why not Vulkan?!
+
+I know I know. Don't get me wrong: Vulkan seems awesome and will probably slowly but surely replace OpenGL in the years to come (it seems this process is already on its way). But right now I don't know Vulkan. When this changes, Vulkan support will probably be added to Qwy2. it could be neat to have a support for both.
+
+### Why the SDL2? Why not something else?!
+
+I know I know. Don't get me wrong: something else could be awesome too. But I feel comfortable with the SDL2. At some point, it could be cool to also support native window handling APIs.
+
+### Why a custom build system written in Python? Why not CMake?!
+
+I know I know. Don't get me wrong: CMake is awesome. Wait, no, I disagree here. Although a subjective (but somewhat popular) opinion, I dislike CMake to a point where I prefer a custom-made build system. Maybe everything that the build system here does could be done via CMake with less effort, but I don't know about that. Maybe, in the future, if a lot of people complain about CMake not being the build system here, then maybe, maybe, it will be supported as a plan-B build system, maybe. Maybe not.
+
+### Why Python? Why not Bash/Ruby/Pearl/JavaScript/Befunge-93/whatever?!
+
+I know I know. Don't get me wrong: Befunge-93 is awesome. But I am more comfortable in Python 3, and it is quite widespread. People are likely to have it installed or install it easily, and know enough of it to fix/adapt the build system if needed.
+
+### Why tabs? Why not 4 spaces?!
+
+I know I know. Don't get me wrong: 4 spaces are the most widely used convention out there, so much so that it is the default for the Rust formatter. But I don't care, we could talk about this for hours, in the end it does not matter, just configure your IDE or something. I feel more comfortable with tabs.
+
+## FAQ - Part 2
+
+### What to expect from this project?
+
+I don't even know. On the one hand, I have abandoned many projects in the past, on the other hand, "making Minecraft" was pretty much what had me started programming 10 years ago. Now that I have the power to do it, I would be a shame to not do it.
+
+### Reporting a bug or an issue, suggesting a feature, etc.?
+
+Sure sure go ahead and post an issue!
+
+### Contributing?
+
+Well I dunno, bug fixes are welcome, but this project is kinda my dream project. I want to be able to show this repo as an achievment, and I have some strong visions about what this should become.
+
+Feel free to clone/fork it and we can talk about cool ideas, that is for sure!
+
+### License?
+
+[Apache License 2.0](LICENSE)
+
+Pretty permissive. It is like the MIT license, but different. Harder to read, but there are plenty of explanations of what it says. Basically (if I understood correctly): you can do what you want with this project, the modifications are to be summed up somewhere with a copy of the license, don't sue me, can be sold, etc.
+
+Unless stated otherwise, all the code and assets in this repo are original work to which this license applies.
+
+Note: I won't launch any legal attacks toward people who don't try to do anything obviously unreasonable and mean.
