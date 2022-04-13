@@ -117,10 +117,28 @@ Feel free to clone/fork it and do your stuff, and we can talk about cool ideas, 
 
 Pretty permissive. It is like the MIT license, but different. Harder to read, but there are [plenty of](https://www.whitesourcesoftware.com/resources/blog/top-10-apache-license-questions-answered/) [explanations](https://fossa.com/blog/open-source-licenses-101-apache-license-2-0/) [of what it says](https://en.wikipedia.org/wiki/Apache_License). Basically (if I understand correctly): you can do what you want with this project, the modifications are to be summed up somewhere with a copy of the license, don't sue me, can be sold, etc.
 
-Unless stated otherwise, all the code and assets in this repo are original work to which this license applies.
+Unless stated otherwise, the code and assets in this repo are original work to which this license applies. If code or specific algorithms are "stolen", the source would be mentionned in comments. Feel free to steal bits of code too, its open source after all!
 
 ### If this is Qwy2, it means there was a Qwy1 before, right?
 
 Yep, [here](https://github.com/anima-libera/qwy), but it is quite dusty by now. It died due to not enough time and me being not powerful enough at the time (I mean, look at the code, ugh..).
 
 Basically Qwy1 does not exist, and the story starts at Qwy2. Like Python.
+
+### Do you know about this other Minecraft-like stuff?
+
+Probably haha. I mean maybe not, there are so many of them. If you are intrested in Minecraft-likes, you should keep an eye on [Hytale](https://hytale.com/) (read all their blog entries!), it looks extremely cool (but only exists in the future, for now).
+
+Here are some YouTube channels *of intrest*, some of them have done devlogs on Minecraft-likes:
+
+- [Hopson](https://www.youtube.com/c/Hopsonn)
+- [jdh](https://www.youtube.com/c/jdhvideo)
+- [GamesWithGabe](https://www.youtube.com/c/GamesWithGabe) (also on Twitch)
+- [Henrik Kniberg](https://www.youtube.com/c/henrikkniberg) (Minecraft dev!!)
+
+Here are some GitHub repos of Minecraft-likes, (not looked at the code in detail yet, might steal multiplayer stuff some day):
+
+- [Terasology](https://github.com/MovingBlocks/Terasology) (Java, seems big)
+- [A Tiny Minecraft Clone](https://github.com/swr06/Minecraft) (C++, Modern OpenGL)
+- [Craft](https://github.com/fogleman/Craft) (C, Modern OpenGL)
+- [AltCraft](https://github.com/LaG1924/AltCraft) (C++, Modern OpenGL)
