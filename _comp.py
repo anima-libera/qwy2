@@ -120,13 +120,17 @@ if option_help:
 # The project file system layout should be as follow:
 # - A source directory (`src_dir`) containing the C++ and GLSL source code.
 # - A binary directory (`bin_dir`) containing the compiled binaries.
-# - A build directory (`build_dir`) containing build artifacts such as
+# - A base build directory (`base_build_dir`) containing build artifacts such as
 #   the previous known date of last modification for each file in the source directory.
+# - Each build mode (debug or release) has its own build persistent data,
+#   the current mode makes the build directory (`build_dir`) be selected among
+#   the different possibilities that are subdirectories of the base build directory.
 # - An object directory (`obj_dir`) inside the build directory (`build_dir`) that contains
 #   the object files (.o) resulting from the compilation of all the translation units.
 src_dir = "src"
 bin_dir = "bin"
-build_dir = "build"
+base_build_dir = "build"
+build_dir = os.path.join(base_build_dir, "debug" if option_debug else "release")
 obj_dir = os.path.join(build_dir, "obj")
 
 bin_name_release = "Qwy2"
@@ -134,11 +138,11 @@ bin_name_debug = "Qwy2-debug"
 
 if option_clear:
 	if option_verbose:
-		print("Clearing previous build results and data.")
-	if os.path.exists(build_dir):
+		print("Clearing all previous build results and data.")
+	if os.path.exists(base_build_dir):
 		if option_verbose:
-			print(f"Deleting the directory \"{build_dir}\".")
-		shutil.rmtree(build_dir)
+			print(f"Deleting the directory \"{base_build_dir}\".")
+		shutil.rmtree(base_build_dir)
 	bin_path_release = os.path.join(bin_dir, bin_name_release)
 	bin_path_debug = os.path.join(bin_dir, bin_name_debug)
 	if os.path.exists(bin_path_release):
@@ -152,7 +156,7 @@ if option_dont_build:
 	sys.exit()
 
 bin_name = bin_name_debug if option_debug else bin_name_release
-print(f"{'Debug' if option_debug else 'Release'} build.")
+print(f"{'Debug' if option_debug else 'Release'} build of {bin_name}.")
 
 ## PRESISTENT BUILD DATA
 
@@ -201,7 +205,7 @@ try:
 except:
 	print("No previous object id table.")
 	obj_id_table = {}
-next_obj_id = max(-1, -1, *obj_id_table.values()) + 1 # Unused object id.
+next_obj_id = max(-1, -1, *obj_id_table.values()) + 1 # Unused object id in the previous build.
 
 def corresponding_obj_file_path(src_file_path):
 	# Path to object file that should be the result of the compilation on the given source file.
