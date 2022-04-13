@@ -89,7 +89,7 @@ I know I know. Don't get me wrong: CMake is awesome. Wait, no, I disagree here. 
 
 ### Why Python? Why not Bash/Ruby/Pearl/JavaScript/Befunge-93/whatever?!
 
-I know I know. Don't get me wrong: Befunge-93 is awesome. But I am more comfortable in Python 3, and it is quite widespread. People are likely to have it installed or install it easily, and know enough of it to fix/adapt the build system if needed.
+I know I know. Don't get me wrong: [Befunge-93](https://youtu.be/dQw4w9WgXcQ) is awesome. But I am more comfortable in Python 3, and it is quite widespread. People are likely to have it installed or install it easily, and know enough of it to fix/adapt the build system if needed.
 
 ### Why tabs? Why not 4 spaces?!
 
@@ -109,14 +109,18 @@ Sure sure go ahead and post an issue!
 
 Well I dunno, bug fixes are welcome, but this project is kinda my dream project. I want to be able to show this repo as an achievment, and I have some strong visions about what this should become.
 
-Feel free to clone/fork it and we can talk about cool ideas, that is for sure!
+Feel free to clone/fork it and do your stuff, and we can talk about cool ideas, that is for sure!
 
 ### License?
 
 [Apache License 2.0](LICENSE)
 
-Pretty permissive. It is like the MIT license, but different. Harder to read, but there are plenty of explanations of what it says. Basically (if I understood correctly): you can do what you want with this project, the modifications are to be summed up somewhere with a copy of the license, don't sue me, can be sold, etc.
+Pretty permissive. It is like the MIT license, but different. Harder to read, but there are [plenty of](https://www.whitesourcesoftware.com/resources/blog/top-10-apache-license-questions-answered/) [explanations](https://fossa.com/blog/open-source-licenses-101-apache-license-2-0/) [of what it says](https://en.wikipedia.org/wiki/Apache_License). Basically (if I understand correctly): you can do what you want with this project, the modifications are to be summed up somewhere with a copy of the license, don't sue me, can be sold, etc.
 
 Unless stated otherwise, all the code and assets in this repo are original work to which this license applies.
 
-Note: I won't launch any legal attacks toward people who don't try to do anything obviously unreasonable and mean.
+### If this is Qwy2, it means there was a Qwy1 before, right?
+
+Yep, [here](https://github.com/anima-libera/qwy), but it is quite dusty by now. It died due to not enough time and me being not powerful enough at the time (I mean, look at the code, ugh..).
+
+Basically Qwy1 does not exist, and the story starts at Qwy2. Like Python.

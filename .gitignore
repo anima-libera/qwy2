@@ -3,6 +3,8 @@
 /bin/
 /build/
 
+# Whatever we want
+/local/
+
 # Other stuff
 /.vscode/
-/local/
