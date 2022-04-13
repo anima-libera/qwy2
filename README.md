@@ -138,7 +138,7 @@ Here are some YouTube channels *of interest*, some of them have done devlogs on 
 
 Here are some GitHub repos of Minecraft-likes, (not looked at the code in detail yet, might steal multiplayer stuff some day):
 
-- [Minetest](https://github.com/minetest/minetest) (C++, [Irrlicht](https://irrlicht.sourceforge.io/?page_id=45))
+- [Minetest](https://github.com/minetest/minetest) (C++, [Irrlicht](https://irrlicht.sourceforge.io/?page_id=45), big projet)
 - [Terasology](https://github.com/MovingBlocks/Terasology) (Java, seems big too)
 - [A Tiny Minecraft Clone](https://github.com/swr06/Minecraft) (C++, Modern OpenGL)
 - [Craft](https://github.com/fogleman/Craft) (C, Modern OpenGL)
