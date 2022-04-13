@@ -129,7 +129,7 @@ Basically Qwy1 does not exist, and the story starts at Qwy2. Like Python.
 
 Probably haha. I mean maybe not, there are so many of them. If you are intrested in Minecraft-likes, you should keep an eye on [Hytale](https://hytale.com/) (read all their blog entries!), it looks extremely cool (but only exists in the future, for now).
 
-Here are some YouTube channels *of intrest*, some of them have done devlogs on Minecraft-likes:
+Here are some YouTube channels *of interest*, some of them have done devlogs on Minecraft-likes:
 
 - [Hopson](https://www.youtube.com/c/Hopsonn)
 - [jdh](https://www.youtube.com/c/jdhvideo)
@@ -138,7 +138,9 @@ Here are some YouTube channels *of intrest*, some of them have done devlogs on M
 
 Here are some GitHub repos of Minecraft-likes, (not looked at the code in detail yet, might steal multiplayer stuff some day):
 
-- [Terasology](https://github.com/MovingBlocks/Terasology) (Java, seems big)
+- [Minetest](https://github.com/minetest/minetest) (C++, [Irrlicht](https://irrlicht.sourceforge.io/?page_id=45), big projet)
+- [Terasology](https://github.com/MovingBlocks/Terasology) (Java, seems big too)
 - [A Tiny Minecraft Clone](https://github.com/swr06/Minecraft) (C++, Modern OpenGL)
 - [Craft](https://github.com/fogleman/Craft) (C, Modern OpenGL)
 - [AltCraft](https://github.com/LaG1924/AltCraft) (C++, Modern OpenGL)
+- [Freeminer](https://github.com/freeminer/freeminer) (C++, [Irrlicht](https://irrlicht.sourceforge.io/?page_id=45), medium?) 
