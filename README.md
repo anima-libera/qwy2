@@ -143,3 +143,4 @@ Here are some GitHub repos of Minecraft-likes, (not looked at the code in detail
 - [A Tiny Minecraft Clone](https://github.com/swr06/Minecraft) (C++, Modern OpenGL)
 - [Craft](https://github.com/fogleman/Craft) (C, Modern OpenGL)
 - [AltCraft](https://github.com/LaG1924/AltCraft) (C++, Modern OpenGL)
+- [Freeminer](https://github.com/freeminer/freeminer) (C++, [Irrlicht](https://irrlicht.sourceforge.io/?page_id=45), medium?) 
