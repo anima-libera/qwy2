@@ -2,7 +2,7 @@
 # Qwy2 TODO list
 
 ## Build system
-s
+
 - **Optimization:** Save last successful link date to avoid unnecessary links.
 - **Optimization:** Save last successful build date for each translation unit to avoid rebuilding those that already passed.
 - **Optimization:** Scanning the header and source files for `#include` directives and obtain a file dependency graph to use to reduce the set of effectively changed source files when some header files are changed.
