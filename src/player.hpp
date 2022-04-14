@@ -6,7 +6,6 @@
 #include "chunk.hpp"
 #include "input_events.hpp"
 #include <glm/vec3.hpp>
-#include <vector>
 
 namespace qwy2
 {

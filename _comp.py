@@ -13,6 +13,7 @@ Options:
   -v   --verbose    Prints details during building.
   --clear           Erases results and data from previous builds.
   --dont-build      Refrains from building anything (useful with --clear).
+  --graph           Output the dependency graph of source files in dot.
   --sdl2-static     Statically link to the SDL2, default is dynamic.
   --use-glew        Uses the GLEW OpenGL extention loader.
   --opengl-notifs   Enables OpenGL notifications.
@@ -27,6 +28,7 @@ import shutil
 import re
 import ast
 import pprint
+import itertools
 
 def print_blue(*args, **kwargs):
 	print("\x1b[36m", end = "")
@@ -102,6 +104,7 @@ if option_debug:
 option_clear = cmdline_has_option(False, "--clear")
 option_dont_build = cmdline_has_option(False, "--dont-build")
 option_verbose = cmdline_has_option(False, "-v", "--verbose")
+option_dependency_graph = cmdline_has_option(False, "--graph")
 option_sdl2_static = cmdline_has_option(False, "--sdl2-static")
 option_use_glew = cmdline_has_option(False, "--use-glew")
 option_opengl_notifs = cmdline_has_option(False, "--opengl-notifs")
@@ -162,6 +165,7 @@ print(f"{'Debug' if option_debug else 'Release'} build of {bin_name}.")
 
 date_table_file_name = "date_table.py"
 obj_id_table_file_name = "obj_id_table.py"
+link_state_file_name = "link_state.py"
 
 # In the build directory (`build_dir`) is saved some data about the past builds
 # that can be used to avoid recompiling the whole project each time a change is made
@@ -187,6 +191,7 @@ except:
 	print("No previous date table.")
 	old_date_table = {}
 new_date_table = dict(old_date_table)
+success_date_table = {} # New dates of successfully built files.
 
 def is_file_new(file_path):
 	# Has the given file been changed from the last build?
@@ -273,6 +278,7 @@ with open(embedded_header_path, "r") as embedded_header_file:
 		generated_cpp.append("")
 		generated_cpp.append(f"/* {what} of \"{partial_file_path}\". */")
 		generated_cpp.append(f"extern {variable_declaration} = {escaped_content};")
+		success_date_table[file_path] = new_date_table[file_path]
 
 if there_are_new_embedded_files:
 	embedded_source_path = os.path.join(src_dir, embedded_source_file_name)
@@ -285,20 +291,99 @@ if there_are_new_embedded_files:
 
 # Recusrively list the files in the source directory (`src_dir`).
 src_file_paths = []
-new_src_file_paths = []
-there_are_new_header_files = False
+header_file_paths = []
 for dir_name, _, file_names in os.walk(src_dir):
 	for file_name in file_names:
 		file_path = os.path.join(dir_name, file_name)
-		if file_name.split(".")[-1] == "cpp":
+		if os.path.splitext(file_name)[1] == ".cpp":
 			src_file_paths.append(file_path)
-			if is_file_new(file_path):
-				new_src_file_paths.append(file_path)
 			new_date_table[file_path] = os.path.getmtime(file_path)
-		elif file_name.split(".")[-1] == "hpp":
-			if is_file_new(file_path):
-				there_are_new_header_files = True
+		elif os.path.splitext(file_name)[1] == ".hpp":
+			header_file_paths.append(file_path)
 			new_date_table[file_path] = os.path.getmtime(file_path)
+
+# By scanning source and header files for include preprocessor directives,
+# we get a graph of the inclusion relations between the source and header files.
+# It is used to list the files on which one source file depend on,
+# so that we recompile it only if itself or one of its dependencies is modified.
+include_re = r"^\s*#\s*include\s*\"([^\"]+)\"\s*$"
+direct_dependency_table = {}
+for src_or_header_file_path in itertools.chain(src_file_paths, header_file_paths):
+	with open(src_or_header_file_path, "r") as src_file:
+		direct_dependency_table[src_or_header_file_path] = set()
+		for match in re.finditer(include_re, src_file.read(), re.MULTILINE):
+			included_raw_path = match.group(1)
+			# To get the full path starting from `src_dir`,
+			# we first try to interpret `included_raw_path` as just missing the `src_dir` part.
+			included_file_path = os.path.join(src_dir, included_raw_path)
+			if not os.path.exists(included_file_path):
+				# If it is not that, we then try to interpret `included_raw_path`
+				# as a path relative to the source file it is in.
+				local_dir = os.path.dirname(src_or_header_file_path)
+				included_file_path = os.path.join(local_dir, included_raw_path)
+				if not os.path.exists(included_file_path):
+					print(f"\x1b[31mInclude warning:\x1b[39m " +
+						f"Include of \"{included_raw_path}\" in \"{src_or_header_file_path}\" " +
+						"could not be interpreted by the build system dependency analyser. " +
+						"This may cause the build system to behave improperly " +
+						"if not used with --clear.")
+					continue
+					# If this problem araises, then it should be fixable in different ways:
+					# - Change the problematic include directive to make it compatible with
+					#   the current state of this dependency analyser (should be preferred).
+					# - Extend this dependency analyser to handle the problematic include
+					#   directive (only if this seems more reasonable than the first way).
+					# - Hack around it (only if deemed necessary, comment it).
+			direct_dependency_table[src_or_header_file_path].add(included_file_path)
+
+# If asked for, the dependency graph is outputted as a DOT file.
+# DOT is a graph description language, there are tools to turn DOT files into
+# graph visualizations, such as `dot` from Graphviz (https://graphviz.org/download/).
+if option_dependency_graph:
+	dependency_graph_dot_file_path = "dependency_graph.dot"
+	with open(dependency_graph_dot_file_path, "w") as dot_file:
+		dot_file.write("digraph {\n")
+		for file_path, dependencies in direct_dependency_table.items():
+			is_src = os.path.splitext(file_path)[1] == ".cpp"
+			dot_file.write(f"\t\"{file_path}\" [" +
+				", ".join((
+					f"label=\"{os.path.basename(file_path)}\"",
+					f"shape=\"{'box' if is_src else 'oval'}\""
+				)) + "]\n")
+			for dependency in dependencies:
+				dot_file.write(f"\t\"{file_path}\" -> \"{dependency}\"\n")
+		dot_file.write("}\n")
+
+# For each source file, we get the complete list of its dependencies (direct and indirect),
+# this is pretty much the only use of the raw dependency graph.
+dependency_table = {}
+for src_file_path in src_file_paths:
+	dependencies = set()
+	# Recursively walking on the graph described by `direct_dependency_table`
+	# to get all the nodes accessible from the `src_file_path` node.
+	dependencies_to_process = set(direct_dependency_table[src_file_path])
+	while dependencies_to_process:
+		dependency = dependencies_to_process.pop()
+		if dependency not in dependencies:
+			dependencies.add(dependency)
+			dependencies_to_process |= direct_dependency_table[dependency]
+	dependency_table[src_file_path] = dependencies
+
+def requires_compiling(src_file_path):
+	if is_file_new(src_file_path):
+		return True
+	for dependency in dependency_table[src_file_path]:
+		if is_file_new(dependency):
+			return True
+	return False
+
+# TODO: Explain.
+reverse_dependency_table = {}
+for header_file_path in header_file_paths:
+	reverse_dependency_table[header_file_path] = set()
+	for src_file_path in src_file_paths:
+		if header_file_path in dependency_table[src_file_path]:
+			reverse_dependency_table[header_file_path].add(src_file_path)
 
 if not os.path.exists(build_dir):
 	if option_verbose:
@@ -348,104 +433,149 @@ def build_translation_unit(src_file_path):
 	build_exit_status = os.system(build_command)
 	return build_exit_status == 0
 
-# If one header has changed, since it could be included in all the source files, 
-# then we have to recompile every source file.
-# If not, we can only recompile the modified source files.
-# Note: This could be optimized by scanning the header and source files for #include directives
-# and obtain a file dependency graph to use to reduce the set of effectively changed source files
-# when some header files are changed. It could be nice to implement that some day.
-src_files_to_build = src_file_paths if there_are_new_header_files else new_src_file_paths
+# Only compile/recompile files that have been modified since their last successful compilation,
+# or that depend (#include) directly or indirectly on a file that have been modified since
+# its last successful build.
+src_files_to_build = set(filter(requires_compiling, src_file_paths))
 if option_verbose:
-	if there_are_new_header_files:
-		print("The modification of a header file may change all the translation units.")
 	if src_files_to_build:
 		print("Source files to be compiled:")
-		print("- \"" + "\"\n- \"".join(src_files_to_build) + "\"")
+		for src_file_path in src_files_to_build:
+			print(f"- \"{src_file_path}\"", end="")
+			if not is_file_new(src_file_path):
+				for dependency in dependency_table[src_file_path]:
+					if is_file_new(dependency):
+						print(f" (depending on \"{dependency}\")", end="")
+						break
+			print()
 	else:
 		print("There are no source files to be compiled.")
+# The "successful build" of a header here means that all the source files that
+# depend on it have been successfully built. Thus we have to keep track, per dependency,
+# of the source files (to compile) that depend on it, to be able to note its success when
+# all these source files passed.
+remaining_reverse_dependency_table = {}
 for src_file_path in src_files_to_build:
+	for dependency in dependency_table[src_file_path]:
+		if dependency not in remaining_reverse_dependency_table:
+			remaining_reverse_dependency_table[dependency] = (
+				reverse_dependency_table[dependency] & src_files_to_build)
+build_is_successful = True
+for src_file_path in src_files_to_build:
+	if option_verbose:
+		print(f"Building \"{src_file_path}\":")
 	build_is_successful = build_translation_unit(src_file_path)
-	if not build_is_successful:
-		# If one compiler unit does not compile, then we don't want to save anything to
-		# the persistent build data for the next build to start as this one.
-		# Note: This could be optimized some day...
-		if option_verbose:
-			print(f"Building of \"{src_file_path}\" failed, build halts.")
-		sys.exit(1)
+	if build_is_successful:
+		success_date_table[src_file_path] = new_date_table[src_file_path]
+		# See if some dependency have been fully used in builds all successful.
+		for dependency in dependency_table[src_file_path]:
+			remaining_reverse_dependency_table[dependency].remove(src_file_path)
+			if not remaining_reverse_dependency_table[dependency]:
+				success_date_table[dependency] = new_date_table[dependency]
+	else:
+		break
 
 # Save the current file dates and object file ids to the persistent build data.
 if option_verbose:
 	print(f"Saving the new date table to \"{date_table_file_path}\".")
 with open(date_table_file_path, "w") as date_table_file:
-	date_table_file.write(pprint.pformat(new_date_table))
+	date_table_file.write(pprint.pformat(old_date_table | success_date_table))
 if option_verbose:
 	print(f"Saving the new object id table to \"{obj_id_table_file_path}\".")
 with open(obj_id_table_file_path, "w") as obj_id_table_file:
 	obj_id_table_file.write(pprint.pformat(obj_id_table))
 
+if not build_is_successful:
+	if option_verbose:
+		print(f"Building of \"{src_file_path}\" failed, building halts now.")
+	sys.exit(1)
+
 ## LINK
 
-if not os.path.exists(bin_dir):
-	if option_verbose:
-		print(f"Creating the binary directory \"{bin_dir}\".")
-	os.makedirs(bin_dir)
-bin_path = os.path.join(bin_dir, bin_name)
 
-if option_verbose:
-	print(f"Linking of the binary \"{bin_path}\":")
-link_command_args = []
-link_command_args.append(option_compiler)
-for src_file_path in src_file_paths:
-	obj_file_path = corresponding_obj_file_path(src_file_path)
-	link_command_args.append(obj_file_path)
-link_command_args.append("-o")
-link_command_args.append(bin_path)
-#link_command_args.append("-std=c++17")
-#link_command_args.append("-Wall")
-#link_command_args.append("-Wextra")
-#link_command_args.append("-pedantic")
-#link_command_args.append("-pipe")
-if option_debug:
-	link_command_args.append("-fsanitize=undefined") # Needed here as GCC uses a runtime lib.
-#	link_command_args.append("-DDEBUG")
-#	link_command_args.append("-g")
-#	link_command_args.append("-Og")
+# Get the link state saved from the last build (was the linking successful?).
+try:
+	link_state_file_path = os.path.join(build_dir, link_state_file_name)
+	with open(link_state_file_path, "r") as link_state_file:
+		old_link_successful = ast.literal_eval(link_state_file.read())
+	assert type(old_link_successful) == bool
+	if option_verbose:
+		print(f"Previous link state read from \"{link_state_file_path}\".")
+except:
+	print("No previous link state.")
+	old_link_successful = False
+
+if old_link_successful and (not src_files_to_build):
+	print("Nothing was compiled and the last link was fine, no linking required.")
 else:
-#	link_command_args.append("-DNDEBUG") # Should discard asserts.
-#	link_command_args.append("-O3")
-#	link_command_args.append("-no-pie")
-#	link_command_args.append("-fno-stack-protector")
-	link_command_args.append("-flto")
-	link_command_args.append("-s")
-if False:
-	link_command_args.append("-v")
-	link_command_args.append("-Wl,-v")
-if option_opengl_notifs:
-	link_command_args.append("-DENABLE_OPENGL_NOTIFICATIONS")
-link_command_args.append("-lm")
-link_command_args.append("-lstdc++")
-link_command_args.append("-lpthread")
-link_command_args.append("-lGL")
-if option_use_glew:
-	link_command_args.append("-DGLEW_STATIC") # Doesn't seem to be enough ><...
-	link_command_args.append("-lGLEW")
-	link_command_args.append("-DUSE_GLEW")
-if option_sdl2_static:
-	link_command_args.append("`sdl2-config --cflags`")
-	link_command_args.append("-static")
-	link_command_args.append("-Wl,-Bstatic")
-	link_command_args.append("`sdl2-config --static-libs`")
-	link_command_args.append("-Wl,-Bdynamic")
-	# TODO: At least confirm that it works, which requiers to statically
-	# link to a lot of libraries..
-else:
-	link_command_args.append("`sdl2-config --cflags --libs`")
-link_command = " ".join(link_command_args)
-print_blue(link_command)
-link_exit_status = os.system(link_command)
-if link_exit_status != 0 and option_verbose:
-	print(f"Linking of \"{bin_path}\" failed, build halts.")
-	sys.exit(1)
+	if not os.path.exists(bin_dir):
+		if option_verbose:
+			print(f"Creating the binary directory \"{bin_dir}\".")
+		os.makedirs(bin_dir)
+	bin_path = os.path.join(bin_dir, bin_name)
+
+	if option_verbose:
+		print(f"Linking of the binary \"{bin_path}\":")
+	link_command_args = []
+	link_command_args.append(option_compiler)
+	for src_file_path in src_file_paths:
+		obj_file_path = corresponding_obj_file_path(src_file_path)
+		link_command_args.append(obj_file_path)
+	link_command_args.append("-o")
+	link_command_args.append(bin_path)
+	#link_command_args.append("-std=c++17")
+	#link_command_args.append("-Wall")
+	#link_command_args.append("-Wextra")
+	#link_command_args.append("-pedantic")
+	#link_command_args.append("-pipe")
+	if option_debug:
+		link_command_args.append("-fsanitize=undefined") # Needed here as GCC links to a runtime lib.
+	#	link_command_args.append("-DDEBUG")
+	#	link_command_args.append("-g")
+	#	link_command_args.append("-Og")
+	else:
+	#	link_command_args.append("-DNDEBUG") # Should discard asserts.
+	#	link_command_args.append("-O3")
+	#	link_command_args.append("-no-pie")
+	#	link_command_args.append("-fno-stack-protector")
+		link_command_args.append("-flto")
+		link_command_args.append("-s")
+	if False:
+		link_command_args.append("-v")
+		link_command_args.append("-Wl,-v")
+	if option_opengl_notifs:
+		link_command_args.append("-DENABLE_OPENGL_NOTIFICATIONS")
+	link_command_args.append("-lm")
+	link_command_args.append("-lstdc++")
+	link_command_args.append("-lpthread")
+	link_command_args.append("-lGL")
+	if option_use_glew:
+		link_command_args.append("-DGLEW_STATIC") # Doesn't seem to be enough ><...
+		link_command_args.append("-lGLEW")
+		link_command_args.append("-DUSE_GLEW")
+	if option_sdl2_static:
+		link_command_args.append("`sdl2-config --cflags`")
+		link_command_args.append("-static")
+		link_command_args.append("-Wl,-Bstatic")
+		link_command_args.append("`sdl2-config --static-libs`")
+		link_command_args.append("-Wl,-Bdynamic")
+		# TODO: At least confirm that it works, which requiers to statically
+		# link to a lot of libraries..
+	else:
+		link_command_args.append("`sdl2-config --cflags --libs`")
+	link_command = " ".join(link_command_args)
+	print_blue(link_command)
+	link_exit_status = os.system(link_command)
+
+	new_link_successful = link_exit_status == 0
+	if option_verbose:
+		print(f"Saving the new link state to \"{link_state_file_path}\".")
+	with open(link_state_file_path, "w") as link_state_file:
+		link_state_file.write(pprint.pformat(new_link_successful))
+	if not new_link_successful:
+		if option_verbose:
+			print(f"Linking of \"{bin_path}\" failed, build halts.")
+		sys.exit(1)
 
 ## LAUNCH
 

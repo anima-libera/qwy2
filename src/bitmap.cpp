@@ -1,4 +1,5 @@
 
+#include "bitmap.hpp"
 #include "nature.hpp"
 #include <cstdint>
 #include <fstream>

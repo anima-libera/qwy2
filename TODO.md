@@ -3,15 +3,14 @@
 
 ## Build system
 
-- **Optimization:** Save last successful link date to avoid unnecessary links.
-- **Optimization:** Save last successful build date for each translation unit to avoid rebuilding those that already passed.
-- **Optimization:** Scanning the header and source files for `#include` directives and obtain a file dependency graph to use to reduce the set of effectively changed source files when some header files are changed.
+- **Optimization:** Save last successful build date for each translation unit (as well as the date of all their dependecies) to avoid rebuilding those that already passed in case of an error on some other translation unit. (Note: If a dependency is shared between a passing translation unit and a failing one, it won't be registered as successful for now, making the translation unit being recompiled as it sees that the shared dependecy could have been modified).
 - **Optimization:** Support [precompiled header files](https://gcc.gnu.org/onlinedocs/gcc/Precompiled-Headers.html).
 - **Optimization:** Support running multiple instances of the compiler at once via nonblocking calls to make use of more cores (up to some input number of cores).
 - **Refactoring:** Split it into multiple scripts.
 - **Refactoring:** Factorize the code that handles the permanent build data sync for some arbitrary Python object.
 - **Feature:** Support Windows (using something like [MinGW](https://www.mingw-w64.org) and maybe other compilers too).
 - **Feature:** Ask for auto install missing dependencies.
+- **Code readabiliy:** Add type indications.
 
 ## Qwy2
 
@@ -19,7 +18,6 @@
 - **Feature (gameplay):** When in first-person view, select a block via a raycast.
 - **Feature (visual):** Display some sort of star in the sun's direction.
 - **Feature (visual):** God rays.
-
 - **Feature:** Block face texture generator that can be tested without launching the whole game to allow easier tweaking and debugging of this specific feature.
 - **Design decision:** Entities will be handled via an Entity Component System (archetypal). The `Player` class will be removed.
 
