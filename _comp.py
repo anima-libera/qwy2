@@ -339,6 +339,7 @@ for src_or_header_file_path in itertools.chain(src_file_paths, header_file_paths
 # If asked for, the dependency graph is outputted as a DOT file.
 # DOT is a graph description language, there are tools to turn DOT files into
 # graph visualizations, such as `dot` from Graphviz (https://graphviz.org/download/).
+# On Linux, if dot is installed, running `sh dot.sh` should do.
 if option_dependency_graph:
 	dependency_graph_dot_file_path = "dependency_graph.dot"
 	with open(dependency_graph_dot_file_path, "w") as dot_file:
@@ -377,7 +378,9 @@ def requires_compiling(src_file_path):
 			return True
 	return False
 
-# TODO: Explain.
+# For each header file, we gte the list of source files that depend on it (directly or indirectly)
+# so that we can know when all the source files that include it get successfully compiled
+# to mark the header file as passing its "build".
 reverse_dependency_table = {}
 for header_file_path in header_file_paths:
 	reverse_dependency_table[header_file_path] = set()
@@ -492,7 +495,6 @@ if not build_is_successful:
 
 ## LINK
 
-
 # Get the link state saved from the last build (was the linking successful?).
 try:
 	link_state_file_path = os.path.join(build_dir, link_state_file_name)
@@ -529,7 +531,7 @@ else:
 	#link_command_args.append("-pedantic")
 	#link_command_args.append("-pipe")
 	if option_debug:
-		link_command_args.append("-fsanitize=undefined") # Needed here as GCC links to a runtime lib.
+		link_command_args.append("-fsanitize=undefined") # GCC links to a runtime lib.
 	#	link_command_args.append("-DDEBUG")
 	#	link_command_args.append("-g")
 	#	link_command_args.append("-Og")
