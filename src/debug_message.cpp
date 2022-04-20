@@ -3,7 +3,6 @@
 #include "opengl.hpp"
 #include <SDL2/SDL.h>
 #include <iostream>
-#include <string_view>
 
 namespace qwy2
 {

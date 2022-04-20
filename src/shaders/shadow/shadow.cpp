@@ -1,9 +1,10 @@
 
 #include "shadow.hpp"
 #include "shaders/classic/classic.hpp"
-#include "chunk.hpp"
+#include "mesh.hpp"
 #include "embedded.hpp"
 #include <glm/gtc/type_ptr.hpp>
+#include <cassert>
 #include <cstddef>
 
 namespace qwy2

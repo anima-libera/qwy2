@@ -11,7 +11,6 @@ namespace qwy2
 
 SDL_Window* g_window = nullptr;
 SDL_GLContext g_opengl_context = nullptr;
-
 static GLuint s_vao_id;
 
 static constexpr char const* window_name = "Qwy2";

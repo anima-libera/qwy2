@@ -2,8 +2,6 @@
 #ifndef QWY2_HEADER_CHUNK_
 #define QWY2_HEADER_CHUNK_
 
-#include "opengl.hpp"
-#include "nature.hpp"
 #include "coords.hpp"
 #include "mesh.hpp"
 #include "shaders/classic/classic.hpp"
@@ -11,7 +9,6 @@
 #include <vector>
 #include <array>
 #include <unordered_map>
-#include <ostream>
 #include <optional>
 #include <variant>
 #include <future>
@@ -105,6 +102,8 @@ public:
 };
 
 using ChunkMeshData = std::vector<VertexDataClassic>;
+
+class Nature;
 
 /* Generates the PTG field of the chunk at the given chunk-level coords.
  * Can be called in isolation, given that the nature is not modified before it returns. */

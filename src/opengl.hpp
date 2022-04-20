@@ -13,6 +13,7 @@
 	//#include <GL/glx.h>
 #endif
 
+/* For some reason I don't use the GLfloat type in the code. */
 static_assert(sizeof(float) == sizeof(GLfloat));
 
 #endif /* QWY2_HEADER_OPENGL_ */

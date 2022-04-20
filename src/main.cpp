@@ -2,7 +2,6 @@
 #include "config.hpp"
 #include "gameloop.hpp"
 #include <iostream>
-#include <cstdlib>
 
 using namespace qwy2;
 

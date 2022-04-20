@@ -1,5 +1,7 @@
 
 #include "coords.hpp"
+#include <iostream>
+#include <cassert>
 #include <cmath>
 
 namespace qwy2

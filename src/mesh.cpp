@@ -2,7 +2,7 @@
 #include "mesh.hpp"
 #include "shaders/classic/classic.hpp"
 #include "shaders/line/line.hpp"
-#include <iostream>
+#include <cassert>
 
 namespace qwy2
 {

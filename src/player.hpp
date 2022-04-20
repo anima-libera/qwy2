@@ -3,12 +3,13 @@
 #define QWY2_HEADER_PLAYER_
 
 #include "coords.hpp"
-#include "chunk.hpp"
-#include "input_events.hpp"
 #include <glm/vec3.hpp>
 
 namespace qwy2
 {
+
+class ChunkGrid;
+class PlayerControls;
 
 /* Note that this class was only made as a way to take away a part of the gameloop code
  * in other files. It is temporary, and further entities should not be implemented as classes

@@ -1,8 +1,10 @@
 
 #include "camera.hpp"
-#define GLM_ENABLE_EXPERIMENTAL
+#include "utils.hpp"
 #include <glm/vec3.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/transform.hpp>
+#undef GLM_ENABLE_EXPERIMENTAL
 
 namespace qwy2
 {

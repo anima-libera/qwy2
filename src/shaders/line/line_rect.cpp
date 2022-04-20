@@ -1,6 +1,7 @@
 
 #include "line_rect.hpp"
-#include "chunk.hpp"
+#include "mesh.hpp"
+#include "coords.hpp"
 #include <utility>
 
 namespace qwy2

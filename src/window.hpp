@@ -6,7 +6,6 @@
 #ifndef QWY2_HEADER_WINDOW_
 #define QWY2_HEADER_WINDOW_
 
-#include "opengl.hpp"
 #include "utils.hpp"
 #include <SDL2/SDL.h>
 #include <tuple>

@@ -2,19 +2,20 @@
 #ifndef QWY2_HEADER_EMBEDDED_
 #define QWY2_HEADER_EMBEDDED_
 
-/* If this macro is used as would be the extern keyword in a variable
- * declaration, and if filename_ is a C-style string literal, then the compilation
- * script "_comp.py" will parse the variable declaration as a special
- * declaration that requires the variable to be set to the content of the file
- * found at filename_ in the generated source file "embedded.cpp". The variable
- * declaration is expected to be in the global scope and to have a type
- * compatible with the generated literal. The escape_mode_ parameter can be
- * one of the following macros and determines the way the content to embed is
- * escaped into a literal. */
+/* The EMBEDDED macro is magic as it is scanned for by the buildsystem (in this header file only)
+ * and triggers the generation of a variable definition in the generted "embedded.cpp" source file.
+ * It sould be used as a prefix to a variable declaration, and given a file path (starting after
+ * the `src` directory). The generated definition will give the content of the file to the defined
+ * variable (see "embedded.cpp" after building to see the results). The macro aslo takes an escape
+ * mode parameter, it sould be one of the macros defined below and specify how the file content
+ * is turned into a C++ literal (and for the case of SIZE it does not even embed content but
+ * it initialize the variable to the size (un bytes) of the file).
+ * The type of the declared variable should be chosen to work with the generated literal.
+ * The `buildsystem/embed.py` script is responsible for the handling of the embedding. */
 #define EMBEDDED(filename_, escape_mode_) extern
 #define TEXT /* Escapes the file content as a string literal. */
 #define BINARY /* Escapes the file content as an array of bytes. */
-#define SIZE /* Just produces an integer literal of the size in bytes. */
+#define SIZE /* Just produces the size in bytes of the file content, as an integer literal. */
 
 EMBEDDED("shaders/classic/classic.vert", TEXT) char const g_shader_source_classic_vert[];
 EMBEDDED("shaders/classic/classic.frag", TEXT) char const g_shader_source_classic_frag[];

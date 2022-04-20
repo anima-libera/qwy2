@@ -2,22 +2,22 @@
 #ifndef QWY2_HEADER_GAMELOOP_
 #define QWY2_HEADER_GAMELOOP_
 
-#include "config.hpp"
 #include "chunk.hpp"
 #include "camera.hpp"
 #include "coords.hpp"
-#include "nature.hpp"
 #include "input_events.hpp"
 #include "player.hpp"
 #include "shaders/line/line_rect.hpp"
 #include "shaders/table.hpp"
 #include <glm/vec3.hpp>
 #include <vector>
-#include <optional>
-#include <future>
+#include <chrono>
 
 namespace qwy2
 {
+
+class Nature;
+class Config;
 
 /* TODO: Refactor in some way that make it easy to find and tinker with any component.
  * That includes (but is not limited to) organizing the member variables. */

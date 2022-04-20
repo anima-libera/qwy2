@@ -1,6 +1,7 @@
 
 #include "nature.hpp"
 #include "chunk.hpp"
+#include <cassert>
 #include <iostream>
 #include <algorithm>
 #include <limits>

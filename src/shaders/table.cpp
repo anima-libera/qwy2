@@ -1,8 +1,6 @@
 
 #include "shaders/table.hpp"
-#include "shaders/classic/classic.hpp"
-#include "shaders/line/line.hpp"
-#include "shaders/shadow/shadow.hpp"
+#include <cassert>
 #include <iostream>
 
 namespace qwy2

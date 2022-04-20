@@ -1,7 +1,5 @@
 
 #include "shader.hpp"
-#include "opengl.hpp"
-#include "utils.hpp"
 #include <iostream>
 
 namespace qwy2

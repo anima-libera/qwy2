@@ -72,6 +72,7 @@ def generate_cpp(files_to_embed: List[FileToEmbed]) -> str:
 		generated_cpp.append(f"/* {what} of \"{file_to_embed.file_path}\". */")
 		variable_declaration = file_to_embed.variable_declaration
 		escaped_content = file_to_embed.get_espaced_content()
+		# The `extern` here is needed as const variables have internal linkage by default in C++.
 		generated_cpp.append(f"extern {variable_declaration} = {escaped_content};")
 	generated_cpp.append("")
 	return "\n".join(generated_cpp)

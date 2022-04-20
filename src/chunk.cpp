@@ -1,8 +1,7 @@
 
 #include "chunk.hpp"
 #include "nature.hpp"
-#include "shaders/classic/classic.hpp"
-#include "shaders/line/line.hpp"
+#include <cassert>
 #include <iostream>
 #include <iterator>
 #include <algorithm>

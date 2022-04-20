@@ -2,10 +2,10 @@
 #ifndef QWY2_HEADER_BITMAP_
 #define QWY2_HEADER_BITMAP_
 
-#include "nature.hpp"
-
 namespace qwy2
 {
+
+class PixelData;
 
 void emit_bitmap(
 	PixelData const* pixel_grid_data,

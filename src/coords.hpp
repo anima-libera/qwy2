@@ -2,8 +2,7 @@
 #ifndef QWY2_HEADER_COORDS_
 #define QWY2_HEADER_COORDS_
 
-#include <utility>
-#include <iostream>
+#include <iosfwd>
 #include <tuple>
 #include <glm/vec3.hpp>
 

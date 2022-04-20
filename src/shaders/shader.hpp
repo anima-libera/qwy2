@@ -4,10 +4,9 @@
 
 #include "opengl.hpp"
 #include "utils.hpp"
-#include <vector>
-#include <variant>
 #include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>
+#include <variant>
 
 namespace qwy2
 {

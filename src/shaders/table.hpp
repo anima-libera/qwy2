@@ -4,7 +4,6 @@
 #define QWY2_HEADER_SHADER_TABLE_
 
 #include "shaders/shader.hpp"
-#include "utils.hpp"
 #include "shaders/classic/classic.hpp"
 #include "shaders/line/line.hpp"
 #include "shaders/shadow/shadow.hpp"
