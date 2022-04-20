@@ -15,32 +15,32 @@ Qwy2 uses the [OpenGL](https://www.khronos.org/opengl/wiki/FAQ#What_is_OpenGL.3F
 
 Qwy2 is a [C++17](https://en.cppreference.com/w/cpp/compiler_support/17) project that uses the C++ standard library, which is thus a dependency (an implementation of which should be installed by default, but in case it is not then any recent implementation should do).
 
-C++ compilers tested and supported by the build system include [GCC](https://gcc.gnu.org/) (`g++`) and [Clang](https://clang.llvm.org/) (`clang`). The build system itself is a [Python 3](https://www.python.org/downloads/) (`python3`) script (Python 3.9 or higher should do (but not older versions as this script uses some dictionary operators added in 3.9), it was out in 2020 so it seems reasonable).
+C++ compilers tested and supported by the build system include [GCC](https://gcc.gnu.org/) (`g++`) and [Clang](https://clang.llvm.org/) (`clang`). The build system is written in [Python 3](https://www.python.org/downloads/) (`python3`) (Python 3.9 or higher should do (but not older versions as this script uses some dictionary operators added in 3.9), it was out in 2020 so it seems reasonable).
 
 The building process has only been tested on Linux (Ubuntu 18.04 LTS) yet, it is likely to fail on very different systems for now.
 
 ### Build
 
-The build system is the `_comp.py` Python 3 script at the root of the project directory.
+The build system is in the `buildsystem` Python 3 package and can be invoked with the `bs.py` Python script.
 
 For a *release build*, simply run it:
 
 ```sh
-python3 _comp.py
+python3 bs.py
 ```
 
-It can take some command line arguments such as `-d` for a *debug build*. Read its docstring or use `-h` to get a list of possible command line arguments.
+It can take some command line arguments such as `-d` for a *debug build*. Use `-h` instead to get a help message containing the possible arguments.
 
-The *release build* compiled binary will be `bin/Qwy2` and the *debug build* compiled binary will be `bin/Qwy2-debug`. Build artifacts will be in the `build` directory.
+The compiled binary will be `bin/Qwy2`, build artifacts will be in the `build` directory.
 
 ### Build and run
 
-The `-l` command line argument given to `_comp.py` will make it run the compiled binary (from `bin`) if the compilation is successful, and arguments that follow `-l` are forwarded to the compiled binary.
+The `-l` command line argument given to `bs.py` will make it run the compiled binary (from `bin`) if the compilation is successful, and arguments that follow `-l` are forwarded to the compiled binary.
 
 Thus the most useful command during development is the following:
 
 ```sh
-python3 _comp.py -l
+python3 bs.py -l
 ```
 
 ### Clearing build artifacts
@@ -48,7 +48,7 @@ python3 _comp.py -l
 If the build system breaks or something, `--clear` is the way to go, the great eraser:
 
 ```sh
-python3 _comp.py --clear --dont-build
+python3 bs.py --clear --dont-build
 ```
 
 ## The game

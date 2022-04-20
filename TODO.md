@@ -3,14 +3,11 @@
 
 ## Build system
 
-- **Optimization:** Save last successful build date for each translation unit (as well as the date of all their dependencies) to avoid rebuilding those that already passed in case of an error on some other translation unit. (Note: If a dependency is shared between a passing translation unit and a failing one, it won't be registered as successful for now, making the translation unit being recompiled as it sees that the shared dependecy could have been modified).
+- **Feature:** Make sure that halting with Ctrl+C at any time during any step of the build process does not break and require `--clean`ing.
 - **Optimization:** Support [precompiled header files](https://gcc.gnu.org/onlinedocs/gcc/Precompiled-Headers.html).
 - **Optimization:** Support running multiple instances of the compiler at once via nonblocking calls to make use of more cores (up to some input number of cores).
-- **Refactoring:** Split it into multiple files.
-- **Refactoring:** Factorize the code that handles the permanent build data sync for some arbitrary Python object.
 - **Feature:** Support Windows (using something like [MinGW](https://www.mingw-w64.org) and maybe other compilers too).
 - **Feature:** Ask for auto install missing dependencies.
-- **Code readabiliy:** Add type indications.
 
 ## Qwy2
 

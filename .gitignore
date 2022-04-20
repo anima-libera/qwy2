@@ -2,10 +2,11 @@
 # Local builds
 /bin/
 /build/
+__pycache__/
 
 # Dependency graph that the build system may produce
-dependency_graph.dot
-dependency_graph.svg
+/dependency_graph.dot
+/dependency_graph.svg
 
 # Whatever we want
 /local/
