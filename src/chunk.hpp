@@ -188,10 +188,15 @@ public:
 	std::future<SomeChunkData> future;
 };
 
+class ThreadPool;
+
 /* An instance of this class should get to manage the process of generating chunks. */
 class ChunkGenerationManager
 {
 public:
+	/* The thread pool to which to give generation tasks. Not owend. */
+	ThreadPool* thread_pool;
+
 	/* The grid of chunks in which to generate chunks. Not owend. */
 	ChunkGrid* chunk_grid;
 

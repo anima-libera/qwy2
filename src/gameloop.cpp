@@ -117,6 +117,11 @@ Game::Game(Config const& config)
 		shadow_depth_texture_image_unit_openglid);
 	glActiveTexture(GL_TEXTURE0 + 0);
 
+	/* Initialize the thread pool. */
+	this->thread_pool.set_thread_number(2);
+	this->chunk_generation_manager.thread_pool = &this->thread_pool;
+	this->chunk_generation_manager.generating_data_vector.resize(4);
+
 	/* Initialize the grid of chunks and related fields. */
 	g_chunk_side = config.get<int>("chunk_side"sv);
 	std::cout << "Chunk side: " << g_chunk_side << std::endl;
@@ -381,7 +386,8 @@ void Game::loop()
 
 		#if 0
 		std::cout
-			<< "Chunk count: " << this->chunk_grid->table.size() << "\t"
+			//<< "Chunk mesh count: " << this->chunk_grid->mesh.size() << "  \t"
+			//<< "Chunk PTG field count: " << this->chunk_grid->ptg_field.size() << "  \t"
 			<< "FPS: " << (1.0f / duration_iteration) << std::endl;
 		#endif
 	}

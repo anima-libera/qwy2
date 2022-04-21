@@ -9,6 +9,7 @@
 #include "player.hpp"
 #include "shaders/line/line_rect.hpp"
 #include "shaders/table.hpp"
+#include "threadpool.hpp"
 #include <glm/vec3.hpp>
 #include <vector>
 #include <chrono>
@@ -51,6 +52,7 @@ public:
 	bool loop_running;
 	InputEventHandler input_event_handler;
 	PlayerControls player_controls;
+	ThreadPool thread_pool;
 
 public:
 	Game(Config const& config);

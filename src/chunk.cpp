@@ -1,6 +1,7 @@
 
 #include "chunk.hpp"
 #include "nature.hpp"
+#include "threadpool.hpp"
 #include <cassert>
 #include <iostream>
 #include <iterator>
@@ -539,11 +540,12 @@ bool ChunkGrid::block_is_air_or_unloaded(BlockCoords coords) const
 }
 
 ChunkGenerationManager::ChunkGenerationManager():
+	thread_pool{nullptr},
 	chunk_grid{nullptr},
 	generation_center{0.0f, 0.0f, 0.0f},
 	generation_radius{50.0f}
 {
-	this->generating_data_vector.resize(2);
+	//this->generating_data_vector.resize(2);
 }
 
 void ChunkGenerationManager::manage(Nature const& nature)
@@ -707,7 +709,7 @@ void ChunkGenerationManager::manage(Nature const& nature)
 				switch (required_step)
 				{
 					case ChunkGeneratingStep::MESH:
-						generating_data.future = std::async(std::launch::async,
+						generating_data.future = this->thread_pool->give_task(std::bind(
 							[](
 								ChunkCoords chunk_coords,
 								ChunkNeighborhood<ChunkBField> const
@@ -719,10 +721,10 @@ void ChunkGenerationManager::manage(Nature const& nature)
 							},
 							required_chunk_coords,
 							this->chunk_grid->get_b_field_neighborhood(required_chunk_coords),
-							std::cref(nature));
-					break;
+							std::cref(nature)));
+						break;
 					case ChunkGeneratingStep::B_FIELD:
-						generating_data.future = std::async(std::launch::async,
+						generating_data.future = this->thread_pool->give_task(std::bind(
 							[](
 								ChunkCoords chunk_coords,
 								ChunkNeighborhood<ChunkPttField> const
@@ -734,10 +736,10 @@ void ChunkGenerationManager::manage(Nature const& nature)
 							},
 							required_chunk_coords,
 							this->chunk_grid->get_ptt_field_neighborhood(required_chunk_coords),
-							std::cref(nature));
+							std::cref(nature)));
 					break;
 					case ChunkGeneratingStep::PTT_FIELD:
-						generating_data.future = std::async(std::launch::async,
+						generating_data.future = this->thread_pool->give_task(std::bind(
 							[](
 								ChunkCoords chunk_coords,
 								ChunkNeighborhood<ChunkPtgField> const
@@ -749,10 +751,10 @@ void ChunkGenerationManager::manage(Nature const& nature)
 							},
 							required_chunk_coords,
 							this->chunk_grid->get_ptg_field_neighborhood(required_chunk_coords),
-							std::cref(nature));
+							std::cref(nature)));
 					break;
 					case ChunkGeneratingStep::PTG_FIELD:
-						generating_data.future = std::async(std::launch::async,
+						generating_data.future = this->thread_pool->give_task(std::bind(
 							[](
 								ChunkCoords chunk_coords,
 								Nature const& nature
@@ -761,7 +763,7 @@ void ChunkGenerationManager::manage(Nature const& nature)
 									chunk_coords, nature)};
 							},
 							required_chunk_coords,
-							std::cref(nature));
+							std::cref(nature)));
 					break;
 					default:
 						assert(false);
