@@ -11,7 +11,6 @@
 
 ## Qwy2
 
-- **Fix:** After some time FPS drop, fix this.
 - **Feature (gameplay):** Allow placing and breaking blocks.
 - **Feature (gameplay):** When in first-person view, select a block via a raycast.
 - **Feature (visual):** Display some sort of star in the sun's direction.
