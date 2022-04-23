@@ -173,10 +173,12 @@ void InputEventHandler::handle_events(Game& game)
 					case SDLK_f:
 						if (event.type == SDL_KEYDOWN)
 						{
-							game.player.allowed_fast_and_infinite_jumps = not game.player.allowed_fast_and_infinite_jumps;
+							game.player.allowed_fast_and_infinite_jumps =
+								not game.player.allowed_fast_and_infinite_jumps;
 							std::cout << "[F] Infinite jumps "
 								<< "and running fast like sonic "
-								<< (game.player.allowed_fast_and_infinite_jumps ? "enabled" : "disabled")
+								<< (game.player.allowed_fast_and_infinite_jumps ?
+									"enabled" : "disabled")
 								<< std::endl;
 						}
 					break;
@@ -195,9 +197,11 @@ void InputEventHandler::handle_events(Game& game)
 					case SDLK_t:
 						if (event.type == SDL_KEYDOWN)
 						{
-							game.keep_generating_chunks = not game.keep_generating_chunks;
+							game.chunk_generation_manager.generation_enabled =
+								not game.chunk_generation_manager.generation_enabled;
 							std::cout << "[T] Chunk generation "
-								<< (game.keep_generating_chunks ? "enabled" : "disabled")
+								<< (game.chunk_generation_manager.generation_enabled ?
+									"enabled" : "disabled")
 								<< std::endl;
 						}
 					break;

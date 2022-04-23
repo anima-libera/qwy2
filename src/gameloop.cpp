@@ -127,7 +127,6 @@ Game::Game(Config const& config)
 	std::cout << "Chunk side: " << g_chunk_side << std::endl;
 	this->chunk_grid = new ChunkGrid{};
 	this->chunk_generation_manager.chunk_grid = this->chunk_grid;
-	this->keep_generating_chunks = true;
 	this->loaded_radius = config.get<float>("loaded_radius"sv);
 	this->chunk_generation_manager.generation_radius = this->loaded_radius;
 

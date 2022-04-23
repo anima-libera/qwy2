@@ -206,6 +206,8 @@ public:
 	/* The radius (in blocks) of the generated zone. */
 	float generation_radius;
 
+	bool generation_enabled;
+
 	/* The data that are undergoing generation (possibly in an other thread). */
 	std::vector<std::optional<ChunkGeneratingData>> generating_data_vector;
 

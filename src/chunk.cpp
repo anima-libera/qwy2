@@ -543,9 +543,10 @@ ChunkGenerationManager::ChunkGenerationManager():
 	thread_pool{nullptr},
 	chunk_grid{nullptr},
 	generation_center{0.0f, 0.0f, 0.0f},
-	generation_radius{50.0f}
+	generation_radius{50.0f},
+	generation_enabled{true}
 {
-	//this->generating_data_vector.resize(2);
+	;
 }
 
 void ChunkGenerationManager::manage(Nature const& nature)
@@ -669,7 +670,7 @@ void ChunkGenerationManager::manage(Nature const& nature)
 		
 		if (not generating_data_opt.has_value())
 		{
-			while (not chunk_generation_candidates.empty())
+			while ((not chunk_generation_candidates.empty()) && this->generation_enabled)
 			{
 				/* There is a chunk that would like to see some data generated. */
 				ChunkCoords const chunk_coords = chunk_generation_candidates.back();

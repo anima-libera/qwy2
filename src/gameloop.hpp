@@ -37,7 +37,6 @@ public:
 	unsigned int shadow_framebuffer_openglid;
 	unsigned int shadow_framebuffer_side;
 	ChunkGenerationManager chunk_generation_manager;
-	bool keep_generating_chunks;
 	glm::vec3 sky_color;
 	Camera<PerspectiveProjection> player_camera;
 	Player player;
