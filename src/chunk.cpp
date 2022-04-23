@@ -153,16 +153,23 @@ ChunkPtgField generate_chunk_ptg_field(
 	ChunkPtgField ptg_field{chunk_coords};
 	for (BlockCoords coords : chunk_rect(chunk_coords))
 	{
-		float const value = nature.world_generator.noise_generator.base_noise(
-			static_cast<float>(coords.x) / 15.0f,
-			static_cast<float>(coords.y) / 15.0f,
-			static_cast<float>(coords.z) / 15.0f);
-		float const dist =
-			glm::distance(glm::vec2(coords.x, coords.y), glm::vec2(0.0f, 0.0f));
-		float const crazy =
-			dist < 20.0f ? 2.0f :
-			(dist - 20.0f + 2.0f) * 3.0f;
-		ptg_field[coords] = ((value - 0.5f) * crazy > coords.z) ? 1 : 0;
+		if (nature.world_generator.flat)
+		{
+			ptg_field[coords] = (coords.z <= 0) ? 1 : 0;
+		}
+		else
+		{
+			float const value = nature.world_generator.noise_generator.base_noise(
+				static_cast<float>(coords.x) / 15.0f,
+				static_cast<float>(coords.y) / 15.0f,
+				static_cast<float>(coords.z) / 15.0f);
+			float const dist =
+				glm::distance(glm::vec2(coords.x, coords.y), glm::vec2(0.0f, 0.0f));
+			float const crazy =
+				dist < 20.0f ? 2.0f :
+				(dist - 20.0f + 2.0f) * 3.0f;
+			ptg_field[coords] = ((value - 0.5f) * crazy > coords.z) ? 1 : 0;
+		}
 	}
 	return ptg_field;
 }

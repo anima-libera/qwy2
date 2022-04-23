@@ -18,6 +18,7 @@ Config::Config()
 	this->parameter_table.insert({"seed"sv, 9});
 	this->parameter_table.insert({"loading_threads"sv, 2});
 	this->parameter_table.insert({"shadow_map_resolution"sv, 4096});
+	this->parameter_table.insert({"flat"sv, false});
 }
 
 ErrorCode Config::parse_command_line(int argc, char const* const* argv)

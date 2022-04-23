@@ -39,6 +39,7 @@ Game::Game(Config const& config)
 
 	/* Generate the laws of nature. */
 	this->nature = new Nature{config.get<int>("seed"sv)};
+	this->nature->world_generator.flat = config.get<bool>("flat"sv);
 	/* Block type id 0 is air. */
 	this->nature->nature_generator.generate_block_type(*this->nature);
 	/* Block type id 1 is dirt covered with grass. */
@@ -124,7 +125,6 @@ Game::Game(Config const& config)
 
 	/* Initialize the grid of chunks and related fields. */
 	g_chunk_side = config.get<int>("chunk_side"sv);
-	std::cout << "Chunk side: " << g_chunk_side << std::endl;
 	this->chunk_grid = new ChunkGrid{};
 	this->chunk_generation_manager.chunk_grid = this->chunk_grid;
 	this->loaded_radius = config.get<float>("loaded_radius"sv);

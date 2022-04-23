@@ -103,6 +103,7 @@ public:
 	BlockTypeId surface_block_type;
 	BlockTypeId primary_block_type;
 	BlockTypeId secondary_block_type;
+	bool flat;
 
 public:
 	WorldGenerator(NoiseGenerator::SeedType seed);
