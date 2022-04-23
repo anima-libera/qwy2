@@ -201,6 +201,28 @@ void InputEventHandler::handle_events(Game& game)
 								<< std::endl;
 						}
 					break;
+
+					case SDLK_x:
+						if (event.type == SDL_KEYDOWN)
+						{
+							if (SDL_GL_GetSwapInterval() == 0)
+							{
+								if (SDL_GL_SetSwapInterval(-1) != 0)
+								{
+									std::cout << "SDL_GL_SetSwapInterval(-1) is not supported"
+										<< std::endl;
+									SDL_GL_SetSwapInterval(1);
+								}
+							}
+							else
+							{
+								SDL_GL_SetSwapInterval(0);
+							}
+							std::cout << "[X] Vsync "
+								<< ((SDL_GL_GetSwapInterval() != 0) ? "enabled" : "disabled")
+								<< std::endl;
+						}
+					break;
 				}
 			break;
 
