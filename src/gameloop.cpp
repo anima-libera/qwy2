@@ -119,9 +119,10 @@ Game::Game(Config const& config)
 	glActiveTexture(GL_TEXTURE0 + 0);
 
 	/* Initialize the thread pool. */
-	this->thread_pool.set_thread_number(2);
+	unsigned int const loading_threads = config.get<int>("loading_threads"sv);
+	this->thread_pool.set_thread_number(loading_threads);
 	this->chunk_generation_manager.thread_pool = &this->thread_pool;
-	this->chunk_generation_manager.generating_data_vector.resize(4);
+	this->chunk_generation_manager.generating_data_vector.resize(loading_threads * 2);
 
 	/* Initialize the grid of chunks and related fields. */
 	g_chunk_side = config.get<int>("chunk_side"sv);
@@ -164,15 +165,16 @@ Game::Game(Config const& config)
 	this->see_chunk_borders = true;
 	this->see_from_behind = false;
 	this->render_shadows = true;
-	this->loop_running = true;
 
 	/* Temporary note. */
 	std::cout << "Game loop ready.\n"
+		<< "\x1b[33m"
 		<< "Please wait a bit, rendering the first chunk requires a bit of generation first.\n"
-		<< "Press [G] to stop displaying the chunk boarders.\n"
+		<< "Press [G] to stop displaying the chunk borders.\n"
 		<< "Press [M] to toggle the view from the sun's point of view.\n"
 		<< "Use [ZQSD] to walk around and [right-click] to jump.\n"
-		<< "Other controls are available, try mashing the keyboard." << std::endl;
+		<< "Other controls are available, try mashing the keyboard."
+		<< "\x1b[39m" << std::endl;
 }
 
 void Game::loop()
@@ -349,7 +351,7 @@ void Game::loop()
 			}
 		}
 
-		/* Render chunk boarders if enabled. */
+		/* Render chunk borders if enabled. */
 		if (this->see_chunk_borders)
 		{
 			if (this->see_from_sun)

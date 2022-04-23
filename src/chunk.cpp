@@ -692,8 +692,8 @@ void ChunkGenerationManager::manage(Nature const& nature)
 					this->required_generation_step(chunk_coords, ChunkGeneratingStep::MESH);
 				if (not required.has_value())
 				{
-					/* Theexamined data is not quite ready to be generated now,
-					 * and there is nothign to do for it instead of waiting,
+					/* The examined data is not quite ready to be generated now,
+					 * and there is nothing to do for it instead of waiting,
 					 * so we go on to see what else we can do. */
 					continue;
 				}

@@ -42,7 +42,6 @@ ErrorCode Config::parse_command_line(int argc, char const* const* argv)
 			}
 			j++; /* Skip the '=' character. */
 			char const* const value_as_cstring = &argv[i][j];
-			std::cout << "[Config] " << name << " = " << value_as_cstring << std::endl;
 
 			/* Parse the given parameter according to the type of the previous value
 			 * (that must not change) and replace the previous value. */
@@ -59,22 +58,27 @@ ErrorCode Config::parse_command_line(int argc, char const* const* argv)
 				bool value;
 				string_stream >> value;
 				parameter->second = value;
+				std::cout << "[Config] " << name << " = " << value << std::endl;
 			}
 			else if (std::holds_alternative<int>(parameter->second))
 			{
 				int value;
 				string_stream >> value;
 				parameter->second = value;
+				std::cout << "[Config] " << name << " = " << value << std::endl;
 			}
 			else if (std::holds_alternative<float>(parameter->second))
 			{
 				float value;
 				string_stream >> value;
 				parameter->second = value;
+				std::cout << "[Config] " << name << " = " << value << std::endl;
 			}
 			else if (std::holds_alternative<std::string_view>(parameter->second))
 			{
 				parameter->second = std::string_view{value_as_cstring};
+				std::cout << "[Config] " << name << " = "
+					<< std::get<std::string_view>(parameter->second) << std::endl;
 			}
 			else
 			{

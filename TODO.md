@@ -12,6 +12,13 @@
 
 ## Qwy2
 
+- **Optimization:** Generate the chunk meshes sooner (without the whole neighborhood) and update the edges of the meshes as neighbors are generated.
+- **Debugging feature:** Allow for chunks to have their PTG fields be given meshes to display as soon as these fields are generated.
+- **Optimization:** When in normal view, don't render chunks with empty meshes.
+- **Optimization:** When in normal view, don't render chunks that are completely covered.
+- **Optimization:** When in normal view, don't render chunks that are outside of the view.
+- **Optimization:** When in normal view, don't render chunks that are behind chunks that act as opaque walls.
+- **Optimization:** Reduce the shadow mapping time.
 - **Feature (gameplay):** Allow placing and breaking blocks.
 - **Feature (gameplay):** When in first-person view, select a block via a raycast.
 - **Feature (visual):** Display some sort of star in the sun's direction.
