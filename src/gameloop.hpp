@@ -10,6 +10,7 @@
 #include "shaders/line/line_rect.hpp"
 #include "shaders/table.hpp"
 #include "threadpool.hpp"
+#include "glop.hpp"
 #include <glm/vec3.hpp>
 #include <vector>
 #include <chrono>
@@ -53,6 +54,7 @@ public:
 	InputEventHandler input_event_handler;
 	PlayerControls player_controls;
 	ThreadPool thread_pool;
+	Glop glop;
 
 public:
 	Game(Config const& config);

@@ -22,9 +22,10 @@ Options:
   --clear            Erases results and data from previous builds.
   --dont-build       Refrains from building anything (useful with --clear).
   --graph            Outputs the dependency graph of source files in dot.
+  --glop             Enables GLOP that will output performance measurements.
+  --opengl-notifs    Enables OpenGL notifications.
   --sdl2-static      Statically links to the SDL2, default is dynamic.
   --use-glew         Uses the GLEW OpenGL extention loader.
-  --opengl-notifs    Enables OpenGL notifications.
 
 Example usage:
   {script} -v --opengl-notifs --compiler=g++ -l
@@ -101,6 +102,7 @@ class Options:
 		self.dont_build = cmdline_option(cmdline_args, False, "--dont-build")
 		self.verbose = cmdline_option(cmdline_args, False, "-v", "--verbose")
 		self.dependency_graph = cmdline_option(cmdline_args, False, "--graph")
+		self.glop = cmdline_option(cmdline_args, False, "--glop")
 		self.sdl2_static = cmdline_option(cmdline_args, False, "--sdl2-static")
 		self.use_glew = cmdline_option(cmdline_args, False, "--use-glew")
 		self.opengl_notifs = cmdline_option(cmdline_args, False, "--opengl-notifs")

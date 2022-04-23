@@ -178,6 +178,21 @@ Game::Game(Config const& config)
 
 void Game::loop()
 {
+	#ifdef GLOP_ENABLED
+	GlopColumnId glop_chunk_ptg_count = this->glop.add_column("PTG count");
+	GlopColumnId glop_chunk_ptt_count = this->glop.add_column("PTT count");
+	GlopColumnId glop_chunk_b_count = this->glop.add_column("B count");
+	GlopColumnId glop_chunk_mesh_count = this->glop.add_column("Chunk mesh count");
+	GlopColumnId glop_time_all = this->glop.add_column("Timer: All");
+	GlopColumnId glop_time_chunk_manager = this->glop.add_column("Timer: Chunk manager");
+	GlopColumnId glop_time_chunk_mesh_sync = this->glop.add_column("Timer: Chunk mesh sync");
+	GlopColumnId glop_time_sun_shadows = this->glop.add_column("Timer: Sun shadows");
+	GlopColumnId glop_time_chunk_mesh_render = this->glop.add_column("Timer: Chunk mesh render");
+	GlopColumnId glop_time_chunk_box_render = this->glop.add_column("Timer: Chunk box render");
+	GlopColumnId glop_time_sdl_swap_window = this->glop.add_column("Timer: SDL_GL_SwapWindow");
+	this->glop.open_output_stream();
+	#endif
+
 	this->loop_running = true;
 	while (this->loop_running)
 	{
@@ -196,7 +211,12 @@ void Game::loop()
 		this->chunk_generation_manager.generation_center = this->player.box.center;
 
 		/* Generate chunks around the player. */
-		this->chunk_generation_manager.manage(*this->nature);
+		{
+			#ifdef GLOP_ENABLED
+			GlopTimer timer_{this->glop, glop_time_chunk_manager};
+			#endif
+			this->chunk_generation_manager.manage(*this->nature);
+		}
 
 		/* Handle the player's camera. */
 		glm::vec3 player_camera_position =
@@ -238,20 +258,29 @@ void Game::loop()
 			this->sun_camera.get_direction());
 
 		/* Make sure that all chunk's mesh data are synchronized on the GPU's side. */
-		for (auto& [chunk_coords, mesh] : this->chunk_grid->mesh)
 		{
-			if (mesh.needs_update_opengl_data)
+			#ifdef GLOP_ENABLED
+			GlopTimer timer_{this->glop, glop_time_chunk_mesh_sync};
+			#endif
+
+			for (auto& [chunk_coords, mesh] : this->chunk_grid->mesh)
 			{
-				mesh.update_opengl_data();
+				if (mesh.needs_update_opengl_data)
+				{
+					mesh.update_opengl_data();
+				}
 			}
 		}
 
 		/* Render the world from the sun camera to get its depth buffer for shadow rendering.
 		 * Face culling is reversed here to make some shadowy artifacts appear in the shadows
 		 * (instead of on the bright faces lit by sunlight) where they remain mostly unseen. */
-		auto const clock_time_before_sun_shadows = clock::now();
 		if (this->render_shadows)
 		{
+			#ifdef GLOP_ENABLED
+			GlopTimer timer_{this->glop, glop_time_sun_shadows};
+			#endif
+
 			glViewport(0, 0, this->shadow_framebuffer_side, this->shadow_framebuffer_side);
 			glBindFramebuffer(GL_FRAMEBUFFER, this->shadow_framebuffer_openglid);
 			glClear(GL_DEPTH_BUFFER_BIT);
@@ -265,12 +294,8 @@ void Game::loop()
 			}
 		}
 		glCullFace(GL_FRONT);
-		auto const clock_time_after_sun_shadows = clock::now();
-		[[maybe_unused]] auto const duration_sun_shadows =
-			(clock_time_after_sun_shadows - clock_time_before_sun_shadows).count();
-
+		
 		/* Render the world from the player camera. */
-		auto const clock_time_before_user_rendering = clock::now();
 		auto const [window_width, window_height] = window_width_height();
 		if (this->see_from_sun)
 		{
@@ -287,17 +312,20 @@ void Game::loop()
 		{
 			glCullFace(GL_BACK);
 		}
-		for (auto const& [chunk_coords, mesh] : this->chunk_grid->mesh)
 		{
-			if (mesh.openglid != 0)
+			#ifdef GLOP_ENABLED
+			GlopTimer timer_{this->glop, glop_time_chunk_mesh_render};
+			#endif
+
+			for (auto const& [chunk_coords, mesh] : this->chunk_grid->mesh)
 			{
-				this->shader_table.classic().draw(mesh);
+				if (mesh.openglid != 0)
+				{
+					this->shader_table.classic().draw(mesh);
+				}
 			}
 		}
 		glCullFace(GL_FRONT);
-		auto const clock_time_after_user_rendering = clock::now();
-		[[maybe_unused]] auto const duration_user_rendering =
-			(clock_time_after_user_rendering - clock_time_before_user_rendering).count();
 
 		/* Render boxes (currently only the player hitbox) is enabled. */
 		if (this->see_boxes)
@@ -335,54 +363,75 @@ void Game::loop()
 			}
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-			this->line_rect_drawer.color = glm::vec3{0.0f, 0.4f, 0.8f};
-			for (auto const& [chunk_coords, chunk_ptg_field] : this->chunk_grid->ptg_field)
 			{
-				BlockRect const rect = chunk_rect(chunk_coords);
-				glm::vec3 const coords_min =
-					static_cast<glm::vec3>(rect.coords_min) - glm::vec3{0.5f, 0.5f, 0.5f};
-				glm::vec3 const coords_max =
-					static_cast<glm::vec3>(rect.coords_max) + glm::vec3{0.5f, 0.5f, 0.5f};
-				this->line_rect_drawer.set_box(AlignedBox{
-					(coords_min + coords_max) / 2.0f, coords_max - coords_min});
-				this->shader_table.line().draw(this->line_rect_drawer.mesh);
-			}
+				#ifdef GLOP_ENABLED
+				GlopTimer timer_{this->glop, glop_time_chunk_box_render};
+				#endif
 
-			#if 0
-			this->line_rect_drawer.color = glm::vec3{1.0f, 0.0f, 0.0f};
-			for (std::optional<GeneratingChunkWrapper> const& wrapper_opt :
-				this->generating_chunk_table)
-			{
-				if (wrapper_opt.has_value())
+				this->line_rect_drawer.color = glm::vec3{0.0f, 0.4f, 0.8f};
+				for (auto const& [chunk_coords, chunk_ptg_field] : this->chunk_grid->ptg_field)
 				{
-					BlockRect const chunk_rect = chunk_grid->chunk_rect(
-						wrapper_opt.value().chunk_coords);
+					BlockRect const rect = chunk_rect(chunk_coords);
 					glm::vec3 const coords_min =
-						static_cast<glm::vec3>(chunk_rect.coords_min)
-							- glm::vec3{0.5f, 0.5f, 0.5f};
+						static_cast<glm::vec3>(rect.coords_min) - glm::vec3{0.5f, 0.5f, 0.5f};
 					glm::vec3 const coords_max =
-						static_cast<glm::vec3>(chunk_rect.coords_max)
-							+ glm::vec3{0.5f, 0.5f, 0.5f};
+						static_cast<glm::vec3>(rect.coords_max) + glm::vec3{0.5f, 0.5f, 0.5f};
 					this->line_rect_drawer.set_box(AlignedBox{
 						(coords_min + coords_max) / 2.0f, coords_max - coords_min});
 					this->shader_table.line().draw(this->line_rect_drawer.mesh);
 				}
+
+				#if 0
+				this->line_rect_drawer.color = glm::vec3{1.0f, 0.0f, 0.0f};
+				for (std::optional<GeneratingChunkWrapper> const& wrapper_opt :
+					this->generating_chunk_table)
+				{
+					if (wrapper_opt.has_value())
+					{
+						BlockRect const chunk_rect = chunk_grid->chunk_rect(
+							wrapper_opt.value().chunk_coords);
+						glm::vec3 const coords_min =
+							static_cast<glm::vec3>(chunk_rect.coords_min)
+								- glm::vec3{0.5f, 0.5f, 0.5f};
+						glm::vec3 const coords_max =
+							static_cast<glm::vec3>(chunk_rect.coords_max)
+								+ glm::vec3{0.5f, 0.5f, 0.5f};
+						this->line_rect_drawer.set_box(AlignedBox{
+							(coords_min + coords_max) / 2.0f, coords_max - coords_min});
+						this->shader_table.line().draw(this->line_rect_drawer.mesh);
+					}
+				}
+				#endif
 			}
-			#endif
 		}
 
 		/* Apply what was drawn to what is displayed on the screen. */
-		auto const clock_time_before_swapping_buffers = clock::now();
-		SDL_GL_SwapWindow(g_window);
-		auto const clock_time_after_swapping_buffers = clock::now();
-		[[maybe_unused]] auto const duration_swapping_buffers =
-			(clock_time_after_swapping_buffers - clock_time_before_swapping_buffers).count();
+		{
+			#ifdef GLOP_ENABLED
+			GlopTimer timer_{this->glop, glop_time_sdl_swap_window};
+			#endif
+			SDL_GL_SwapWindow(g_window);
+		}
 
 		/* Mesure time at the end of the current iteration. */
 		auto const clock_time_after_iteration = clock::now();
 		[[maybe_unused]] float const duration_iteration =
 			std::chrono::duration<float>(
 				clock_time_after_iteration - clock_time_before_iteration).count();
+
+		#ifdef GLOP_ENABLED
+		this->glop.set_column_value(glop_time_all,
+			duration_iteration);
+		this->glop.set_column_value(glop_chunk_ptg_count,
+			this->chunk_grid->ptg_field.size());
+		this->glop.set_column_value(glop_chunk_ptt_count,
+			this->chunk_grid->ptt_field.size());
+		this->glop.set_column_value(glop_chunk_b_count,
+			this->chunk_grid->b_field.size());
+		this->glop.set_column_value(glop_chunk_mesh_count,
+			this->chunk_grid->mesh.size());
+		this->glop.emit_row();
+		#endif
 
 		#if 0
 		std::cout
@@ -392,6 +441,7 @@ void Game::loop()
 		#endif
 	}
 
+	this->glop.close_output_stream();
 	cleanup_window_graphics();
 }
 
