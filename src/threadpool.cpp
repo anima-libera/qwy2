@@ -2,6 +2,8 @@
 #include "threadpool.hpp"
 #include <cassert>
 
+#include <iostream>
+
 namespace qwy2
 {
 
@@ -12,7 +14,7 @@ bool s_threads_should_finish = false;
 
 void thread_endless_work(ThreadPool& thread_pool)
 {
-	while(not s_threads_should_finish)
+	while(true)
 	{
 		std::packaged_task<void()> task;
 		{
@@ -24,6 +26,10 @@ void thread_endless_work(ThreadPool& thread_pool)
 			}
 			task = std::move(thread_pool.task_queue.front());
 			thread_pool.task_queue.pop_front();
+		}
+		if (s_threads_should_finish)
+		{
+			return;
 		}
 		task();
 		{
@@ -43,6 +49,11 @@ ThreadPool::ThreadPool()
 ThreadPool::~ThreadPool()
 {
 	s_threads_should_finish = true;
+	/* Distribue dummy tasks to all the threads for them to check for s_threads_should_finish. */
+	for (unsigned int i = 0; i < this->thread_table.size(); i++)
+	{
+		this->give_task([](){});
+	}
 	for (std::thread& thread : this->thread_table)
 	{
 		thread.join();
