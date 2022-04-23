@@ -3,6 +3,7 @@
 
 ## Build system
 
+- **Optimization:** Avoid recompiling everything when all that changes is the linking command. This could be done by storing the object files and translation unit data in directories that only depend on the compiling command (and not on the linking command).
 - **Feature:** Make sure that halting with Ctrl+C at any time during any step of the build process does not break and require `--clean`ing.
 - **Optimization:** Support [precompiled header files](https://gcc.gnu.org/onlinedocs/gcc/Precompiled-Headers.html).
 - **Optimization:** Support running multiple instances of the compiler at once via nonblocking calls to make use of more cores (up to some input number of cores).
