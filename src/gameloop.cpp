@@ -80,7 +80,7 @@ Game::Game(Config const& config)
 	 * cast shadows on the user's rendering of the world. */
 	glGenFramebuffers(1, &this->shadow_framebuffer_openglid);
 	glBindFramebuffer(GL_FRAMEBUFFER, this->shadow_framebuffer_openglid);
-	this->shadow_framebuffer_side = 4096 * 8; /* TODO: Make this configurable. */
+	this->shadow_framebuffer_side = config.get<int>("shadow_map_resolution"sv);
 	GLint max_framebuffer_width, max_framebuffer_height;
 	glGetIntegerv(GL_MAX_FRAMEBUFFER_WIDTH, &max_framebuffer_width);
 	glGetIntegerv(GL_MAX_FRAMEBUFFER_HEIGHT, &max_framebuffer_height);
