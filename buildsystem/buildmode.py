@@ -76,6 +76,8 @@ def get_build_mode(options: Options) -> BuildMode:
 	if False:
 		linking_command_args.append("-v")
 		linking_command_args.append("-Wl,-v")
+	if options.compiler == "clang":
+		linking_command_args.append("-no-pie")
 	linking_command_args.append("-lm")
 	linking_command_args.append("-lstdc++")
 	linking_command_args.append("-lpthread")
