@@ -12,12 +12,88 @@ Config::Config()
 {
 	using namespace std::literals::string_view_literals;
 
+	/* Is the cursor initially captured by the game window?
+	 * Setting it to false can be more confortable when launching the game in an IDE debugger. */
 	this->parameter_table.insert({"cursor_capture"sv, true});
+
+	/* Radius (in blocks) of the spherical zone around the player that gets to be loaded. */
 	this->parameter_table.insert({"loaded_radius"sv, 160.0f});
+	this->corrector_table.insert({"loaded_radius"sv, [](ParameterType& variant_value){
+		float const value = std::get<float>(variant_value);
+		if (value <= 0.0f)
+		{
+			std::cout << "\x1b[31mCommand line error:\x1b[39m "
+				<< "The loaded_radius value should be strictly positive, "
+				<< "thus " << value << " is not valid."
+				<< std::endl;
+			return false;
+		}
+		return true;
+	}});
+
+	/* The length (in blocks) of an edge of the cube that is the shape of all chunks.
+	 * It should be odd for chunks to have a singe block at their center
+	 * (I'm pretty sure I had a good reason when that decision was taken). */
 	this->parameter_table.insert({"chunk_side"sv, 45});
+	this->corrector_table.insert({"chunk_side"sv, [](ParameterType& variant_value){
+		int const value = std::get<int>(variant_value);
+		if (value <= 0)
+		{
+			std::cout << "\x1b[31mCommand line error:\x1b[39m "
+				<< "The chunk_side value should be strictly positive, "
+				<< "thus " << value << " is not valid."
+				<< std::endl;
+			return false;
+		}
+		if (value % 2 == 0)
+		{
+			std::cout << "\x1b[31mCommand line error:\x1b[39m "
+				<< "The chunk_side value should be odd, "
+				<< "thus " << value << " is not valid."
+				<< std::endl;
+			variant_value = value + 1;
+		}
+		return true;
+	}});
+
+	/* Seed of the whole nature and world generation. */
 	this->parameter_table.insert({"seed"sv, 9});
+
+	/* The number of threads in the thread pool dedicated to stuff like chunk generation. */
 	this->parameter_table.insert({"loading_threads"sv, 2});
+	this->corrector_table.insert({"loading_threads"sv, [](ParameterType& variant_value){
+		int const value = std::get<int>(variant_value);
+		if (value <= 0)
+		{
+			std::cout << "\x1b[31mCommand line error:\x1b[39m "
+				<< "The loading_threads value should be strictly positive, "
+				<< "thus " << value << " is not valid."
+				<< std::endl;
+			return false;
+		}
+		return true;
+	}});
+
+	/* The length (in pixels) of the side of the square-shaped framebuffer in which
+	 * the shadow map (shadows cast by the sun) is stored.
+	 * Less means faster rendering but also more pixelated shadows.
+	 * There is an implementation-dependant maximum value that may cap this parameter
+	 * (that is not done here). */
 	this->parameter_table.insert({"shadow_map_resolution"sv, 4096});
+	this->corrector_table.insert({"shadow_map_resolution"sv, [](ParameterType& variant_value){
+		int const value = std::get<int>(variant_value);
+		if (value <= 0)
+		{
+			std::cout << "\x1b[31mCommand line error:\x1b[39m "
+				<< "The shadow_map_resolution value should be strictly positive, "
+				<< "thus " << value << " is not valid."
+				<< std::endl;
+			return false;
+		}
+		return true;
+	}});
+
+	/* If ture, then the terrain generation will produce a flat world. */
 	this->parameter_table.insert({"flat"sv, false});
 }
 
@@ -37,53 +113,60 @@ ErrorCode Config::parse_command_line(int argc, char const* const* argv)
 			std::string name{};
 			for (; argv[i][j] != '\0' && argv[i][j] != '='; j++)
 			{
-				/* Replace '-' characters with '_' characters. */
+				/* Replace '-' characters with '_' characters to allow for the more idiomatic
+				 * kebab-case for command line arguments. */
 				name += argv[i][j] == '-' ? '_' : argv[i][j];
 			}
-			j++; /* Skip the '=' character. */
-			char const* const value_as_cstring = &argv[i][j];
+			char const* value_as_cstring = nullptr;
+			if (argv[i][j] == '=')
+			{
+				j++; /* Skip the '=' character. */
+				value_as_cstring = &argv[i][j];
+			}
 
 			/* Parse the given parameter according to the type of the previous value
 			 * (that must not change) and replace the previous value. */
 			ParameterTableType::iterator const parameter = this->parameter_table.find(name);
 			if (parameter == this->parameter_table.end())
 			{
-				std::cout << "Command line error: Unknown config parameter name "
-					<< "\"" << argv[i] << "\"." << std::endl;
+				std::cout << "\x1b[31mCommand line error:\x1b[39m "
+					<< "Unknown parameter name \"" << argv[i] << "\"."
+					<< std::endl;
+				std::cout << "The parameter list can be found "
+					<< "in the code of the constructor Config::Config."
+					<< std::endl;
 				return ErrorCode::ERROR;
 			}
-			std::stringstream string_stream{value_as_cstring};
+			else if (value_as_cstring == nullptr)
+			{
+				std::cout << "\x1b[31mCommand line error:\x1b[39m "
+					<< "No value was given to the parameter \"" << argv[i] << "\"."
+					<< std::endl;
+				std::cout << "Syntax is \"--parameter-name=value\"."
+					<< std::endl;
+				return ErrorCode::ERROR;
+			}
 			if (std::holds_alternative<bool>(parameter->second))
 			{
-				bool value;
-				string_stream >> value;
-				parameter->second = value;
-				std::cout << "[Config] " << name << " = " << value << std::endl;
+				this->set_parameter<bool>(parameter, value_as_cstring);
 			}
 			else if (std::holds_alternative<int>(parameter->second))
 			{
-				int value;
-				string_stream >> value;
-				parameter->second = value;
-				std::cout << "[Config] " << name << " = " << value << std::endl;
+				this->set_parameter<int>(parameter, value_as_cstring);
 			}
 			else if (std::holds_alternative<float>(parameter->second))
 			{
-				float value;
-				string_stream >> value;
-				parameter->second = value;
-				std::cout << "[Config] " << name << " = " << value << std::endl;
+				this->set_parameter<float>(parameter, value_as_cstring);
 			}
 			else if (std::holds_alternative<std::string_view>(parameter->second))
 			{
-				parameter->second = std::string_view{value_as_cstring};
-				std::cout << "[Config] " << name << " = "
-					<< std::get<std::string_view>(parameter->second) << std::endl;
+				this->set_parameter<std::string_view>(parameter, value_as_cstring);
 			}
 			else
 			{
-				std::cout << "Bug: Unsupported type for the config parameter named "
-					<< "\"" << name << "\"." << std::endl;
+				std::cout << "\x1b[31mBug:\x1b[39m "
+					<< "Unsupported type for the parameter \"" << name << "\"."
+					<< std::endl;
 				return ErrorCode::ERROR;
 			}
 		}
@@ -95,12 +178,64 @@ ErrorCode Config::parse_command_line(int argc, char const* const* argv)
 		}
 		else
 		{
-			std::cout << "Command line error: Unknown argument "
-				<< "\"" << argv[i] << "\"." << std::endl;
+			std::cout << "\x1b[31mCommand line error:\x1b[31m "
+				<< "Unknown argument syntax \"" << argv[i] << "\"."
+				<< std::endl;
+			std::cout << "Syntax for giving values to parameters is \"--parameter-name=value\"."
+				<< std::endl;
 			return ErrorCode::ERROR;
 		}
 	}
 	return ErrorCode::OK;
+}
+
+template<typename ValueType>
+void Config::set_parameter(
+	ParameterTableType::iterator const parameter, char const* value_as_cstring)
+{
+	ValueType value;
+	std::stringstream string_stream{value_as_cstring};
+	if constexpr (not std::is_same_v<ValueType, std::string_view>)
+	{
+		string_stream >> std::boolalpha >> value;
+	}
+	else
+	{
+		value = std::string_view{value_as_cstring};
+	}
+	if (not string_stream.fail())
+	{
+		CorrectorTableType::iterator const corrector =
+			this->corrector_table.find(parameter->first);
+		if (corrector != this->corrector_table.end())
+		{
+			ParameterType variant_value{value};
+			if (corrector->second(variant_value))
+			{
+				parameter->second = std::get<ValueType>(variant_value);
+			}
+		}
+		else
+		{
+			parameter->second = value;
+		}
+	}
+	else
+	{
+		constexpr char const* type =
+			std::is_same_v<ValueType, bool> ? "boolean " :
+			std::is_same_v<ValueType, int> ? "integer " :
+			std::is_same_v<ValueType, float> ? "single precision floating point value " :
+			std::is_same_v<ValueType, std::string_view> ? "string " :
+			(assert(false), "h");
+		std::cout << "\x1b[31mCommand line error:\x1b[39m "
+			<< "Parameter \"" << parameter->first << "\" is a " << type << " "
+			<< "and \"" << value_as_cstring << "\" failed to be parsed as such."
+			<< std::endl;
+	}
+	std::cout << "[Config] "
+		<< parameter->first << " = " << std::get<ValueType>(parameter->second)
+		<< std::endl;
 }
 
 template<typename ValueType>
