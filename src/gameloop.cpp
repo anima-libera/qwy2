@@ -89,7 +89,8 @@ Game::Game(Config const& config)
 		static_cast<unsigned int>(max_framebuffer_width));
 	this->shadow_framebuffer_side = std::min(this->shadow_framebuffer_side,
 		static_cast<unsigned int>(max_framebuffer_height));
-	std::cout << "shadow_framebuffer_side = " << this->shadow_framebuffer_side << std::endl;
+	std::cout << "[Init] "
+		<< "shadow_framebuffer_side = " << this->shadow_framebuffer_side << std::endl;
 	unsigned int shadow_depth_texture_openglid;
 	glGenTextures(1, &shadow_depth_texture_openglid);
 	glBindTexture(GL_TEXTURE_2D, shadow_depth_texture_openglid);
@@ -167,7 +168,9 @@ Game::Game(Config const& config)
 	this->render_shadows = true;
 
 	/* Temporary note. */
-	std::cout << "Game loop ready.\n"
+	std::cout << "[Init] "
+		<< "Game loop ready." << std::endl;
+	std::cout
 		<< "\x1b[33m"
 		<< "Please wait a bit, rendering the first chunk requires a bit of generation first.\n"
 		<< "Press [G] to stop displaying the chunk borders.\n"

@@ -134,7 +134,7 @@ ErrorCode Config::parse_command_line(int argc, char const* const* argv)
 			if (parameter == this->parameter_table.end())
 			{
 				std::cout << "\x1b[31mCommand line error:\x1b[39m "
-					<< "Unknown parameter name \"" << argv[i] << "\"."
+					<< "Unknown parameter name \"" << name << "\"."
 					<< std::endl;
 				std::cout << "The parameter list can be found "
 					<< "in the code of the constructor Config::Config."
@@ -144,9 +144,10 @@ ErrorCode Config::parse_command_line(int argc, char const* const* argv)
 			else if (value_as_cstring == nullptr)
 			{
 				std::cout << "\x1b[31mCommand line error:\x1b[39m "
-					<< "No value was given to the parameter \"" << argv[i] << "\"."
+					<< "No value was given to the parameter \"" << name << "\"."
 					<< std::endl;
-				std::cout << "Syntax is \"--parameter-name=value\"."
+				std::cout << "Syntax is \"--parameter-name=value\" "
+					<< "(all in one command line argument, thus no spaces (or in quotes))."
 					<< std::endl;
 				return ErrorCode::ERROR;
 			}
@@ -241,13 +242,13 @@ void Config::set_parameter(
 	else
 	{
 		constexpr char const* type =
-			std::is_same_v<ValueType, bool> ? "boolean " :
-			std::is_same_v<ValueType, int> ? "integer " :
-			std::is_same_v<ValueType, float> ? "single precision floating point value " :
-			std::is_same_v<ValueType, std::string_view> ? "string " :
+			std::is_same_v<ValueType, bool> ? "a boolean" :
+			std::is_same_v<ValueType, int> ? "an integer" :
+			std::is_same_v<ValueType, float> ? "a single precision floating point value" :
+			std::is_same_v<ValueType, std::string_view> ? "a string" :
 			(assert(false), "h");
 		std::cout << "\x1b[31mCommand line error:\x1b[39m "
-			<< "Parameter \"" << parameter->first << "\" is a " << type << " "
+			<< "Parameter \"" << parameter->first << "\" is " << type << " "
 			<< "and \"" << value_as_cstring << "\" failed to be parsed as such."
 			<< std::endl;
 	}
