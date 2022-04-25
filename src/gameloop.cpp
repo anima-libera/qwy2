@@ -171,7 +171,7 @@ Game::Game(Config const& config)
 	std::cout << "[Init] "
 		<< "Game loop ready." << std::endl;
 	std::cout
-		<< "\x1b[33m"
+		<< "\x1b[33m" /* Yellow. */
 		<< "Please wait a bit, rendering the first chunk requires a bit of generation first.\n"
 		<< "Press [G] to stop displaying the chunk borders.\n"
 		<< "Press [M] to toggle the view from the sun's point of view.\n"

@@ -12,6 +12,7 @@
 
 ## Qwy2
 
+- **Fix:** Rewrite the player collision with blocks code entirely. It is currently so ugly it can be considered a bug.
 - **Optimization:** Generate the chunk meshes sooner (without the whole neighborhood) and update the edges of the meshes as neighbors are generated.
 - **Debugging feature:** Allow for chunks to have their PTG fields be given meshes to display as soon as these fields are generated.
 - **Optimization:** When in normal view, don't render chunks with empty meshes.

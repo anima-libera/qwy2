@@ -128,8 +128,7 @@ ErrorCode Config::parse_command_line(int argc, char const* const* argv)
 				value_as_cstring = &argv[i][j];
 			}
 
-			/* Parse the given parameter according to the type of the previous value
-			 * (that must not change) and replace the previous value. */
+			/* Checks and value change hapen here! */
 			ParameterTableType::iterator const parameter = this->parameter_table.find(name);
 			if (parameter == this->parameter_table.end())
 			{
