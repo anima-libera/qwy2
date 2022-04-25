@@ -12,6 +12,10 @@ Config::Config()
 {
 	using namespace std::literals::string_view_literals;
 
+	/* The parameters that can be set by command line arguments are all defined here.
+	 * The type of a default value is the type of the parameter
+	 * and that cannot be changed at runtime. */
+
 	/* Is the cursor initially captured by the game window?
 	 * Setting it to false can be more confortable when launching the game in an IDE debugger. */
 	this->parameter_table.insert({"cursor_capture"sv, true});
@@ -164,6 +168,14 @@ ErrorCode Config::parse_command_line(int argc, char const* const* argv)
 			}
 			else
 			{
+				/* If this problem araises, then it means that a parameter have been defined
+				 * with a type that is not a case handled above.
+				 * To fix it, either change the parameter type
+				 * (by making sure that its default value has a type handled here),
+				 * or add the parameter type to the list of supported types
+				 * (by adding it to the types of the variant ParameterType,
+				 * adding it in the cases above, making sure Config::set_parameter works with it,
+				 * and adding a line of the Config::get function template instantiation). */
 				std::cout << "\x1b[31mBug:\x1b[39m "
 					<< "Unsupported type for the parameter \"" << name << "\"."
 					<< std::endl;
@@ -212,11 +224,17 @@ void Config::set_parameter(
 			ParameterType variant_value{value};
 			if (corrector->second(variant_value))
 			{
+				/* Since the corrector can modify the variant_value given to it
+				 * (to adjust the value in case it is almost valid),
+				 * we have to use this maybe modified variant_value instead of the
+				 * value variable that could not have been modified. */
 				parameter->second = std::get<ValueType>(variant_value);
 			}
 		}
 		else
 		{
+			/* The parameter does not have a corrector,
+			 * it just means that no specific check/adjustment is needed here. */
 			parameter->second = value;
 		}
 	}
