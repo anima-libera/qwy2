@@ -53,7 +53,9 @@ public:
 	InputEventHandler input_event_handler;
 	PlayerControls player_controls;
 	ThreadPool thread_pool;
+	#ifdef GLOP_ENABLED
 	Glop glop;
+	#endif
 
 public:
 	Game(Config const& config);

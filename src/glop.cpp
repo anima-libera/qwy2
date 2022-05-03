@@ -14,7 +14,7 @@ GlopColumnId Glop::add_column(char const* name)
 
 void Glop::open_output_stream()
 {
-	this->output_stream.open("glop", std::ios::out);
+	this->output_stream.open(Glop::OUTPUT_FILE_NAME, std::ios::out);
 	for (GlopColumnId id = 0; id < this->column_name_table.size(); id++)
 	{
 		this->output_stream << this->column_name_table[id];

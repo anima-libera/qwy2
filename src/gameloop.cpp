@@ -182,11 +182,17 @@ Game::Game(Config const& config)
 
 void Game::loop()
 {
+	/* GLOP is the (cheap) profiler of Qwy2 and is only enabled when build with `--glop`. */
 	#ifdef GLOP_ENABLED
+	/* Frame number incremented at each frame. */
+	unsigned int frame = 0;
+	GlopColumnId glop_frame = this->glop.add_column("Frame");
+	/* Some counts of chunk components. */
 	GlopColumnId glop_chunk_ptg_count = this->glop.add_column("PTG count");
 	GlopColumnId glop_chunk_ptt_count = this->glop.add_column("PTT count");
 	GlopColumnId glop_chunk_b_count = this->glop.add_column("B count");
 	GlopColumnId glop_chunk_mesh_count = this->glop.add_column("Chunk mesh count");
+	/* Timers of different sections of the game loop. */
 	GlopColumnId glop_time_all = this->glop.add_column("Timer: All");
 	GlopColumnId glop_time_chunk_manager = this->glop.add_column("Timer: Chunk manager");
 	GlopColumnId glop_time_chunk_mesh_sync = this->glop.add_column("Timer: Chunk mesh sync");
@@ -195,8 +201,12 @@ void Game::loop()
 	GlopColumnId glop_time_chunk_box_render = this->glop.add_column("Timer: Chunk box render");
 	GlopColumnId glop_time_sdl_swap_window = this->glop.add_column("Timer: SDL_GL_SwapWindow");
 	this->glop.open_output_stream();
+	#define TIME_BLOCK(column_id_) GlopTimer timer_{this->glop, column_id_}
+	#else
+	#define TIME_BLOCK(column_id_) do {} while (false)
 	#endif
 
+	/* The main game loop is here! */
 	this->loop_running = true;
 	while (this->loop_running)
 	{
@@ -216,9 +226,7 @@ void Game::loop()
 
 		/* Generate chunks around the player. */
 		{
-			#ifdef GLOP_ENABLED
-			GlopTimer timer_{this->glop, glop_time_chunk_manager};
-			#endif
+			TIME_BLOCK(glop_time_chunk_manager);
 			this->chunk_generation_manager.manage(*this->nature);
 		}
 
@@ -263,10 +271,7 @@ void Game::loop()
 
 		/* Make sure that all chunk's mesh data are synchronized on the GPU's side. */
 		{
-			#ifdef GLOP_ENABLED
-			GlopTimer timer_{this->glop, glop_time_chunk_mesh_sync};
-			#endif
-
+			TIME_BLOCK(glop_time_chunk_mesh_sync);
 			for (auto& [chunk_coords, mesh] : this->chunk_grid->mesh)
 			{
 				if (mesh.needs_update_opengl_data)
@@ -281,9 +286,7 @@ void Game::loop()
 		 * (instead of on the bright faces lit by sunlight) where they remain mostly unseen. */
 		if (this->render_shadows)
 		{
-			#ifdef GLOP_ENABLED
-			GlopTimer timer_{this->glop, glop_time_sun_shadows};
-			#endif
+			TIME_BLOCK(glop_time_sun_shadows);
 
 			glViewport(0, 0, this->shadow_framebuffer_side, this->shadow_framebuffer_side);
 			glBindFramebuffer(GL_FRAMEBUFFER, this->shadow_framebuffer_openglid);
@@ -317,10 +320,7 @@ void Game::loop()
 			glCullFace(GL_BACK);
 		}
 		{
-			#ifdef GLOP_ENABLED
-			GlopTimer timer_{this->glop, glop_time_chunk_mesh_render};
-			#endif
-
+			TIME_BLOCK(glop_time_chunk_mesh_render);
 			for (auto const& [chunk_coords, mesh] : this->chunk_grid->mesh)
 			{
 				if (mesh.openglid != 0)
@@ -368,9 +368,7 @@ void Game::loop()
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 			{
-				#ifdef GLOP_ENABLED
-				GlopTimer timer_{this->glop, glop_time_chunk_box_render};
-				#endif
+				TIME_BLOCK(glop_time_chunk_box_render);
 
 				this->line_rect_drawer.color = glm::vec3{0.0f, 0.4f, 0.8f};
 				for (auto const& [chunk_coords, chunk_ptg_field] : this->chunk_grid->ptg_field)
@@ -411,9 +409,7 @@ void Game::loop()
 
 		/* Apply what was drawn to what is displayed on the screen. */
 		{
-			#ifdef GLOP_ENABLED
-			GlopTimer timer_{this->glop, glop_time_sdl_swap_window};
-			#endif
+			TIME_BLOCK(glop_time_sdl_swap_window);
 			SDL_GL_SwapWindow(g_window);
 		}
 
@@ -426,6 +422,8 @@ void Game::loop()
 		#ifdef GLOP_ENABLED
 		this->glop.set_column_value(glop_time_all,
 			duration_iteration);
+		this->glop.set_column_value(glop_frame,
+			frame++);
 		this->glop.set_column_value(glop_chunk_ptg_count,
 			this->chunk_grid->ptg_field.size());
 		this->glop.set_column_value(glop_chunk_ptt_count,
@@ -445,7 +443,9 @@ void Game::loop()
 		#endif
 	}
 
+	#ifdef GLOP_ENABLED
 	this->glop.close_output_stream();
+	#endif
 	cleanup_window_graphics();
 }
 
