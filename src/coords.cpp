@@ -23,6 +23,15 @@ CoordsInt<L>::CoordsInt(int x, int y, int z):
 }
 
 template<CoordsLevel L>
+CoordsInt<L>::CoordsInt(glm::vec3 coords):
+	x{static_cast<int>(std::round(coords.x))},
+	y{static_cast<int>(std::round(coords.y))},
+	z{static_cast<int>(std::round(coords.z))}
+{
+	;
+}
+
+template<CoordsLevel L>
 int& CoordsInt<L>::operator[](int index)
 {
 	return (&x)[index];

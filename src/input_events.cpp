@@ -227,6 +227,39 @@ void InputEventHandler::handle_events(Game& game)
 								<< std::endl;
 						}
 					break;
+
+					case SDLK_SPACE:
+					case SDLK_w:
+						if (event.type == SDL_KEYDOWN)
+						{
+							/* Modify the B field (the actual blocks). */
+							BlockCoords const coords =
+								game.player.box.center - glm::vec3{0.0f, 0.0f, 1.9f};
+							ChunkCoords const chunk_coords = containing_chunk_coords(coords);
+							ChunkBField& b_field = game.chunk_grid->b_field.at(chunk_coords);
+							b_field[coords].type_id = event.key.keysym.sym == SDLK_w ? 3 : 0;
+							/* Update the meshes.
+							 * Due to concerns such as ambiant occlusion, nearby chunks may
+							 * also have to also be remeshed. */
+							BlockRect const concerned_blocks{coords, 2};
+							ChunkRect const concerned_chunks =
+								containing_chunk_rect(concerned_blocks);
+							for (ChunkCoords const chunk_coords : concerned_chunks)
+							{
+								Mesh<VertexDataClassic>& mesh =
+									game.chunk_grid->mesh.at(chunk_coords);
+								ChunkMeshData* data = generate_chunk_complete_mesh(chunk_coords,
+									game.chunk_grid->get_b_field_neighborhood(chunk_coords),
+									*game.nature);
+								mesh.vertex_data = std::move(*data);
+								mesh.needs_update_opengl_data = true;
+							}
+							std::cout <<
+								(event.key.keysym.sym == SDLK_w ?
+									"[W] Place block" : "[Space] Remove block")
+								<< std::endl;
+						}
+					break;
 				}
 			break;
 

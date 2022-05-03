@@ -49,6 +49,7 @@ public:
 public:
 	CoordsInt();
 	CoordsInt(int x, int y, int z);
+	CoordsInt(glm::vec3 coords);
 	int& operator[](int index);
 	int const& operator[](int index) const;
 	operator glm::vec3() const;

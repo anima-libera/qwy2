@@ -1,0 +1,510 @@
+[33mcommit ae58b6081b5897e51660bcdecd56804c1672a636[m[33m ([m[1;36mHEAD -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m)[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Tue May 3 03:24:39 2022 +0200
+
+    Made GLOP (profiler) related code more readable and added comments
+
+[33mcommit 2cdbf6d0d67beb1adac205af8f2e3d67bddb2e9f[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Mon Apr 25 02:56:45 2022 +0200
+
+    Changed minor comments, added a TODO list entry for the rewtriting of the player-blocks collision code
+
+[33mcommit 5e3c0c7d23e4bc2732d2ba495a23581f881b2d9a[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Mon Apr 25 02:40:43 2022 +0200
+
+    Made some messages a bit better
+
+[33mcommit 654034dd1eb7c4720b379ffb7ff5214832819182[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Mon Apr 25 02:00:37 2022 +0200
+
+    Added a few comments in the config.cpp and .hpp
+
+[33mcommit 16d9f5ee034efc73ca19aaa87560ff99ca774ca3[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Mon Apr 25 01:31:21 2022 +0200
+
+    Improved command line parsing errors and added checks for the values
+
+[33mcommit 3e53c769a9168e0b6915eb94e75819de0fbde143[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Sat Apr 23 23:52:52 2022 +0200
+
+    Small fixes
+
+[33mcommit 58f870cf12f72708af31b917e5af7ee1470cb216[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Sat Apr 23 22:51:19 2022 +0200
+
+    Added config option for a flat world generation
+
+[33mcommit c7c3025a37d18f9533c7e77dca0bb8041c2d04ac[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Sat Apr 23 21:34:10 2022 +0200
+
+    Added a TODO list entry on a way to optimize the build system in a special case
+
+[33mcommit 19625e745f31a56ec5ee7068aa3ceecd9b729992[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Sat Apr 23 21:29:20 2022 +0200
+
+    Fixed clang build
+
+[33mcommit 8e6eb4a3bea1f7a7b92a78b92f8229a2991fe19e[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Sat Apr 23 20:57:00 2022 +0200
+
+    Fixed threads that did not die when window was closed
+
+[33mcommit f630817bfb4cb343415015a50e56b7d88a87846d[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Sat Apr 23 20:29:57 2022 +0200
+
+    Fixed the [T] key that toggles the generation of chunks
+
+[33mcommit 9408e6f3c84f0fc5d8708e7619a4fb041365f41d[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Sat Apr 23 20:22:14 2022 +0200
+
+    Added control to toggle vsync
+
+[33mcommit d63c39b3dc98e1e5df3acd2d9e9ace2a16574fcc[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Sat Apr 23 20:12:58 2022 +0200
+
+    Removed FPS drop fix entry from the TODO list, it was due to the too large shadow map resolution
+
+[33mcommit 1252272207cd234e3aa42aa58b58d3864481dbde[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Sat Apr 23 20:11:27 2022 +0200
+
+    Made the shadow map resolution configurable
+
+[33mcommit eb35350e4ad3c28781c8c44db4cd14d22244bd35[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Sat Apr 23 20:04:11 2022 +0200
+
+    Added GLOP: a performance measurement compile-time option
+
+[33mcommit 069a7f7d7958042ff32f065d6d85e53d631977ea[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Thu Apr 21 04:39:59 2022 +0200
+
+    Stolen some thread pool code for the chunk generation
+
+[33mcommit ac07f1f4df8222aeb81e51cc2365f8815786afc2[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Wed Apr 20 19:47:14 2022 +0200
+
+    A bit of cleanup in the #include sections
+
+[33mcommit 22d61d66b925db69b9cb1e1ba46aeb9a6c225026[m[33m ([m[1;32mbuild-system[m[33m)[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Wed Apr 20 05:48:44 2022 +0200
+
+    Complete refactoring of the build system!
+
+[33mcommit 17992c3c0eefab8c52fa9032d1d2a54939678953[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Fri Apr 15 04:59:23 2022 +0200
+
+    Added an optimization entry on the build system's TODO list
+
+[33mcommit 7e5e8297d466f7e8fdeca1b0dce2831d50b9c87b[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Thu Apr 14 05:41:15 2022 +0200
+
+    Made the build system a bit smarter
+
+[33mcommit 2bee86846ba017452931be894e2a9b5170022ff1[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Thu Apr 14 00:07:41 2022 +0200
+
+    Fixed TODO list
+
+[33mcommit 4fb76825f4f1bf630d290b8c38a2da67c491c5e5[m
+Merge: c8c3029 792856c
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Thu Apr 14 00:06:53 2022 +0200
+
+    Merge branch 'master' of github.com:anima-libera/qwy2
+
+[33mcommit c8c3029353b4951effbeb34fc38b53ee4a58d9ea[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Thu Apr 14 00:06:11 2022 +0200
+
+    Removed the build system fix from the TODO list
+
+[33mcommit 0a8f971da148a36491d95b986df0b1dd70f12787[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Thu Apr 14 00:04:44 2022 +0200
+
+    Fixed building in release mode after debug build, separating the build artifacts in different directories
+
+[33mcommit 792856c05d143bb8a64599b9392f8f0c4aea9c94[m
+Author: Anima Libera <46418869+anima-libera@users.noreply.github.com>
+Date:   Wed Apr 13 10:48:47 2022 +0200
+
+    Added Freeminer to the README repo list
+
+[33mcommit 6e2c150bedf7351da6b0bae7d153742ba1efc6f3[m
+Author: Anima Libera <46418869+anima-libera@users.noreply.github.com>
+Date:   Wed Apr 13 09:18:08 2022 +0200
+
+    Mentioning the fact that Minetest is big in the README
+
+[33mcommit dbe4b4529d57f91a7549e1204434dd9fc17347d6[m
+Author: Anima Libera <46418869+anima-libera@users.noreply.github.com>
+Date:   Wed Apr 13 09:16:11 2022 +0200
+
+    Added Minetest to the README interest repo list
+
+[33mcommit 44ec3e5bbddbf1dbd056e21e0df77d239d157388[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Wed Apr 13 03:31:03 2022 +0200
+
+    Added a list of references of intrest to the README
+
+[33mcommit bab1059a8d03e78b581eae63510119f60b9e41f1[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Wed Apr 13 02:35:49 2022 +0200
+
+    Few additions to the README
+
+[33mcommit 62a22f535f368ef46a6b2dc6a000e0193ea12ac6[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Wed Apr 13 02:02:48 2022 +0200
+
+    Added text in the README and TODO list
+
+[33mcommit 28fb0f3876fc98e3610ec6955c6aacf654385313[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Tue Apr 12 23:59:38 2022 +0200
+
+    Removed the TODO entry for ambiant occlusion on voxels, since it is done now
+
+[33mcommit 813a45a677dc5f3df030e0eec4fe9d7eb1025744[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Tue Apr 12 23:54:53 2022 +0200
+
+    Other size adjustment to the README image
+
+[33mcommit 0b16a22be8360325b3753a36c40e9567d214a4c8[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Tue Apr 12 23:54:09 2022 +0200
+
+    Size adjustment to the README image
+
+[33mcommit 5ecf246d8cabadbe74ba8ac7f8acad5014e6a850[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Tue Apr 12 23:50:28 2022 +0200
+
+    Make the README image have round side edges
+
+[33mcommit 1aa38d45c54d624cc70cd8e533696f99c17dbe7a[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Tue Apr 12 23:45:18 2022 +0200
+
+    Added a piece of screenshot to the README
+
+[33mcommit 1d9b08c33b03478869cf9594be1c4ed0db08b758[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Tue Apr 12 23:31:06 2022 +0200
+
+    Added the printing of a kinda help message on game initialization
+
+[33mcommit 31fd2ea022e3389b79a92267bfde1c120e3ecac1[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Tue Apr 12 04:49:00 2022 +0200
+
+    Implemented a cool local ambiant occlusion trick, and made placeholder world gen cool again
+
+[33mcommit 9aa93f4e1f506a2e29361615bf04ed8a07bb37c4[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Mon Apr 11 06:59:02 2022 +0200
+
+    Made the world generation follow the player again
+
+[33mcommit 74d3fcf2e3fba02781be24910ec75a0181076396[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Mon Apr 11 06:53:36 2022 +0200
+
+    Chunk generation refactored and working!
+
+[33mcommit 670aea3fc39129e1054a020691b8ff8d859a1ccb[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Sun Apr 3 20:38:56 2022 +0200
+
+    Started the design of the new chunk-related types
+
+[33mcommit 312e19593a4eb70578e279a2544a0d2ce7e70d56[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Sun Apr 3 18:48:43 2022 +0200
+
+    Minor changes
+
+[33mcommit 18af8f1468d00b8307c43938e680ebc7fb70a346[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Mon Mar 28 03:24:38 2022 +0200
+
+    Prepared the future implementation of mini ambiant occlusion, and made the T key toggle chunk loading
+
+[33mcommit 02cedc2219466c866a37bfa6a11fdafc176472b5[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Mon Mar 28 01:12:47 2022 +0200
+
+    Added version printing (Indev)
+
+[33mcommit de731b429dd12a1460a36d1e86f6751a17250ee2[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Mon Mar 28 00:59:40 2022 +0200
+
+    Refactoring, gameloop.cpp is smaller now, added some comments
+
+[33mcommit 8658a33148191461d9b7116ed85abb5f1e1bde59[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Wed Mar 23 00:49:31 2022 +0100
+
+    Minor fixes
+
+[33mcommit 9e38ba7326db15eca39187cf65d1504dfa4e2647[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Wed Mar 23 00:15:15 2022 +0100
+
+    Made config parameters very easy to add
+
+[33mcommit d7ca6f09d50067d6feee8b1554ec307f36475781[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Tue Mar 22 21:28:41 2022 +0100
+
+    Small fixes on the build script
+
+[33mcommit 87f51aaedf7ef61c68a5e8fc5bcb2da0ebf667c2[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Mon Mar 21 18:01:48 2022 +0100
+
+    Improved README a bit, added a TODO list
+
+[33mcommit 2e6d2cd64fa576e7c95190382dfd64b03b43b3af[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Mon Mar 21 14:23:38 2022 +0100
+
+    Added incremental build support in the build system, and documenting it
+
+[33mcommit ae1ccb5eb7611943e8ed61008d7d3e90f694fe38[m
+Author: Anima Libera <46418869+anima-libera@users.noreply.github.com>
+Date:   Fri Mar 18 01:34:09 2022 +0100
+
+    Adding a license (Apache 2.0)
+
+[33mcommit 3b6fd0e2304ff74a6b091be9088fa057c9643186[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Fri Mar 18 01:15:09 2022 +0100
+
+    Added a README
+
+[33mcommit 0d4c72aa7fd2d0f253e76ee7ee1991fe322a9b35[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Thu Mar 17 23:54:21 2022 +0100
+
+    Shader uniforms are handled in a better way, and I think I understand OpenGL textures now (see texture image units)
+
+[33mcommit 308ee15d95ee34fe418d7c29022f1763906649e6[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Wed Mar 16 12:09:19 2022 +0100
+
+    Moved some code around as a first step toward a sane project organization
+
+[33mcommit fbb2ce5e466727ca74ba885afd622074520e5672[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Sun Mar 6 15:13:33 2022 +0100
+
+    Got more threads busy generating chunks
+
+[33mcommit 7b7d9b81bf4dc995566c85439afdc25608346d08[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Sun Mar 6 14:14:20 2022 +0100
+
+    Somehow the collision handling works now? It will still have to be rewritten at some point tho
+
+[33mcommit e10006b1bf65499385a888dad06ad3c20c12bb1b[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Tue Mar 1 20:30:03 2022 +0100
+
+    Multi-threading chunk loading is working !!! (but the code needs a serious refactoring now)
+
+[33mcommit 6fa4ee3ec10c7c5ee9a905b26f63e9d4b88f4844[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Sun Feb 27 02:01:16 2022 +0100
+
+    Added fog effect
+
+[33mcommit c1f5628186acd5b58b71ab989e761f1866a262ca[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Sun Feb 27 00:52:49 2022 +0100
+
+    Small code improvements, sun shadows follow the player, chunk load closest to the player, collisions are still broken tho
+
+[33mcommit 46eabd22f704c59e531a8b9b7a63d7ec2748c41d[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Wed Feb 16 09:46:53 2022 +0100
+
+    Fixed the collision handling again, now it seems to work but I have no idea WHY taking the closest colliding block makes it sometimes NOT WORK
+
+[33mcommit 0b88c79dbda53685ad58cd56c4c90868e7635915[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Wed Feb 16 09:12:24 2022 +0100
+
+    Fixed collision handling (one could clip though the ground if walking in a low hole of height 1)
+
+[33mcommit 482d4a0c7f9faf8119b95748ba8a4b567c74c13c[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Wed Feb 16 07:58:15 2022 +0100
+
+    Working collision detection and better controls somehow
+
+[33mcommit 739f99d88966ee8353e2539c4f498e20cb5f5703[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Wed Feb 16 01:01:09 2022 +0100
+
+    Added box drawing (mostly for debugging)
+
+[33mcommit 5fa570167a913b57dc159fe5990d82f21056f2f3[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Sun Feb 13 03:11:06 2022 +0100
+
+    Reworked the style of the code a little
+
+[33mcommit f3936ab716c7a89f490e7609beac4228bdfc90d9[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Thu Feb 10 04:20:32 2022 +0100
+
+    Smoother chunk generation, renaming of shader related stuff
+
+[33mcommit 93a7ba8ff6a46fec054de7921c9fc5808a4a7fb7[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Thu Feb 10 02:12:06 2022 +0100
+
+    Solved the texture atlas bleeding problem!
+
+[33mcommit e88d769eada031a758fea1a7f3e2b3bed9dea764[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Thu Feb 10 00:39:22 2022 +0100
+
+    Not adding unseen faces inbetween chunks to meshes
+
+[33mcommit f213dd70f6554b240622625d7cb0fa0dd1a25d08[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Wed Feb 9 22:06:34 2022 +0100
+
+    Added dynamic shadows
+
+[33mcommit c855afba684a0e46f9ba22355b8ad21a761e7914[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Mon Feb 7 03:20:34 2022 +0100
+
+    Fixed negative noise inputs and added a grass-like texture
+
+[33mcommit 1a043ee2297157f82c8ac26d797edc6fc060a09e[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Mon Feb 7 02:35:23 2022 +0100
+
+    Added smooth noize in the world generation
+
+[33mcommit c8e38ac12cb14985e91e7e1746fa5b7a25c5261f[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Sun Feb 6 23:33:34 2022 +0100
+
+    Added face culling
+
+[33mcommit c2aaa6923ec0dae9e89f3d00413cf7a8b18a14bf[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Sun Feb 6 18:19:26 2022 +0100
+
+    The world is now infinite in every direction!
+
+[33mcommit 30e223f2a3a667023533f39a609e113df0b1ea40[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Sun Feb 6 17:31:41 2022 +0100
+
+    Refactored the block type generation and the atlas rect allocation
+
+[33mcommit a3ee5313d4bd61b05b20ab06898cd2bc0fc2efa6[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Sun Feb 6 03:40:54 2022 +0100
+
+    Working chunk grid
+
+[33mcommit 79108f2329ec2c02538716fab048b243226cf770[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Fri Feb 4 17:13:52 2022 +0100
+
+    Introduces Nature class to keep things organized, made some vertical faces flipped for symetry
+
+[33mcommit 4e379eabb025d091fbe21570be306ab51a0d1e4a[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Fri Feb 4 16:52:22 2022 +0100
+
+    Fixed rendering bug
+
+[33mcommit 5c1f2018efeb210a4ce22480b4cc290d121c079c[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Fri Feb 4 16:29:05 2022 +0100
+
+    Added texture atlas
+
+[33mcommit 5e5e3fbd3b1ff987bd39d0e3c62ee17b0d387aef[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Fri Feb 4 07:00:22 2022 +0100
+
+    Added chunk class with mesh handling
+
+[33mcommit 5c0e3c63ceb5f46e262c4ec8ce66b0bf7b05f750[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Fri Feb 4 02:20:02 2022 +0100
+
+    So we doit now
+
+[33mcommit fdfd587ef2faa49eb9aacb55924096f272cbcf4f[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Fri Feb 4 02:18:54 2022 +0100
+
+    It seems I didn't gitignore the bin rep at the beginning
+
+[33mcommit 8ed39b67a99515e4a8821280322b0e0b8393f7bb[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Fri Feb 4 02:17:50 2022 +0100
+
+    Better camera control
+
+[33mcommit 5c8c4370fafe732bbf13ffd37a5dd50ce12f6e94[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Fri Feb 4 01:43:33 2022 +0100
+
+    Better camera stuff and camera control
+
+[33mcommit 3340734c1145c2f0aff71f49c2d28fbe0c1ce568[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Thu Feb 3 03:45:59 2022 +0100
+
+    Setup basic shader, triangle and primitive camera
+
+[33mcommit 916795cca5b506d058a1962c4c7525b050787e0b[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Sun Jan 30 22:11:57 2022 +0100
+
+    Get some event loop running
+
+[33mcommit dc1fde7c4faf48c6397876dbd5e49c6577d1503b[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Sun Jan 30 21:47:44 2022 +0100
+
+    OpenGL+SDL2 window setup
+
+[33mcommit 369569003caeba99632a6c8bea9e27e610d68a24[m
+Author: anima-libera <anim.libera@gmail.com>
+Date:   Sun Jan 30 20:35:06 2022 +0100
+
+    Compiling setup

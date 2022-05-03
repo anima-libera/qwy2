@@ -30,6 +30,14 @@ BlockCoords chunk_most_negativeward_block_coords(ChunkCoords chunk_coords)
 		static_cast<int>(g_chunk_side) / 2};
 }
 
+BlockCoords chunk_most_positiveward_block_coords(ChunkCoords chunk_coords)
+{
+	return chunk_center_coords(chunk_coords) + BlockCoords{
+		static_cast<int>(g_chunk_side) / 2,
+		static_cast<int>(g_chunk_side) / 2,
+		static_cast<int>(g_chunk_side) / 2};
+}
+
 BlockRect chunk_rect(ChunkCoords chunk_coords)
 {
 	BlockCoords const center_coords = chunk_center_coords(chunk_coords);
@@ -55,6 +63,13 @@ ChunkCoords containing_chunk_coords(glm::vec3 coords)
 			static_cast<int>(std::round(coords.x)),
 			static_cast<int>(std::round(coords.y)),
 			static_cast<int>(std::round(coords.z))});
+}
+
+ChunkRect containing_chunk_rect(BlockRect block_rect)
+{
+	return ChunkRect{
+		containing_chunk_coords(block_rect.coords_min),
+		containing_chunk_coords(block_rect.coords_max)};
 }
 
 inline static unsigned int chunk_volume()
@@ -105,6 +120,10 @@ FieldValueType const& ChunkField<FieldValueType>::operator[](BlockCoords coords)
 		g_chunk_side * local_coords.y + 
 		g_chunk_side * g_chunk_side * local_coords.z];
 }
+
+template ChunkField<Block>::~ChunkField();
+template Block& ChunkField<Block>::operator[](BlockCoords coords);
+template Block const& ChunkField<Block>::operator[](BlockCoords coords) const;
 
 bool Block::is_air() const
 {

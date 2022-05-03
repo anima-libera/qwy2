@@ -27,6 +27,9 @@ BlockCoords chunk_center_coords(ChunkCoords chunk_coords);
 /* Returns the coords of the block at the negativeward corner of the given chunk. */
 BlockCoords chunk_most_negativeward_block_coords(ChunkCoords chunk_coords);
 
+/* Returns the coords of the block at the positiveward corner of the given chunk. */
+BlockCoords chunk_most_positiveward_block_coords(ChunkCoords chunk_coords);
+
 /* Returns the block rect that contains exactly the blocks of the chunk given by chunk_coords. */
 BlockRect chunk_rect(ChunkCoords chunk_coords);
 
@@ -35,6 +38,9 @@ ChunkCoords containing_chunk_coords(BlockCoords coords);
 
 /* Returns the chunk-level coords of the chunk that contains the point at the given coords. */
 ChunkCoords containing_chunk_coords(glm::vec3 coords);
+
+/* Returns the chunk rect of all the chunks that intersect with the given block rect. */
+ChunkRect containing_chunk_rect(BlockRect block_rect);
 
 /* Grid of values, one value per block, for one chunk.
  * As this is mostly a pointer to the data, passing it by value does not copy the data. */
