@@ -20,7 +20,6 @@
 - **Optimization:** When in normal view, don't render chunks that are outside of the view.
 - **Optimization:** When in normal view, don't render chunks that are behind chunks that act as opaque walls.
 - **Optimization:** Reduce the shadow mapping time.
-- **Feature (gameplay):** Allow placing and breaking blocks.
 - **Feature (gameplay):** When in first-person view, select a block via a raycast.
 - **Feature (visual):** Display some sort of star in the sun's direction.
 - **Feature (visual):** God rays.

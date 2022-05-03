@@ -3,7 +3,7 @@
 
 <p align="center"><img src="./pics/band_round.png" width="95%"/></>
 
-Very early alpha indev work-in-progress v0.0.0 state, there is not much to see yet. For now all you can do here is move around in a voxel world.
+Very early alpha indev work-in-progress v0.0.0 state, there is not much to see yet. For now all you can do here is move around in a voxel world and place/remove blocks.
 
 ## Build and run on Linux
 
@@ -58,6 +58,8 @@ It is in a so early state that everything is subject to change anytime soon.
 ### Controls
 
 At the time of writing this README (that may not be quite kept in sync with the changes made to Qwy2), I have hardcoded some of my personal Minecraft controls, which is why *jumping is right-click* (don't ask), and forward/left/backward/right is ZQSD (AZERTY keyboard). This should change in the (near?) future and be configurable! The rest of the controls can be found either by searching the event loop in the source code or by trying all the keys (keys that have an effect on settings will result in some message being printed, that should help).
+
+The W and space keys can be used to place and remove blocks.
 
 ### What this project will become (if my motivation does not disappear into the void too soon)?
 
