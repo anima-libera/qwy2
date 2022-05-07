@@ -145,6 +145,7 @@ Here are some YouTube channels *of interest*, some of them have done devlogs on 
 - [jdh](https://www.youtube.com/c/jdhvideo)
 - [GamesWithGabe](https://www.youtube.com/c/GamesWithGabe) (also on Twitch)
 - [Henrik Kniberg](https://www.youtube.com/c/henrikkniberg) (Minecraft dev!!)
+- [Gabe Rundlett](https://youtube.com/channel/UCTceODz7ynphUfT8QnFduZQ)
 
 Here are some GitHub repos of Minecraft-likes, (not looked at the code in detail yet, might steal multiplayer stuff some day):
 
