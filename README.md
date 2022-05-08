@@ -155,3 +155,4 @@ Here are some GitHub repos of Minecraft-likes, (not looked at the code in detail
 - [Craft](https://github.com/fogleman/Craft) (C, Modern OpenGL)
 - [AltCraft](https://github.com/LaG1924/AltCraft) (C++, Modern OpenGL)
 - [Freeminer](https://github.com/freeminer/freeminer) (C++, [Irrlicht](https://irrlicht.sourceforge.io/?page_id=45), medium?)
+- [ClassiCube](https://github.com/UnknownShadow200/ClassiCube) (C, OpenGL 1 and 2 and Direct3D 9 and 11)
