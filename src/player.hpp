@@ -17,16 +17,16 @@ class PlayerControls;
 class Player
 {
 public:
-	/* Motionless state. */
+	/* Non-motion-related state. */
 	AlignedBox box;
 	float horizontal_angle;
 	float vertical_angle;
 
-	/* Motion state. */
+	/* Motion-related state. */
 	bool is_falling;
 	glm::vec3 motion;
 
-	/* Settings that act on how controls apply on the player. */
+	/* Settings that act on how controls apply to the player. */
 	float moving_angle_factor;
 	bool allowed_fast_and_infinite_jumps;
 
