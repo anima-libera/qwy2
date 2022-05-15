@@ -50,6 +50,7 @@ public:
 	bool see_from_behind;
 	bool render_shadows;
 	bool loop_running;
+	bool auto_close;
 	InputEventHandler input_event_handler;
 	PlayerControls player_controls;
 	ThreadPool thread_pool;

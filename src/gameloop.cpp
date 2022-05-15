@@ -171,6 +171,7 @@ Game::Game(Config const& config)
 	this->see_chunk_borders = true;
 	this->see_from_behind = false;
 	this->render_shadows = true;
+	this->auto_close = config.get<bool>("close"sv);
 
 	/* Temporary note. */
 	std::cout << "[Init] "
@@ -446,6 +447,13 @@ void Game::loop()
 			//<< "Chunk PTG field count: " << this->chunk_grid->ptg_field.size() << "  \t"
 			<< "FPS: " << (1.0f / duration_iteration) << std::endl;
 		#endif
+
+		if (this->auto_close)
+		{
+			std::cout << "[Gameloop] "
+				<< "Closing as requested by the configuration." << std::endl;
+			break;
+		}
 	}
 
 	#ifdef GLOP_ENABLED
