@@ -99,6 +99,9 @@ Config::Config()
 
 	/* If ture, then the terrain generation will produce a flat world. */
 	this->parameter_table.insert({"flat"sv, false});
+
+	/* If true, then the texture atlas will be emitted as a bitmap file. */
+	this->parameter_table.insert({"emit_bitmap"sv, false});
 }
 
 ErrorCode Config::parse_command_line(int argc, char const* const* argv)

@@ -51,10 +51,15 @@ Game::Game(Config const& config)
 	/* Block type id 3 is plain rock. */
 	this->nature->world_generator.secondary_block_type =
 		this->nature->nature_generator.generate_block_type(*this->nature);
-	#if 0
-	emit_bitmap(this->nature->atlas.data,
-		this->nature->atlas.side, this->nature->atlas.side, "atlas.bmp");
-	#endif
+	
+	/* Emit the texture atlas if requested. */
+	if (config.get<bool>("emit_bitmap"sv)) {
+		char const* bitmap_file_name = "atlas.bmp";
+		emit_bitmap(this->nature->atlas.data,
+			this->nature->atlas.side, this->nature->atlas.side, bitmap_file_name);
+		std::cout << "[Init] "
+			<< "Texture atlas emitted to the file \"" << bitmap_file_name << "\"." << std::endl;
+	}
 
 	/* The texture image unit of id 0 is used as the default active unit so that binding
 	 * textures around does not disturb the texture bound in non-zero units that are
