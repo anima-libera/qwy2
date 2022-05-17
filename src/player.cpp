@@ -9,6 +9,8 @@
 #include <unordered_set>
 #include <limits>
 
+#include <iostream>
+
 namespace qwy2
 {
 
@@ -385,6 +387,62 @@ void Player::apply_motion(ChunkGrid const& chunk_grid, PlayerControls const& con
 	}
 }
 
+std::optional<BlockFace> Player::pointed_face(ChunkGrid const& chunk_grid) const
+{
+	glm::vec3 const start_point_coords = this->camera_position();
+	glm::vec3 point_coords = start_point_coords;
+	BlockCoords previous_block = point_coords;
+	BlockCoords current_block = point_coords;
+	glm::vec3 const direction = glm::normalize(this->direction());
+	glm::vec3 const step_max = direction * 4.0f;
+
+	while (true)
+	{
+		/* We basically do a binary search on the distance to move to get to the next block
+		 * without skipping any (which means that we should get to a common face neighbor). */
+		previous_block = point_coords;
+		glm::vec3 const max_next_point_coords = point_coords + step_max;
+		glm::vec3 next_point_coords = max_next_point_coords;
+		float step_ratio_min = 0.0f;
+		float step_ratio_max = 1.0f;
+		float step_ratio = (step_ratio_min + step_ratio_max) / 2.0f;
+		current_block = next_point_coords;
+		while (not previous_block.is_common_face_neighbor(current_block))
+		{
+			float const previous_step_ratio = step_ratio;
+			if (previous_block == current_block)
+			{
+				step_ratio_min = step_ratio;
+			}
+			else
+			{
+				step_ratio_max = step_ratio;
+			}
+			step_ratio = (step_ratio_min + step_ratio_max) / 2.0f;
+			if (step_ratio == previous_step_ratio)
+			{
+				next_point_coords = max_next_point_coords;
+				current_block = next_point_coords;
+				break;
+			}
+
+			next_point_coords =
+				point_coords * (1.0f - step_ratio) + max_next_point_coords * step_ratio;
+			current_block = next_point_coords;
+		}
+
+		if (not chunk_grid.block_is_air_or_unloaded(current_block))
+		{
+			return BlockFace{current_block, previous_block};
+		}
+		else if (glm::distance(start_point_coords, next_point_coords) > 5.0f)
+		{
+			return std::nullopt;
+		}
+		point_coords = next_point_coords;
+	}
+}
+
 glm::vec3 Player::direction() const
 {
 	glm::vec3 horizontal_direction{
@@ -397,6 +455,11 @@ glm::vec3 Player::direction() const
 		0.0f};
 	return glm::rotate(horizontal_direction,
 		this->vertical_angle, horizontal_right_direction);
+}
+
+glm::vec3 Player::camera_position() const
+{
+	return this->box.center + glm::vec3{0.0f, 0.0f, 0.6f};
 }
 
 } /* qwy2 */

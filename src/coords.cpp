@@ -75,6 +75,23 @@ CoordsInt<L> CoordsInt<L>::operator-(CoordsInt other) const
 }
 
 template<CoordsLevel L>
+bool CoordsInt<L>::is_common_face_neighbor(CoordsInt other) const
+{
+	/* Branchless.
+	 * Project the coords on all 3 axes and count the number of axes
+	 * on which the points appear next to each other. */
+	unsigned int const count_adjacency_axes =
+		static_cast<int>(std::abs(this->x - other.x) == 1) +
+		static_cast<int>(std::abs(this->y - other.y) == 1) +
+		static_cast<int>(std::abs(this->z - other.z) == 1);
+	unsigned int const count_same_axes =
+		static_cast<int>(std::abs(this->x - other.x) == 0) +
+		static_cast<int>(std::abs(this->y - other.y) == 0) +
+		static_cast<int>(std::abs(this->z - other.z) == 0);
+	return count_adjacency_axes == 1 && count_same_axes == 2;
+}
+
+template<CoordsLevel L>
 std::size_t CoordsInt<L>::Hash::operator()(CoordsInt const& coords) const noexcept
 {
 	return
@@ -271,6 +288,31 @@ FaceInt<L>::FaceInt(CoordsInt<L> internal_coords, Axis axis, bool negativeward):
 	internal_coords{internal_coords}, axis{axis}, negativeward{negativeward}
 {
 	;
+}
+
+template<CoordsLevel L>
+FaceInt<L>::FaceInt(CoordsInt<L> internal_coords, CoordsInt<L> external_coords):
+	internal_coords{internal_coords}
+{
+	if (std::abs(internal_coords.x - external_coords.x) == 1)
+	{
+		this->axis = Axis::X;
+		this->negativeward = internal_coords.x > external_coords.x;
+	}
+	else if (std::abs(internal_coords.y - external_coords.y) == 1)
+	{
+		this->axis = Axis::Y;
+		this->negativeward = internal_coords.y > external_coords.y;
+	}
+	else if (std::abs(internal_coords.z - external_coords.z) == 1)
+	{
+		this->axis = Axis::Z;
+		this->negativeward = internal_coords.z > external_coords.z;
+	}
+	else
+	{
+		assert(false);
+	}
 }
 
 template<CoordsLevel L>

@@ -57,6 +57,7 @@ public:
 	bool operator!=(CoordsInt const& other) const;
 	CoordsInt operator+(CoordsInt other) const;
 	CoordsInt operator-(CoordsInt other) const;
+	bool is_common_face_neighbor(CoordsInt other) const;
 
 public:
 	/* Callable hash that allows CoordsInt values to be used as keys
@@ -143,6 +144,7 @@ public:
 
 public:
 	FaceInt(CoordsInt<L> internal_coords, Axis axis, bool negativeward);
+	FaceInt(CoordsInt<L> internal_coords, CoordsInt<L> external_coords);
 	CoordsInt<L> external_coords() const;
 	
 	/* The first index returned corresponds to the axis of this face.

@@ -54,6 +54,7 @@ public:
 	InputEventHandler input_event_handler;
 	PlayerControls player_controls;
 	ThreadPool thread_pool;
+	Mesh<VertexDataLineUi> pointer_cross_mesh;
 	#ifdef GLOP_ENABLED
 	Glop glop;
 	#endif

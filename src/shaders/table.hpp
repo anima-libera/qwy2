@@ -7,6 +7,7 @@
 #include "shaders/classic/classic.hpp"
 #include "shaders/line/line.hpp"
 #include "shaders/shadow/shadow.hpp"
+#include "shaders/line_ui/line_ui.hpp"
 #include <vector>
 
 namespace qwy2
@@ -25,6 +26,7 @@ public:
 		CLASSIC = 0,
 		LINE,
 		SHADOW,
+		LINE_UI,
 		SHADER_COUNT,
 	};
 
@@ -41,6 +43,7 @@ public:
 	ShaderProgramClassic& classic();
 	ShaderProgramLine& line();
 	ShaderProgramShadow& shadow();
+	ShaderProgramLineUi& line_ui();
 };
 
 } /* qwy2 */

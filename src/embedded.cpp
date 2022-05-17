@@ -20,3 +20,9 @@ extern char const g_shader_source_shadow_vert[] = "\n#version 430 core\n\nlayout
 
 /* Content of "src/shaders/shadow/shadow.frag". */
 extern char const g_shader_source_shadow_frag[] = "\n#version 430 core\n\nin vec2 v_atlas_coords;\n\nlayout(location = 1) uniform sampler2D u_atlas;\n\nvoid main()\n{\n\t/* Here there is no need to carefully avoid atlas bleeding it seems. */\n\n\tvec4 out_color = texture(u_atlas, v_atlas_coords);\n\tif (out_color.a < 0.001)\n\t{\n\t\tdiscard;\n\t}\n}\n";
+
+/* Content of "src/shaders/line_ui/line_ui.vert". */
+extern char const g_shader_source_line_ui_vert[] = "\n#version 430 core\n\nlayout(location = 0) in vec2 in_coords;\nlayout(location = 1) in vec3 in_color;\n\nout vec3 v_color;\n\nvoid main()\n{\n\tgl_Position = vec4(in_coords, 0.0, 1.0);\n\n\tv_color = in_color;\n}\n";
+
+/* Content of "src/shaders/line_ui/line_ui.frag". */
+extern char const g_shader_source_line_ui_frag[] = "\n#version 430 core\n\nin vec3 v_color;\n\nout vec4 out_color;\n\nvoid main()\n{\n\tout_color = vec4(v_color, 1.0);\n}\n";

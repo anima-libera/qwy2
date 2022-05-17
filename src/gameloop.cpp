@@ -158,6 +158,20 @@ Game::Game(Config const& config)
 	}
 	assert(this->player.moving_angle_factor == 0.005f);
 
+	/* Make the pointer plus-shape mesh. */
+	VertexDataLineUi ui_vertex;
+	ui_vertex.color = glm::vec3{1.0f, 1.0f, 1.0f};
+	float const pointer_size = 0.015f;
+	ui_vertex.coords = glm::vec2{0.0f - pointer_size, 0.0f};
+	this->pointer_cross_mesh.vertex_data.push_back(ui_vertex);
+	ui_vertex.coords = glm::vec2{0.0f + pointer_size, 0.0f};
+	this->pointer_cross_mesh.vertex_data.push_back(ui_vertex);
+	ui_vertex.coords = glm::vec2{0.0f, 0.0f - aspect_ratio * pointer_size};
+	this->pointer_cross_mesh.vertex_data.push_back(ui_vertex);
+	ui_vertex.coords = glm::vec2{0.0f, 0.0f + aspect_ratio * pointer_size};
+	this->pointer_cross_mesh.vertex_data.push_back(ui_vertex);
+	this->pointer_cross_mesh.update_opengl_data();
+
 	/* Handle the mesurment of time. */
 	using clock = std::chrono::high_resolution_clock;
 	this->clock_time_beginning = clock::now();
@@ -237,8 +251,7 @@ void Game::loop()
 		}
 
 		/* Handle the player's camera. */
-		glm::vec3 player_camera_position =
-			this->player.box.center + glm::vec3{0.0f, 0.0f, 0.6f};
+		glm::vec3 player_camera_position = this->player.camera_position();
 		glm::vec3 const player_direction = this->player.direction();
 		this->shader_table.update_uniform(Uniform::USER_COORDS, player_camera_position);
 		this->player_camera.set_position(player_camera_position);
@@ -248,6 +261,10 @@ void Game::loop()
 			player_camera_position -= 5.0f * player_direction;
 			this->player_camera.set_position(player_camera_position);
 		}
+
+		/* Handle the face pointed by the player. */
+		std::optional<BlockFace> const pointed_face_opt =
+			this->player.pointed_face(*this->chunk_grid);
 
 		/* Handle the sun's camera. */
 		this->sun_position.x = 500.0f * std::cos(this->time / 40.0f);
@@ -290,6 +307,7 @@ void Game::loop()
 		/* Render the world from the sun camera to get its depth buffer for shadow rendering.
 		 * Face culling is reversed here to make some shadowy artifacts appear in the shadows
 		 * (instead of on the bright faces lit by sunlight) where they remain mostly unseen. */
+		glEnable(GL_DEPTH_TEST);
 		if (this->render_shadows)
 		{
 			TIME_BLOCK(glop_time_sun_shadows);
@@ -336,6 +354,25 @@ void Game::loop()
 			}
 		}
 		glCullFace(GL_FRONT);
+
+		/* Render the pointed face. */
+		if (pointed_face_opt.has_value())
+		{
+			if (this->see_from_sun)
+			{
+				glViewport(0, 0, window_height, window_height);
+			}
+			else
+			{
+				glViewport(0, 0, window_width, window_height);
+			}
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+			AlignedBox const box{pointed_face_opt->internal_coords, glm::vec3{1.0f, 1.0f, 1.0f} * 1.001f};
+			this->line_rect_drawer.color = glm::vec3{1.0f, 1.0f, 1.0f};
+			this->line_rect_drawer.set_box(box);
+			this->shader_table.line().draw(this->line_rect_drawer.mesh);
+		}
 
 		/* Render boxes (currently only the player hitbox) is enabled. */
 		if (this->see_boxes)
@@ -411,6 +448,15 @@ void Game::loop()
 				}
 				#endif
 			}
+		}
+
+		/* Render the pointer cross. */
+		glDisable(GL_DEPTH_TEST);
+		if (not this->see_from_sun)
+		{
+			glViewport(0, 0, window_width, window_height);
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			this->shader_table.line_ui().draw(this->pointer_cross_mesh);
 		}
 
 		/* Apply what was drawn to what is displayed on the screen. */

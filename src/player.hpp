@@ -4,6 +4,7 @@
 
 #include "coords.hpp"
 #include <glm/vec3.hpp>
+#include <optional>
 
 namespace qwy2
 {
@@ -33,7 +34,9 @@ public:
 public:
 	Player();
 	void apply_motion(ChunkGrid const& chunk_grid, PlayerControls const& controls);
+	std::optional<BlockFace> pointed_face(ChunkGrid const& chunk_grid) const;
 	glm::vec3 direction() const;
+	glm::vec3 camera_position() const;
 };
 
 } /* qwy2 */
