@@ -263,8 +263,7 @@ void Game::loop()
 		}
 
 		/* Handle the face pointed by the player. */
-		std::optional<BlockFace> const pointed_face_opt =
-			this->player.pointed_face(*this->chunk_grid);
+		this->pointed_face_opt = this->player.pointed_face(*this->chunk_grid);
 
 		/* Handle the sun's camera. */
 		this->sun_position.x = 500.0f * std::cos(this->time / 40.0f);
@@ -356,7 +355,7 @@ void Game::loop()
 		glCullFace(GL_FRONT);
 
 		/* Render the pointed face. */
-		if (pointed_face_opt.has_value())
+		if (this->pointed_face_opt.has_value())
 		{
 			if (this->see_from_sun)
 			{
@@ -368,7 +367,8 @@ void Game::loop()
 			}
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-			AlignedBox const box{pointed_face_opt->internal_coords, glm::vec3{1.0f, 1.0f, 1.0f} * 1.001f};
+			AlignedBox const box{this->pointed_face_opt->internal_coords,
+				glm::vec3{1.0f, 1.0f, 1.0f} * 1.001f};
 			this->line_rect_drawer.color = glm::vec3{1.0f, 1.0f, 1.0f};
 			this->line_rect_drawer.set_box(box);
 			this->shader_table.line().draw(this->line_rect_drawer.mesh);

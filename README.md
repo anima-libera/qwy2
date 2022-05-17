@@ -59,7 +59,7 @@ It is in a so early state that everything is subject to change anytime soon.
 
 At the time of writing this README (that may not be quite kept in sync with the changes made to Qwy2), I have hardcoded some of my personal Minecraft controls, which is why *jumping is right-click* (don't ask), and forward/left/backward/right is ZQSD (AZERTY keyboard). This should change in the (near?) future and be configurable! The rest of the controls can be found either by searching the event loop in the source code or by trying all the keys (keys that have an effect on settings will result in some message being printed, that should help).
 
-The W and space keys can be used to place and remove blocks.
+The A key and Left Click can be used to place and remove blocks.
 
 ### What this project will become (if my motivation does not disappear into the void too soon)?
 

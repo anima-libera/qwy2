@@ -17,6 +17,36 @@ PlayerControls::PlayerControls():
 	;
 }
 
+namespace
+{
+
+void set_block(ChunkGrid* chunk_grid, Nature const* nature,
+	BlockCoords coords, BlockTypeId new_type_id)
+{
+	/* Modify the B field (the actual blocks). */
+	ChunkCoords const chunk_coords = containing_chunk_coords(coords);
+	ChunkBField& b_field = chunk_grid->b_field.at(chunk_coords);
+	b_field[coords].type_id = new_type_id;
+	/* Update the meshes.
+	 * Due to concerns such as ambiant occlusion, nearby chunks may
+	 * also have to also be remeshed. */
+	BlockRect const concerned_blocks{coords, 2};
+	ChunkRect const concerned_chunks =
+		containing_chunk_rect(concerned_blocks);
+	for (ChunkCoords const chunk_coords : concerned_chunks)
+	{
+		Mesh<VertexDataClassic>& mesh =
+			chunk_grid->mesh.at(chunk_coords);
+		ChunkMeshData* data = generate_chunk_complete_mesh(chunk_coords,
+			chunk_grid->get_b_field_neighborhood(chunk_coords),
+			*nature);
+		mesh.vertex_data = std::move(*data);
+		mesh.needs_update_opengl_data = true;
+	}
+}
+
+} /* Anonymous namespace. */
+
 void InputEventHandler::handle_events(Game& game)
 {
 	game.player_controls.will_jump = false;
@@ -232,45 +262,56 @@ void InputEventHandler::handle_events(Game& game)
 					case SDLK_w:
 						if (event.type == SDL_KEYDOWN)
 						{
-							/* Modify the B field (the actual blocks). */
 							BlockCoords const coords =
 								game.player.box.center - glm::vec3{0.0f, 0.0f, 1.9f};
-							ChunkCoords const chunk_coords = containing_chunk_coords(coords);
-							ChunkBField& b_field = game.chunk_grid->b_field.at(chunk_coords);
-							b_field[coords].type_id = event.key.keysym.sym == SDLK_w ? 3 : 0;
-							/* Update the meshes.
-							 * Due to concerns such as ambiant occlusion, nearby chunks may
-							 * also have to also be remeshed. */
-							BlockRect const concerned_blocks{coords, 2};
-							ChunkRect const concerned_chunks =
-								containing_chunk_rect(concerned_blocks);
-							for (ChunkCoords const chunk_coords : concerned_chunks)
-							{
-								Mesh<VertexDataClassic>& mesh =
-									game.chunk_grid->mesh.at(chunk_coords);
-								ChunkMeshData* data = generate_chunk_complete_mesh(chunk_coords,
-									game.chunk_grid->get_b_field_neighborhood(chunk_coords),
-									*game.nature);
-								mesh.vertex_data = std::move(*data);
-								mesh.needs_update_opengl_data = true;
-							}
+							BlockTypeId const new_type_id =
+								event.key.keysym.sym == SDLK_w ? 3 : 0;
+							set_block(game.chunk_grid, game.nature, coords, new_type_id);
 							std::cout <<
 								(event.key.keysym.sym == SDLK_w ?
-									"[W] Place block" : "[Space] Remove block")
+									"[W] Place block below" : "[Space] Remove block below")
 								<< std::endl;
+						}
+					break;
+
+					case SDLK_a:
+						if (event.type == SDL_KEYDOWN)
+						{
+							if (game.pointed_face_opt.has_value())
+							{
+								BlockCoords const coords =
+									game.pointed_face_opt->external_coords();
+								if (not game.player.box.containing_block_rect().contains(coords))
+								{
+									BlockTypeId const new_type_id = 3;
+									set_block(game.chunk_grid, game.nature, coords, new_type_id);
+									std::cout << "[A] Place block"
+										<< std::endl;
+								}
+							}
 						}
 					break;
 				}
 			break;
 
 			case SDL_MOUSEBUTTONDOWN:
-			case SDL_MOUSEBUTTONUP:
-				if (event.button.button == SDL_BUTTON_RIGHT && event.type == SDL_MOUSEBUTTONDOWN)
+				if (event.button.button == SDL_BUTTON_RIGHT)
 				{
 					if ((game.player.is_falling && game.player.allowed_fast_and_infinite_jumps)
 						|| (not game.player.is_falling))
 					{
 						game.player_controls.will_jump = true;
+					}
+				}
+				else if (event.button.button == SDL_BUTTON_LEFT)
+				{
+					if (game.pointed_face_opt.has_value())
+					{
+						BlockCoords const coords = game.pointed_face_opt->internal_coords;
+						BlockTypeId const new_type_id = 0;
+						set_block(game.chunk_grid, game.nature, coords, new_type_id);
+						std::cout << "[Left Click] Remove block"
+							<< std::endl;
 					}
 				}
 			break;
