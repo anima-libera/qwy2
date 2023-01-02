@@ -1,7 +1,6 @@
 
 import buildsystem.globals as globals
 import os
-from typing import *
 
 Path = str
 PathSrc = str

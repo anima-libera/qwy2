@@ -12,6 +12,7 @@ content of the specified files.
 import os
 import re
 import enum
+from typing import List
 from buildsystem.structure import SRC_DIR, get_embedded_hpp_file_path, get_embedded_cpp_file_path
 from buildsystem.utils import *
 
@@ -57,7 +58,7 @@ class FileToEmbed:
 				"The embedded content generator could not find the file " +
 				f"\"{self.file_path}\" used in an EMBEDDED macro in the " +
 				f"\"{get_embedded_hpp_file_path()}\" header file.")
-		raise error
+			raise error
 
 def generate_cpp(files_to_embed: List[FileToEmbed]) -> str:
 	generated_cpp: List[str] = []

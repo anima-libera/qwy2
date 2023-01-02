@@ -9,7 +9,7 @@
  * variable (see "embedded.cpp" after building to see the results). The macro aslo takes an escape
  * mode parameter, it sould be one of the macros defined below and specify how the file content
  * is turned into a C++ literal (and for the case of SIZE it does not even embed content but
- * it initialize the variable to the size (un bytes) of the file).
+ * it initializes the variable to the size (in bytes) of the file).
  * The type of the declared variable should be chosen to work with the generated literal.
  * The `buildsystem/embed.py` script is responsible for the handling of the embedding. */
 #define EMBEDDED(filename_, escape_mode_) extern

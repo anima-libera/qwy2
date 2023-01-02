@@ -6,6 +6,7 @@ See the `HELP_MESSAGE` for the available options.
 """
 
 import sys
+from typing import List
 from buildsystem.utils import *
 
 HELP_MESSAGE = """Compiles and links the Qwy2 source code.
@@ -75,27 +76,30 @@ class Options:
 	def __init__(self):
 		# Checks for the lauch option and separates what is after (to be given to the binary)
 		# from what is before (other arguments given to this script).
-		self.launch = False
+		launch_index: int | None = None
 		for i in range(1, len(sys.argv)):
 			if sys.argv[i] in ("-l", "--launch"):
 				self.launch = True
 				launch_index = i
 				break
-		if self.launch:
+		if launch_index == None:
+			self.launch = False
+			cmdline_args = sys.argv[1:]
+		else:
+			self.launch = True
 			cmdline_args = sys.argv[1:launch_index]
 			self.launch_args = sys.argv[launch_index+1:]
-		else:
-			cmdline_args = sys.argv[1:]
 
 		self.help = cmdline_option(cmdline_args, False, "-h", "--help")
 		self.debug = cmdline_option(cmdline_args, False, "-d", "--debug")
-		self.compiler = cmdline_option(cmdline_args, True, "-c", "--compiler")
-		if self.compiler == None or self.compiler == "gcc":
-			self.compiler = "g++"
-		if self.compiler not in ("g++", "clang"):
-			print_error("Cmdline error", f"The \"{self.compiler}\" compiler " +
+		compiler = cmdline_option(cmdline_args, True, "-c", "--compiler")
+		if compiler == None or compiler == "gcc":
+			compiler = "g++"
+		if compiler not in ("g++", "clang"):
+			print_error("Cmdline error", f"The \"{compiler}\" compiler " +
 				"is not supported.")
 			sys.exit(1) # Comment this out to use the given compiler anyway.
+		self.compiler = compiler
 		if self.debug:
 			print(f"Using compiler {self.compiler}")
 		self.clear = cmdline_option(cmdline_args, False, "--clear")

@@ -9,6 +9,7 @@ using `pprint.pformat` and `ast.literal_eval`.
 
 import ast
 import pprint
+from typing import Any, Tuple, Dict
 from buildsystem.structure import *
 from buildsystem.utils import *
 

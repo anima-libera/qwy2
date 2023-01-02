@@ -1,7 +1,7 @@
 
 """ Crafting of the compilation and linking commands. """
 
-from typing import *
+from typing import List
 from buildsystem.cmdline import Options
 from buildsystem.structure import SRC_DIR
 from buildsystem.persistent import BuildMode

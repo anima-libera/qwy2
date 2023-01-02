@@ -1,6 +1,7 @@
 
 """ Actually compiling and linking, it all hapens here. """
 
+from typing import List
 from buildsystem.utils import *
 from buildsystem.cmdline import Options
 from buildsystem.buildmode import get_build_mode
@@ -64,6 +65,7 @@ def build(options: Options) -> bool:
 			obj_id = tu_data_table[cpp_file_path].obj_id
 			print_verbose(f"Assigned \"{cpp_file_path}\" to object id {obj_id:04d}.")
 		tu_data = tu_data_table.get(cpp_file_path, None)
+		assert tu_data != None
 		# Determine if the examined translation unit has to be compiled/recompiled.
 		# Compilation is needed if at least one file in the file scope of the translation unit
 		# has been modified since the last successful compilation of the translation unit.

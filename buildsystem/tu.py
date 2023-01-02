@@ -1,6 +1,7 @@
 
 import os
 import re
+from typing import Set
 from buildsystem.utils import *
 from buildsystem.structure import SRC_DIR, DEPENDENCY_GRAPH_DOT_FILE_NAME
 
