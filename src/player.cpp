@@ -26,7 +26,8 @@ Player::Player():
 	;
 }
 
-void Player::apply_motion(ChunkGrid const& chunk_grid, PlayerControls const& controls)
+void Player::apply_motion(ChunkGrid const& chunk_grid, PlayerControls const& controls,
+	float delta_time)
 {
 	constexpr float floor_moving_factor_fast = 0.13f;
 	constexpr float floor_moving_factor_normal = 0.05f;
@@ -66,16 +67,25 @@ void Player::apply_motion(ChunkGrid const& chunk_grid, PlayerControls const& con
 			this->allowed_fast_and_infinite_jumps ? floor_moving_factor_fast :
 			floor_moving_factor_normal);
 
+	float delta_time_in_60_fps_frames = delta_time / 0.016f;
+	if (delta_time_in_60_fps_frames >= 2.0f)
+	{
+		delta_time_in_60_fps_frames = 2.0f;
+		/* We cannot allow for a step to apply a too big motion that did not pass through enough
+		 * friction smoothing steps or something. */
+	}
 
-	this->motion *= this->is_falling ? falling_friction_factor : floor_friction_factor;
-	this->motion.z -= falling_factor;
-	this->motion += walking_motion;
+	float const friction_factor = this->is_falling ? falling_friction_factor : floor_friction_factor;
+	glm::vec3 const friction = this->motion * (1.0f - friction_factor);
+	this->motion -= friction * delta_time_in_60_fps_frames;
+	this->motion.z -= falling_factor * delta_time_in_60_fps_frames;
+	this->motion += walking_motion * delta_time_in_60_fps_frames;
 	if (controls.will_jump)
 	{
 		this->motion.z = jump_boost_value;
 	}
 
-	glm::vec3 motion_remaining = this->motion;
+	glm::vec3 motion_remaining = this->motion * delta_time_in_60_fps_frames;
 	if (not chunk_grid.has_complete_mesh(containing_chunk_coords(this->box.center)))
 	{
 		/* Prevents falling through unloaded floor. */

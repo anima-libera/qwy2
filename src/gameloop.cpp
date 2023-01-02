@@ -236,12 +236,13 @@ void Game::loop()
 		this->previous_time = this->time;
 		this->time = std::chrono::duration<float>(
 			clock::now() - this->clock_time_beginning).count();
+		auto const delta_time = this->time - this->previous_time;
 
 		/* Handle input events. */
 		this->input_event_handler.handle_events(*this);
 
 		/* Apply controls, motion and collisions to the player. */
-		this->player.apply_motion(*this->chunk_grid, this->player_controls);
+		this->player.apply_motion(*this->chunk_grid, this->player_controls, delta_time);
 		this->chunk_generation_manager.generation_center = this->player.box.center;
 
 		/* Generate chunks around the player. */

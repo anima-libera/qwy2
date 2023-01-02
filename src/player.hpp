@@ -33,7 +33,8 @@ public:
 
 public:
 	Player();
-	void apply_motion(ChunkGrid const& chunk_grid, PlayerControls const& controls);
+	void apply_motion(ChunkGrid const& chunk_grid, PlayerControls const& controls,
+		float delta_time);
 	std::optional<BlockFace> pointed_face(ChunkGrid const& chunk_grid) const;
 	glm::vec3 direction() const;
 	glm::vec3 camera_position() const;

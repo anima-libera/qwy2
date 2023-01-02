@@ -49,7 +49,7 @@ ThreadPool::ThreadPool()
 ThreadPool::~ThreadPool()
 {
 	s_threads_should_finish = true;
-	/* Distribue dummy tasks to all the threads for them to check for s_threads_should_finish. */
+	/* Distribute dummy tasks to all the threads for them to check for s_threads_should_finish. */
 	for (unsigned int i = 0; i < this->thread_table.size(); i++)
 	{
 		this->give_task([](){});
