@@ -27,6 +27,7 @@ Options:
   --opengl-notifs    Enables OpenGL notifications.
   --sdl2-static      Statically links to the SDL2, default is dynamic.
   --use-glew         Uses the GLEW OpenGL extention loader.
+  --no-nvidia        Do not make the launch command attempt to use an Nvidia GPU.
 
 Example usage:
   {script} -v --opengl-notifs --compiler=g++ -l
@@ -110,6 +111,7 @@ class Options:
 		self.sdl2_static = cmdline_option(cmdline_args, False, "--sdl2-static")
 		self.use_glew = cmdline_option(cmdline_args, False, "--use-glew")
 		self.opengl_notifs = cmdline_option(cmdline_args, False, "--opengl-notifs")
+		self.no_nvidia = cmdline_option(cmdline_args, False, "--no-nvidia")
 
 		for unknown_arg in cmdline_args:
 			print_error("Cmdline error", f"Unknown argument \"{unknown_arg}\".")

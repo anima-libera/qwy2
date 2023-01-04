@@ -34,7 +34,11 @@ def clear() -> None:
 def launch(options: Options) -> None:
 	""" Runs the executable from its directory with the proper command line arguments. """
 	print(f"Running {BIN_NAME} from \"{BIN_DIR}\":")
-	launch_command_args = ["./" + BIN_NAME]
+	launch_command_args = []
+	if not options.no_nvidia:
+		launch_command_args.append("__NV_PRIME_RENDER_OFFLOAD=1")
+		launch_command_args.append("__GLX_VENDOR_LIBRARY_NAME=nvidia")
+	launch_command_args.append("./" + BIN_NAME)
 	if options.debug:
 		launch_command_args.append("-d")
 	for launch_arg in options.launch_args:
