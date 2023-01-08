@@ -212,7 +212,7 @@ ChunkPtgField generate_chunk_ptg_field(
 			float const crazy =
 				dist < 20.0f ? 2.0f :
 				(dist - 20.0f + 2.0f) * 3.0f;
-			ptg_field[coords] = ((value - nature.world_generator.density) * crazy > coords.z) ? 1 : 0;
+			ptg_field[coords] = ((value - (1.0f - nature.world_generator.density)) * crazy > coords.z) ? 1 : 0;
 		}
 	}
 	return ptg_field;

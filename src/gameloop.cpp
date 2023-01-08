@@ -189,7 +189,7 @@ Game::Game(Config const& config)
 	this->see_from_sun = false;
 	this->see_through_walls = false;
 	this->see_boxes = false;
-	this->see_chunk_borders = true;
+	this->see_chunk_borders = false;
 	this->see_from_behind = false;
 	this->render_shadows = true;
 	this->auto_close = config.get<bool>("close"sv);
@@ -200,10 +200,10 @@ Game::Game(Config const& config)
 	std::cout
 		<< "\x1b[33m" /* Yellow. */
 		<< "Please wait a bit, rendering the first chunk requires a bit of generation first.\n"
-		<< "Press [G] to stop displaying the chunk borders.\n"
 		<< "Press [M] to toggle the view from the sun's point of view.\n"
 		<< "Use [ZQSD] to walk around and [right-click] to jump.\n"
-		<< "Other controls are available, try mashing the keyboard."
+		<< "Press [F] to toggle infinite jumping and higher speed.\n"
+		<< "Other controls are available, try mashing the keyboard or reading the code.\n"
 		<< "\x1b[39m" << std::endl;
 }
 
