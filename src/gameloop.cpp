@@ -128,7 +128,9 @@ Game::Game(Config const& config)
 	unsigned int const loading_threads = config.get<int>("loading_threads"sv);
 	this->thread_pool.set_thread_number(loading_threads);
 	this->chunk_generation_manager.thread_pool = &this->thread_pool;
-	this->chunk_generation_manager.generating_data_vector.resize(loading_threads * 2);
+	/* Note: The `+ 2` here is arbitrary.
+	 * TODO: Make this configurable or find a value that makes sense. */
+	this->chunk_generation_manager.generating_data_vector.resize(loading_threads + 2);
 
 	/* Initialize the grid of chunks and related fields. */
 	g_chunk_side = config.get<int>("chunk_side"sv);
@@ -214,6 +216,7 @@ void Game::loop()
 	GlopColumnId glop_chunk_mesh_count = this->glop.add_column("Chunk mesh count");
 	/* Timers of different sections of the game loop. */
 	GlopColumnId glop_time_all = this->glop.add_column("Timer: All");
+	GlopColumnId glop_time_event_handling = this->glop.add_column("Timer: Event handling");
 	GlopColumnId glop_time_chunk_manager = this->glop.add_column("Timer: Chunk manager");
 	GlopColumnId glop_time_chunk_mesh_sync = this->glop.add_column("Timer: Chunk mesh sync");
 	GlopColumnId glop_time_sun_shadows = this->glop.add_column("Timer: Sun shadows");
@@ -239,7 +242,10 @@ void Game::loop()
 		auto const delta_time = this->time - this->previous_time;
 
 		/* Handle input events. */
-		this->input_event_handler.handle_events(*this);
+		{
+			TIME_BLOCK(glop_time_event_handling);
+			this->input_event_handler.handle_events(*this);
+		}
 
 		/* Apply controls, motion and collisions to the player. */
 		this->player.apply_motion(*this->chunk_grid, this->player_controls, delta_time);

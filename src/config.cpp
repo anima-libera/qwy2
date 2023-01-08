@@ -37,8 +37,11 @@ Config::Config()
 
 	/* The length (in blocks) of an edge of the cube that is the shape of all chunks.
 	 * It should be odd for chunks to have a singe block at their center
-	 * (I'm pretty sure I had a good reason when that decision was taken). */
-	this->parameter_table.insert({"chunk_side"sv, 45});
+	 * (I'm pretty sure I had a good reason when that decision was taken).
+	 * This parameter has a big impact on the performances, some values are *significantly*
+	 * better than others, and the best value probably depends on the machine.
+	 * Beware setting this to too small or too big values can cause lag issues. */
+	this->parameter_table.insert({"chunk_side"sv, 31});
 	this->corrector_table.insert({"chunk_side"sv, [](ParameterType& variant_value){
 		int const value = std::get<int>(variant_value);
 		if (value <= 0)
