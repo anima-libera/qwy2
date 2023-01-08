@@ -103,6 +103,48 @@ Config::Config()
 	/* If ture, then the terrain generation will produce a flat world. */
 	this->parameter_table.insert({"flat"sv, false});
 
+	/* If ture, then the terrain generation will produce a flat-ish world with hills. */
+	this->parameter_table.insert({"hills"sv, false});
+
+	/* If ture, then the terrain generation will be homogenous in all directions. */
+	this->parameter_table.insert({"homogenous"sv, false});
+
+	/* If ture, then the terrain generation will be a flat plane with holed. */
+	this->parameter_table.insert({"plane"sv, false});
+
+	/* The size (in blocks) of noise detail level used by world generation. */
+	this->parameter_table.insert({"noise_size"sv, 15.0f});
+	this->corrector_table.insert({"noise_size"sv, [](ParameterType& variant_value){
+		int const value = std::get<float>(variant_value);
+		if (value <= 0.0f)
+		{
+			std::cout << "\x1b[31mCommand line error:\x1b[39m "
+				<< "The noise_size value should be strictly positive, "
+				<< "thus " << value << " is not valid."
+				<< std::endl;
+			return false;
+		}
+		return true;
+	}});
+
+	/* How dense is the world generated, 0.0f produces an empty world and 1.0f produces
+	 * a filled world.
+	 * It only influences some world generation methods, and it is best noticed with
+	 * world generations like "homogenous" or "plane". */
+	this->parameter_table.insert({"density"sv, 0.5f});
+	this->corrector_table.insert({"density"sv, [](ParameterType& variant_value){
+		int const value = std::get<float>(variant_value);
+		if (value < 0.0f || 1.0f < value)
+		{
+			std::cout << "\x1b[31mCommand line error:\x1b[39m "
+				<< "The density value should be between 0.0 (included) and 1.0 (included), "
+				<< "thus " << value << " is not valid."
+				<< std::endl;
+			return false;
+		}
+		return true;
+	}});
+
 	/* If true, then the texture atlas will be emitted as a bitmap file. */
 	this->parameter_table.insert({"emit_bitmap"sv, false});
 

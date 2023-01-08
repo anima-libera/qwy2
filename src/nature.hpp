@@ -104,6 +104,11 @@ public:
 	BlockTypeId primary_block_type;
 	BlockTypeId secondary_block_type;
 	bool flat;
+	bool hills;
+	bool homogenous;
+	bool plane;
+	float noise_size;
+	float density;
 
 public:
 	WorldGenerator(NoiseGenerator::SeedType seed);

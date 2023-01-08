@@ -40,6 +40,11 @@ Game::Game(Config const& config)
 	/* Generate the laws of nature. */
 	this->nature = new Nature{config.get<int>("seed"sv)};
 	this->nature->world_generator.flat = config.get<bool>("flat"sv);
+	this->nature->world_generator.hills = config.get<bool>("hills"sv);
+	this->nature->world_generator.homogenous = config.get<bool>("homogenous"sv);
+	this->nature->world_generator.plane = config.get<bool>("plane"sv);
+	this->nature->world_generator.noise_size = config.get<float>("noise_size"sv);
+	this->nature->world_generator.density = config.get<float>("density"sv);
 	/* Block type id 0 is air. */
 	this->nature->nature_generator.generate_block_type(*this->nature);
 	/* Block type id 1 is dirt covered with grass. */

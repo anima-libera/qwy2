@@ -176,18 +176,43 @@ ChunkPtgField generate_chunk_ptg_field(
 		{
 			ptg_field[coords] = (coords.z <= 0) ? 1 : 0;
 		}
+		else if (nature.world_generator.hills)
+		{
+			float const value = nature.world_generator.noise_generator.base_noise(
+				static_cast<float>(coords.x) / nature.world_generator.noise_size,
+				static_cast<float>(coords.y) / nature.world_generator.noise_size);
+			ptg_field[coords] = (coords.z <= -value * 5.0f) ? 1 : 0;
+		}
+		else if (nature.world_generator.homogenous)
+		{
+			float const value = nature.world_generator.noise_generator.base_noise(
+				static_cast<float>(coords.x) / nature.world_generator.noise_size,
+				static_cast<float>(coords.y) / nature.world_generator.noise_size,
+				static_cast<float>(coords.z) / nature.world_generator.noise_size);
+			ptg_field[coords] = (value - nature.world_generator.density < 0.0f) ? 1 : 0;
+		}
+		else if (nature.world_generator.plane)
+		{
+			float const value = nature.world_generator.noise_generator.base_noise(
+				static_cast<float>(coords.x) / nature.world_generator.noise_size,
+				static_cast<float>(coords.y) / nature.world_generator.noise_size,
+				static_cast<float>(coords.z) / nature.world_generator.noise_size);
+			float const value_plane =
+				value + static_cast<float>(std::abs(coords.z - (-20))) / 30.0f;
+			ptg_field[coords] = (value_plane - nature.world_generator.density < 0.0f) ? 1 : 0;
+		}
 		else
 		{
 			float const value = nature.world_generator.noise_generator.base_noise(
-				static_cast<float>(coords.x) / 15.0f,
-				static_cast<float>(coords.y) / 15.0f,
-				static_cast<float>(coords.z) / 15.0f);
+				static_cast<float>(coords.x) / nature.world_generator.noise_size,
+				static_cast<float>(coords.y) / nature.world_generator.noise_size,
+				static_cast<float>(coords.z) / nature.world_generator.noise_size);
 			float const dist =
 				glm::distance(glm::vec2(coords.x, coords.y), glm::vec2(0.0f, 0.0f));
 			float const crazy =
 				dist < 20.0f ? 2.0f :
 				(dist - 20.0f + 2.0f) * 3.0f;
-			ptg_field[coords] = ((value - 0.5f) * crazy > coords.z) ? 1 : 0;
+			ptg_field[coords] = ((value - nature.world_generator.density) * crazy > coords.z) ? 1 : 0;
 		}
 	}
 	return ptg_field;
