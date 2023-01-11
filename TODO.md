@@ -14,6 +14,7 @@
 
 - **Fix:** Rewrite the player collision with blocks code entirely. It is currently so ugly it can be considered a bug.
 - **Optimization:** Generate the chunk meshes sooner (without the whole neighborhood) and update the edges of the meshes as neighbors are generated.
+- **Optimisation:** Allow chunks to have multiple meshes so that chunks with too much faces could internally have regions with separate meshes to require less remeshing work when a block is changed.
 - **Debugging feature:** Allow for chunks to have their PTG fields be given meshes to display as soon as these fields are generated.
 - **Optimization:** When in normal view, don't render chunks with empty meshes.
 - **Optimization:** When in normal view, don't render chunks that are completely covered.
