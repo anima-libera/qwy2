@@ -6,6 +6,7 @@
 #include "nature.hpp"
 #include "noise.hpp"
 #include "bitmap.hpp"
+#include "embedded.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
@@ -16,6 +17,7 @@
 #include <cmath>
 #include <optional>
 #include <limits>
+#include <fstream>
 
 namespace qwy2
 {
@@ -24,6 +26,27 @@ using namespace std::literals::string_view_literals;
 
 Game::Game(Config const& config)
 {
+	register_builtin_command_names();
+
+	{
+		std::ifstream command_file{"commands.qwy2"};
+		if (not command_file.is_open())
+		{
+			std::ofstream command_file{"commands.qwy2"};
+			command_file.write(g_default_commands, strlen(g_default_commands));
+		}
+	}
+
+	std::ifstream command_file{"commands.qwy2"};
+	std::string line;
+	while (std::getline(command_file, line))
+	{
+		if (line.length() >= 1 && line[0] != '#')
+		{
+			parse_command(line)->run(*this);
+		}
+	}
+
 	/* Initialize graphics. */
 	if (init_window_graphics() == ErrorCode::ERROR)
 	{
@@ -203,7 +226,9 @@ Game::Game(Config const& config)
 		<< "Press [M] to toggle the view from the sun's point of view.\n"
 		<< "Use [ZQSD] to walk around and [right-click] to jump.\n"
 		<< "Press [F] to toggle infinite jumping and higher speed.\n"
-		<< "Other controls are available, try mashing the keyboard or reading the code.\n"
+		<< "Other controls are available, try mashing the keyboard.\n"
+		<< "You can read or modify `commands.qwy2` to customize controls.\n"
+		<< "You can read `src/command.cpp` to get a list of commands.\n"
 		<< "\x1b[39m" << std::endl;
 }
 

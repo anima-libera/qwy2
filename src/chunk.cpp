@@ -590,6 +590,31 @@ bool ChunkGrid::block_is_air_or_unloaded(BlockCoords coords) const
 	}
 }
 
+void ChunkGrid::set_block(Nature const* nature,
+	BlockCoords coords, BlockTypeId new_type_id)
+{
+	/* Modify the B field (the actual blocks). */
+	ChunkCoords const chunk_coords = containing_chunk_coords(coords);
+	ChunkBField& b_field = this->b_field.at(chunk_coords);
+	b_field[coords].type_id = new_type_id;
+	/* Update the meshes.
+	 * Due to concerns such as ambiant occlusion, nearby chunks may
+	 * also have to also be remeshed. */
+	BlockRect const concerned_blocks{coords, 2};
+	ChunkRect const concerned_chunks =
+		containing_chunk_rect(concerned_blocks);
+	for (ChunkCoords const chunk_coords : concerned_chunks)
+	{
+		Mesh<VertexDataClassic>& mesh =
+			this->mesh.at(chunk_coords);
+		ChunkMeshData* data = generate_chunk_complete_mesh(chunk_coords,
+			this->get_b_field_neighborhood(chunk_coords),
+			*nature);
+		mesh.vertex_data = std::move(*data);
+		mesh.needs_update_opengl_data = true;
+	}
+}
+
 ChunkGenerationManager::ChunkGenerationManager():
 	thread_pool{nullptr},
 	chunk_grid{nullptr},

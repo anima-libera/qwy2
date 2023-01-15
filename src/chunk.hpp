@@ -172,6 +172,9 @@ public:
 
 	bool block_is_air_or_unloaded(BlockCoords coords) const;
 
+	void set_block(Nature const* nature,
+		BlockCoords coords, BlockTypeId new_type_id);
+
 	friend class ChunkGenerationManager;
 };
 

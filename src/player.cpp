@@ -14,6 +14,16 @@
 namespace qwy2
 {
 
+PlayerControls::PlayerControls():
+	walking_forward{0},
+	walking_rightward{0},
+	will_jump{false},
+	horizontal_angle_motion{0.0f},
+	vertical_angle_motion{0.0f}
+{
+	;
+}
+
 Player::Player():
 	box{glm::vec3{0.0f, 0.0f, 8.0f}, glm::vec3{0.8f, 0.8f, 1.8f}},
 	horizontal_angle{TAU / 2.0f},

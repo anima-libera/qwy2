@@ -29,4 +29,6 @@ EMBEDDED("shaders/shadow/shadow.frag", TEXT) char const g_shader_source_shadow_f
 EMBEDDED("shaders/line_ui/line_ui.vert", TEXT) char const g_shader_source_line_ui_vert[];
 EMBEDDED("shaders/line_ui/line_ui.frag", TEXT) char const g_shader_source_line_ui_frag[];
 
+EMBEDDED("default_commands.qwy2", TEXT) char const g_default_commands[];
+
 #endif /* QWY2_HEADER_EMBEDDED_ */

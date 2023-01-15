@@ -1,0 +1,33 @@
+%YAML 1.2
+---
+name: Qwy2 Command Language
+file_extensions: [qwy2, Qwy2, QWY2]
+scope: source.qwy2
+
+contexts:
+
+  main:
+    - match: '[a-z_]+'
+      scope: entity.name.function.qwy2
+    - match: '((K|M)(U|D)\:)([a-z0-9_]+)'
+      captures:
+        1: storage.type.qwy2
+        4: constant.language.qwy2
+    - match: '[0-9]+'
+      scope: constant.numeric.value.qwy2
+    - match: '\"[^\"]*\"'
+      scope: string.quoted.double.qwy2
+    - match: '#.*'
+      scope: comment.line.qwy2
+    - match: '\['
+      scope: punctuation.section.brackets.begin.qwy2
+      push: brackets
+    - match: '\]'
+      scope: invalid.illegal.qwy2
+
+  brackets:
+    - match: '\]'
+      scope: punctuation.section.brackets.end.qwy2
+      pop: true
+    - include: main
+

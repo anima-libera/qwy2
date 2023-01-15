@@ -1,6 +1,12 @@
 
+#if 0
+
 #ifndef QWY2_HEADER_INPUT_EVENTS_
 #define QWY2_HEADER_INPUT_EVENTS_
+
+#include <SDL2/SDL.h>
+#include <vector>
+#include <variant>
 
 namespace qwy2
 {
@@ -21,9 +27,53 @@ public:
 
 class Game;
 
+class ControlAction
+{
+public:
+	virtual void perform(Game& game) = 0;
+};
+
+class ControlActionPlaceBlock : public ControlAction
+{
+public:
+	virtual void perform(Game& game) override final;
+};
+
+class KeyPress
+{
+public:
+	SDL_Keycode sdl_keycode;
+
+public:
+	KeyPress(SDL_Keycode sdl_keycode);
+};
+
+class MouseClick
+{
+public:
+	unsigned char sdl_button;
+};
+
+using ControlEvent = std::variant<KeyPress, MouseClick>;
+
+class Control
+{
+public:
+	ControlEvent event;
+	ControlAction* action;
+
+public:
+	Control(ControlEvent event, ControlAction* action);
+};
+
 class InputEventHandler
 {
 public:
+	std::vector<Control> controls;
+
+public:
+	InputEventHandler();
+
 	/* All the new input events (obtained via the `SDL_PollEvent` function) are processed. */
 	void handle_events(Game& game);
 };
@@ -31,3 +81,5 @@ public:
 } /* qwy2 */
 
 #endif /* QWY2_HEADER_INPUT_EVENTS_ */
+
+#endif

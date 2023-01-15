@@ -26,3 +26,6 @@ extern char const g_shader_source_line_ui_vert[] = "\n#version 430 core\n\nlayou
 
 /* Content of "src/shaders/line_ui/line_ui.frag". */
 extern char const g_shader_source_line_ui_frag[] = "\n#version 430 core\n\nin vec3 v_color;\n\nout vec4 out_color;\n\nvoid main()\n{\n\tout_color = vec4(v_color, 1.0);\n}\n";
+
+/* Content of "src/default_commands.qwy2". */
+extern char const g_default_commands[] = "\nlog \"Commands start.\"\n\n# Controls\nbind_control KD:9 [log \"GAMING\"]\nbind_control KD:escape [quit_game]\nbind_control KD:a [player_place_block]\nbind_control MD:left [player_break_block]\nbind_control KD:z [player_move_forward]\nbind_control KU:z [player_move_backward]\nbind_control KD:s [player_move_backward]\nbind_control KU:s [player_move_forward]\nbind_control KD:d [player_move_rightward]\nbind_control KU:d [player_move_leftward]\nbind_control KD:q [player_move_leftward]\nbind_control KU:q [player_move_rightward]\nbind_control MD:right [player_jump]\nbind_control KD:l [toggle_capture_cursor]\nbind_control KD:m [toggle_see_from_sun]\nbind_control KD:j [teleport_player 0 0 0]\nbind_control KD:u [teleport_relative_player 0 0 30]\nbind_control KD:f [toggle_fast_and_infinite_jumps]\n\nlog \"Commands end.\"\n";

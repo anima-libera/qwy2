@@ -5,7 +5,7 @@
 #include "chunk.hpp"
 #include "camera.hpp"
 #include "coords.hpp"
-#include "input_events.hpp"
+#include "command.hpp"
 #include "player.hpp"
 #include "shaders/line/line_rect.hpp"
 #include "shaders/table.hpp"
@@ -40,6 +40,7 @@ public:
 	glm::vec3 sky_color;
 	Camera<PerspectiveProjection> player_camera;
 	Player player;
+	PlayerControls player_controls;
 	std::chrono::time_point<std::chrono::high_resolution_clock> clock_time_beginning;
 	float time; /* In seconds. */
 	float previous_time;
@@ -52,7 +53,6 @@ public:
 	bool loop_running;
 	bool auto_close;
 	InputEventHandler input_event_handler;
-	PlayerControls player_controls;
 	ThreadPool thread_pool;
 	Mesh<VertexDataLineUi> pointer_cross_mesh;
 	std::optional<BlockFace> pointed_face_opt;

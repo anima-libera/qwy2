@@ -1,0 +1,24 @@
+
+log "Commands start."
+
+# Controls
+bind_control KD:9 [log "GAMING"]
+bind_control KD:escape [quit_game]
+bind_control KD:a [player_place_block]
+bind_control MD:left [player_break_block]
+bind_control KD:z [player_move_forward]
+bind_control KU:z [player_move_backward]
+bind_control KD:s [player_move_backward]
+bind_control KU:s [player_move_forward]
+bind_control KD:d [player_move_rightward]
+bind_control KU:d [player_move_leftward]
+bind_control KD:q [player_move_leftward]
+bind_control KU:q [player_move_rightward]
+bind_control MD:right [player_jump]
+bind_control KD:l [toggle_capture_cursor]
+bind_control KD:m [toggle_see_from_sun]
+bind_control KD:j [teleport_player 0 0 0]
+bind_control KD:u [teleport_relative_player 0 0 30]
+bind_control KD:f [toggle_fast_and_infinite_jumps]
+
+log "Commands end."
