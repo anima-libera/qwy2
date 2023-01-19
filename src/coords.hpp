@@ -4,6 +4,7 @@
 
 #include <iosfwd>
 #include <tuple>
+#include <iterator>
 #include <glm/vec3.hpp>
 
 namespace qwy2
