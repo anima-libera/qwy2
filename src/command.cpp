@@ -53,14 +53,14 @@ void register_builtin_command_names()
 	using namespace std::literals::string_view_literals;
 	
 	BuiltinCommandName::table.insert(std::make_pair("log"sv, BuiltinCommandName {
-		[](Game& game, std::vector<CommandObject> const& args){
+		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.size() == 1);
 			assert(std::holds_alternative<std::string>(args[0]));
 			std::cout << std::get<std::string>(args[0]) << std::endl;
 		}}));
 	
 	BuiltinCommandName::table.insert(std::make_pair("run"sv, BuiltinCommandName {
-		[](Game& game, std::vector<CommandObject> const& args){
+		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.size() == 1);
 			assert(std::holds_alternative<Command*>(args[0]));
 			Command* command = std::get<Command*>(args[0]);
@@ -69,7 +69,7 @@ void register_builtin_command_names()
 		}}));
 	
 	BuiltinCommandName::table.insert(std::make_pair("bind_control"sv, BuiltinCommandName {
-		[](Game& game, std::vector<CommandObject> const& args){
+		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.size() == 2);
 			assert(std::holds_alternative<ControlEvent>(args[0]));
 			assert(std::holds_alternative<Command*>(args[1]));
@@ -95,35 +95,35 @@ void register_builtin_command_names()
 		}}));
 
 	BuiltinCommandName::table.insert(std::make_pair("quit_game"sv, BuiltinCommandName {
-		[](Game& game, std::vector<CommandObject> const& args){
+		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.size() == 0);
 			game.loop_running = false;
 			std::cout << "Quit game" << std::endl;
 		}}));
 
 	BuiltinCommandName::table.insert(std::make_pair("player_move_forward"sv, BuiltinCommandName {
-		[](Game& game, std::vector<CommandObject> const& args){
+		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			game.player_controls.walking_forward += 1;
 		}}));
 	BuiltinCommandName::table.insert(std::make_pair("player_move_backward"sv, BuiltinCommandName {
-		[](Game& game, std::vector<CommandObject> const& args){
+		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			game.player_controls.walking_forward -= 1;
 		}}));
 	BuiltinCommandName::table.insert(std::make_pair("player_move_rightward"sv, BuiltinCommandName {
-		[](Game& game, std::vector<CommandObject> const& args){
+		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			game.player_controls.walking_rightward += 1;
 		}}));
 	BuiltinCommandName::table.insert(std::make_pair("player_move_leftward"sv, BuiltinCommandName {
-		[](Game& game, std::vector<CommandObject> const& args){
+		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			game.player_controls.walking_rightward -= 1;
 		}}));
 
 	BuiltinCommandName::table.insert(std::make_pair("player_jump"sv, BuiltinCommandName {
-		[](Game& game, std::vector<CommandObject> const& args){
+		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			if ((game.player.is_falling && game.player.allowed_fast_and_infinite_jumps)
 				|| (not game.player.is_falling))
@@ -133,7 +133,7 @@ void register_builtin_command_names()
 		}}));
 
 	BuiltinCommandName::table.insert(std::make_pair("player_place_block"sv, BuiltinCommandName {
-		[](Game& game, std::vector<CommandObject> const& args){
+		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			if (game.pointed_face_opt.has_value())
 			{
@@ -148,7 +148,7 @@ void register_builtin_command_names()
 		}}));
 	
 	BuiltinCommandName::table.insert(std::make_pair("player_break_block"sv, BuiltinCommandName {
-		[](Game& game, std::vector<CommandObject> const& args){
+		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			if (game.pointed_face_opt.has_value())
 			{
@@ -160,7 +160,7 @@ void register_builtin_command_names()
 		}}));
 
 	BuiltinCommandName::table.insert(std::make_pair("toggle_capture_cursor"sv, BuiltinCommandName {
-		[](Game& game, std::vector<CommandObject> const& args){
+		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			if (SDL_GetRelativeMouseMode() == SDL_TRUE)
 			{
@@ -175,7 +175,7 @@ void register_builtin_command_names()
 		}}));
 
 	BuiltinCommandName::table.insert(std::make_pair("toggle_see_from_sun"sv, BuiltinCommandName {
-		[](Game& game, std::vector<CommandObject> const& args){
+		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			game.see_from_sun = not game.see_from_sun;
 			std::cout << (game.see_from_sun ? "Enable" : "Disable")
@@ -183,7 +183,7 @@ void register_builtin_command_names()
 		}}));
 
 	BuiltinCommandName::table.insert(std::make_pair("toggle_see_through_walls"sv, BuiltinCommandName {
-		[](Game& game, std::vector<CommandObject> const& args){
+		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			game.see_through_walls = not game.see_through_walls;
 			std::cout << (game.see_through_walls ? "Enable" : "Disable")
@@ -191,7 +191,7 @@ void register_builtin_command_names()
 		}}));
 
 	BuiltinCommandName::table.insert(std::make_pair("toggle_see_boxes"sv, BuiltinCommandName {
-		[](Game& game, std::vector<CommandObject> const& args){
+		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			game.see_boxes = not game.see_boxes;
 			std::cout << (game.see_boxes ? "Enable" : "Disable")
@@ -199,7 +199,7 @@ void register_builtin_command_names()
 		}}));
 
 	BuiltinCommandName::table.insert(std::make_pair("toggle_see_chunk_borders"sv, BuiltinCommandName {
-		[](Game& game, std::vector<CommandObject> const& args){
+		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			game.see_chunk_borders = not game.see_chunk_borders;
 			std::cout << (game.see_chunk_borders ? "Enable" : "Disable")
@@ -207,7 +207,7 @@ void register_builtin_command_names()
 		}}));
 
 	BuiltinCommandName::table.insert(std::make_pair("toggle_see_from_behind"sv, BuiltinCommandName {
-		[](Game& game, std::vector<CommandObject> const& args){
+		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			game.see_from_behind = not game.see_from_behind;
 			std::cout << (game.see_from_behind ? "Enable" : "Disable")
@@ -215,7 +215,7 @@ void register_builtin_command_names()
 		}}));
 
 	BuiltinCommandName::table.insert(std::make_pair("toggle_fast_and_infinite_jumps"sv, BuiltinCommandName {
-		[](Game& game, std::vector<CommandObject> const& args){
+		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			game.player.allowed_fast_and_infinite_jumps =
 				not game.player.allowed_fast_and_infinite_jumps;
@@ -224,7 +224,7 @@ void register_builtin_command_names()
 		}}));
 
 	BuiltinCommandName::table.insert(std::make_pair("toggle_sun_shadows"sv, BuiltinCommandName {
-		[](Game& game, std::vector<CommandObject> const& args){
+		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			game.render_shadows = not game.render_shadows;
 			glBindFramebuffer(GL_FRAMEBUFFER, game.shadow_framebuffer_openglid);
@@ -234,7 +234,7 @@ void register_builtin_command_names()
 		}}));
 
 	BuiltinCommandName::table.insert(std::make_pair("toggle_world_generation"sv, BuiltinCommandName {
-		[](Game& game, std::vector<CommandObject> const& args){
+		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			game.chunk_generation_manager.generation_enabled =
 				not game.chunk_generation_manager.generation_enabled;
@@ -243,7 +243,7 @@ void register_builtin_command_names()
 		}}));
 
 	BuiltinCommandName::table.insert(std::make_pair("toggle_vsync"sv, BuiltinCommandName {
-		[](Game& game, std::vector<CommandObject> const& args){
+		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			if (SDL_GL_GetSwapInterval() == 0)
 			{
@@ -262,7 +262,7 @@ void register_builtin_command_names()
 		}}));
 
 	BuiltinCommandName::table.insert(std::make_pair("place_block_below_player"sv, BuiltinCommandName {
-		[](Game& game, std::vector<CommandObject> const& args){
+		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			BlockCoords const coords = game.player.box.center - glm::vec3{0.0f, 0.0f, 1.9f};
 			game.chunk_grid->set_block(game.nature, coords, 3);
@@ -270,7 +270,7 @@ void register_builtin_command_names()
 		}}));
 
 	BuiltinCommandName::table.insert(std::make_pair("teleport_player"sv, BuiltinCommandName {
-		[](Game& game, std::vector<CommandObject> const& args){
+		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.size() == 3);
 			assert(std::holds_alternative<int>(args[0]));
 			assert(std::holds_alternative<int>(args[1]));
@@ -285,7 +285,7 @@ void register_builtin_command_names()
 				<< "(" << x << ", " << y << ", " << z << ")." << std::endl;
 		}}));
 	BuiltinCommandName::table.insert(std::make_pair("teleport_relative_player"sv, BuiltinCommandName {
-		[](Game& game, std::vector<CommandObject> const& args){
+		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.size() == 3);
 			assert(std::holds_alternative<int>(args[0]));
 			assert(std::holds_alternative<int>(args[1]));
@@ -329,16 +329,16 @@ static inline bool is_key_name_char(char c)
 	return is_name_char(c) || is_digit_char(c);
 }
 
-Command* parse_command(std::string_view string_command, int* out_command_length)
+Command* parse_command(std::string_view string_command, unsigned int* out_command_length)
 {
-	int i = 0;
+	unsigned int i = 0;
 	while (i < string_command.length() && string_command[i] == ' ')
 	{
 		i++;
 	}
 	
-	int name_start = i;
-	int name_end = i;
+	unsigned int name_start = i;
+	unsigned int name_end = i;
 	while (is_name_char(string_command[i]))
 	{
 		i++;
@@ -372,8 +372,8 @@ Command* parse_command(std::string_view string_command, int* out_command_length)
 		else if (string_command[i] == '\"')
 		{
 			i++;
-			int string_start = i;
-			int string_end = i;
+			unsigned int string_start = i;
+			unsigned int string_end = i;
 			while (string_command[i] != '\"')
 			{
 				i++;
@@ -387,7 +387,7 @@ Command* parse_command(std::string_view string_command, int* out_command_length)
 		{
 			i++;
 			std::string_view starting_at_sub_command = string_command.substr(i);
-			int sub_command_length;
+			unsigned int sub_command_length;
 			Command* sub_command = parse_command(starting_at_sub_command, &sub_command_length);
 			i += sub_command_length;
 			i++; /* Discard the matching closing bracket ']'. */
@@ -423,8 +423,8 @@ Command* parse_command(std::string_view string_command, int* out_command_length)
 			}
 			else
 			{
-				int key_name_start = i;
-				int key_name_end = i;
+				unsigned int key_name_start = i;
+				unsigned int key_name_end = i;
 				while (i < string_command.length() && is_key_name_char(string_command[i]))
 				{
 					i++;
@@ -443,8 +443,8 @@ Command* parse_command(std::string_view string_command, int* out_command_length)
 			bool when_down = string_command[i+1] == 'D';
 			i += 3;
 
-			int button_name_start = i;
-			int button_name_end = i;
+			unsigned int button_name_start = i;
+			unsigned int button_name_end = i;
 			while (i < string_command.length() && is_name_char(string_command[i]))
 			{
 				i++;

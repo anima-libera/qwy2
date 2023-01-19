@@ -1,7 +1,6 @@
 
 #include "player.hpp"
 #include "chunk.hpp"
-#include "input_events.hpp"
 #include "utils.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/rotate_vector.hpp>

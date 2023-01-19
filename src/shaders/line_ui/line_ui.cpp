@@ -18,7 +18,7 @@ ErrorCode ShaderProgramLineUi::init()
 		"line ui vert", nullptr, "line ui frag", "line ui");
 }	
 
-void ShaderProgramLineUi::update_uniform(Uniform uniform, UniformValue value)
+void ShaderProgramLineUi::update_uniform(Uniform uniform, [[maybe_unused]] UniformValue value)
 {
 	glUseProgram(this->openglid);
 

@@ -76,7 +76,7 @@ public:
 	void run(Game& game);
 };
 
-Command* parse_command(std::string_view string_command, int* out_command_length = nullptr);
+Command* parse_command(std::string_view string_command, unsigned int* out_command_length = nullptr);
 
 class Control
 {
