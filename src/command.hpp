@@ -62,6 +62,7 @@ public:
 	BuiltinCommandName(Callback callback);
 };
 
+/* Defines the command names and their code. Must be called before attempting to run commands. */
 void register_builtin_command_names();
 
 class Command

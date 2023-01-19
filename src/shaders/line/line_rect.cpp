@@ -3,6 +3,7 @@
 #include "mesh.hpp"
 #include "coords.hpp"
 #include <utility>
+#include <array>
 
 namespace qwy2
 {
