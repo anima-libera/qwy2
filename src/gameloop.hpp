@@ -57,7 +57,7 @@ public:
 	Mesh<VertexDataLineUi> pointer_cross_mesh;
 	std::optional<BlockFace> pointed_face_opt;
 	#ifdef GLOP_ENABLED
-	Glop glop;
+		Glop glop;
 	#endif
 
 public:

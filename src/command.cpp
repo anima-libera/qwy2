@@ -9,19 +9,19 @@
 namespace qwy2
 {
 
-KeyPress::KeyPress(SDL_Keycode sdl_keycode):
+KeyboardKey::KeyboardKey(SDL_Keycode sdl_keycode):
 	sdl_keycode(sdl_keycode)
 {
 	;
 }
 
-MouseClick::MouseClick(unsigned char sdl_button):
+MouseButton::MouseButton(unsigned char sdl_button):
 	sdl_button(sdl_button)
 {
 	;
 }
 
-ControlEvent::ControlEvent(std::variant<KeyPress, MouseClick> control, bool when_down):
+ControlEvent::ControlEvent(std::variant<KeyboardKey, MouseButton> control, bool when_down):
 	when_down(when_down), control(control)
 {
 	;
@@ -48,27 +48,44 @@ BuiltinCommandName::BuiltinCommandName(Callback callback):
 	;
 }
 
+static void register_one_builtin_command_name(std::string_view name,
+	BuiltinCommandName::Callback callback)
+{
+	BuiltinCommandName::table.insert(std::make_pair(name, BuiltinCommandName {callback}));
+}
+
 void register_builtin_command_names()
 {
 	using namespace std::literals::string_view_literals;
+
+	/* Here they are, the built-in commands! */
+
+	/* TODO: Replace the `assert`s in command callbacks with something that
+	 * produces some kind of error message even in release mode. */
 	
-	BuiltinCommandName::table.insert(std::make_pair("log"sv, BuiltinCommandName {
+	/* Logs a string (arg 0) to stdout. */
+	register_one_builtin_command_name("log"sv, 
 		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.size() == 1);
 			assert(std::holds_alternative<std::string>(args[0]));
 			std::cout << std::get<std::string>(args[0]) << std::endl;
-		}}));
+		});
 	
-	BuiltinCommandName::table.insert(std::make_pair("run"sv, BuiltinCommandName {
+	/* Runs a command (arg 0) immediately. */
+	register_one_builtin_command_name("run"sv, 
 		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.size() == 1);
 			assert(std::holds_alternative<Command*>(args[0]));
 			Command* command = std::get<Command*>(args[0]);
 			command->run(game);
 			std::cout << "Run command [" << command->source << "]." << std::endl;
-		}}));
+		});
 	
-	BuiltinCommandName::table.insert(std::make_pair("bind_control"sv, BuiltinCommandName {
+	/* Binds a control event (arg 0) (stuff like pressing or releasing a key or a mouse button)
+	 * to a command (arg 1).
+	 * Now, every time that control event is triggered the command will be run.
+	 * One control event can be bound to multiple commands (all of which are run unpon trigger). */
+	register_one_builtin_command_name("bind_control"sv, 
 		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.size() == 2);
 			assert(std::holds_alternative<ControlEvent>(args[0]));
@@ -76,12 +93,12 @@ void register_builtin_command_names()
 			ControlEvent control_event = std::get<ControlEvent>(args[0]);
 			Command* command = std::get<Command*>(args[1]);
 			game.input_event_handler.controls.push_back(Control{control_event, command});
-			if (std::holds_alternative<KeyPress>(control_event.control))
+			if (std::holds_alternative<KeyboardKey>(control_event.control))
 			{
 				std::cout << "Bound key "
 					<< "K" << (control_event.when_down ? "D" : "U") << ":"
-					<< key_sdl_keycode_to_name(
-						std::get<KeyPress>(control_event.control).sdl_keycode)
+					<< keyboard_key_code_to_name(
+						std::get<KeyboardKey>(control_event.control).sdl_keycode)
 					<< " to command [" << command->source << "]." << std::endl;
 			}
 			else
@@ -89,40 +106,51 @@ void register_builtin_command_names()
 				std::cout << "Bound mouse button "
 					<< "M" << (control_event.when_down ? "D" : "U") << ":"
 					<< mouse_button_code_to_name(
-						std::get<MouseClick>(control_event.control).sdl_button)
+						std::get<MouseButton>(control_event.control).sdl_button)
 					<< " to command [" << command->source << "]." << std::endl;
 			}
-		}}));
+		});
 
-	BuiltinCommandName::table.insert(std::make_pair("quit_game"sv, BuiltinCommandName {
+	/* Makes the game to close and terminate execution. */
+	register_one_builtin_command_name("quit_game"sv, 
 		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.size() == 0);
 			game.loop_running = false;
-			std::cout << "Quit game" << std::endl;
-		}}));
+			std::cout << "Quit game." << std::endl;
+		});
 
-	BuiltinCommandName::table.insert(std::make_pair("player_move_forward"sv, BuiltinCommandName {
+	/* Makes the player to start moving in a given direction relative to the camera orientation.
+	 * Running the opposite command will make the player to stop moving along the given axis,
+	 * so it is recommended to bind key presses and releases in a way in which the pressing
+	 * of a given key makes the player to walk in some direction and the release of that key
+	 * makes the player walk in the opposite direction (so that it stops walking). */
+	register_one_builtin_command_name("player_move_forward"sv, 
 		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			game.player_controls.walking_forward += 1;
-		}}));
-	BuiltinCommandName::table.insert(std::make_pair("player_move_backward"sv, BuiltinCommandName {
+			assert(game.player_controls.walking_forward <= 1);
+		});
+	register_one_builtin_command_name("player_move_backward"sv, 
 		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			game.player_controls.walking_forward -= 1;
-		}}));
-	BuiltinCommandName::table.insert(std::make_pair("player_move_rightward"sv, BuiltinCommandName {
+			assert(-1 <= game.player_controls.walking_forward);
+		});
+	register_one_builtin_command_name("player_move_rightward"sv, 
 		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			game.player_controls.walking_rightward += 1;
-		}}));
-	BuiltinCommandName::table.insert(std::make_pair("player_move_leftward"sv, BuiltinCommandName {
+			assert(game.player_controls.walking_rightward <= 1);
+		});
+	register_one_builtin_command_name("player_move_leftward"sv, 
 		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			game.player_controls.walking_rightward -= 1;
-		}}));
+			assert(-1 <= game.player_controls.walking_rightward);
+		});
 
-	BuiltinCommandName::table.insert(std::make_pair("player_jump"sv, BuiltinCommandName {
+	/* Makes the player to jump, if allowed. */
+	register_one_builtin_command_name("player_jump"sv, 
 		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			if ((game.player.is_falling && game.player.allowed_fast_and_infinite_jumps)
@@ -130,9 +158,10 @@ void register_builtin_command_names()
 			{
 				game.player_controls.will_jump = true;
 			}
-		}}));
+		});
 
-	BuiltinCommandName::table.insert(std::make_pair("player_place_block"sv, BuiltinCommandName {
+	/* Make the player to place a block on the pointed face. */
+	register_one_builtin_command_name("player_place_block"sv, 
 		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			if (game.pointed_face_opt.has_value())
@@ -145,9 +174,10 @@ void register_builtin_command_names()
 					std::cout << "Place block." << std::endl;
 				}
 			}
-		}}));
+		});
 	
-	BuiltinCommandName::table.insert(std::make_pair("player_break_block"sv, BuiltinCommandName {
+	/* Make the player to break the pointed block. */
+	register_one_builtin_command_name("player_break_block"sv, 
 		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			if (game.pointed_face_opt.has_value())
@@ -157,9 +187,12 @@ void register_builtin_command_names()
 				game.chunk_grid->set_block(game.nature, coords, new_type_id);
 				std::cout << "Break block." << std::endl;
 			}
-		}}));
+		});
 
-	BuiltinCommandName::table.insert(std::make_pair("toggle_capture_cursor"sv, BuiltinCommandName {
+	/* Toggles the fact that the mouse cursor is visible and free to exit the window or not.
+	 * Playing with the mouse cursor free to go is annoying, but when a bug makes closing
+	 * the game difficult then it can help to be able to pull out the mouse cursor from there. */
+	register_one_builtin_command_name("toggle_capture_cursor"sv, 
 		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			if (SDL_GetRelativeMouseMode() == SDL_TRUE)
@@ -172,58 +205,69 @@ void register_builtin_command_names()
 				std::cout << "Capture mouse cursor." << std::endl;
 				SDL_SetRelativeMouseMode(SDL_TRUE);
 			}
-		}}));
+		});
 
-	BuiltinCommandName::table.insert(std::make_pair("toggle_see_from_sun"sv, BuiltinCommandName {
+	/* Displays the world as seen by the sun, from afar. */
+	register_one_builtin_command_name("toggle_see_from_sun"sv, 
 		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			game.see_from_sun = not game.see_from_sun;
 			std::cout << (game.see_from_sun ? "Enable" : "Disable")
 				<< " seeing from the sun." << std::endl;
-		}}));
+		});
 
-	BuiltinCommandName::table.insert(std::make_pair("toggle_see_through_walls"sv, BuiltinCommandName {
+	/* Displays the back faces instead of the front faces,
+	 * which allows to see through opaque surfaces somewhat. */
+	register_one_builtin_command_name("toggle_see_through_walls"sv, 
 		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			game.see_through_walls = not game.see_through_walls;
 			std::cout << (game.see_through_walls ? "Enable" : "Disable")
 				<< " seeing through walls." << std::endl;
-		}}));
+		});
 
-	BuiltinCommandName::table.insert(std::make_pair("toggle_see_boxes"sv, BuiltinCommandName {
+	/* Displays the hitboxes of stuff like the player. */
+	register_one_builtin_command_name("toggle_see_boxes"sv, 
 		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			game.see_boxes = not game.see_boxes;
 			std::cout << (game.see_boxes ? "Enable" : "Disable")
 				<< " seeing boxes." << std::endl;
-		}}));
+		});
 
-	BuiltinCommandName::table.insert(std::make_pair("toggle_see_chunk_borders"sv, BuiltinCommandName {
+	/* Displays the chunk borders (more like the chunk edges actually). */
+	register_one_builtin_command_name("toggle_see_chunk_borders"sv, 
 		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			game.see_chunk_borders = not game.see_chunk_borders;
 			std::cout << (game.see_chunk_borders ? "Enable" : "Disable")
 				<< " seeing chunk borders." << std::endl;
-		}}));
+		});
 
-	BuiltinCommandName::table.insert(std::make_pair("toggle_see_from_behind"sv, BuiltinCommandName {
+	/* Displays the world from a point a bit behind the player, in a 3rd person way. */
+	register_one_builtin_command_name("toggle_see_from_behind"sv, 
 		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			game.see_from_behind = not game.see_from_behind;
 			std::cout << (game.see_from_behind ? "Enable" : "Disable")
 				<< " seeing player from behind." << std::endl;
-		}}));
+		});
 
-	BuiltinCommandName::table.insert(std::make_pair("toggle_fast_and_infinite_jumps"sv, BuiltinCommandName {
+	/* Toggles a mode that allows for infinite jumps in the air and faster motions
+	 * to explore the world faster. */
+	register_one_builtin_command_name("toggle_fast_and_infinite_jumps"sv, 
 		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			game.player.allowed_fast_and_infinite_jumps =
 				not game.player.allowed_fast_and_infinite_jumps;
 			std::cout << (game.player.allowed_fast_and_infinite_jumps ? "Enable" : "Disable")
 				<< " fast-and-infinite-jumps mode." << std::endl;
-		}}));
+		});
 
-	BuiltinCommandName::table.insert(std::make_pair("toggle_sun_shadows"sv, BuiltinCommandName {
+	/* Toggles shadow mapping (the sun projecting shadows on surfaces that it does not see).
+	 * Turning this off may help when performances become a problem, as shadow mapping
+	 * takes a significant time of the rendering. */
+	register_one_builtin_command_name("toggle_sun_shadows"sv, 
 		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			game.render_shadows = not game.render_shadows;
@@ -231,18 +275,20 @@ void register_builtin_command_names()
 			glClear(GL_DEPTH_BUFFER_BIT);
 			std::cout << (game.render_shadows ? "Enable" : "Disable")
 				<< " sun shadows." << std::endl;
-		}}));
+		});
 
-	BuiltinCommandName::table.insert(std::make_pair("toggle_world_generation"sv, BuiltinCommandName {
+	/* Toggles the fact that non-generated chunks near the player shall be generated. */
+	register_one_builtin_command_name("toggle_world_generation"sv, 
 		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			game.chunk_generation_manager.generation_enabled =
 				not game.chunk_generation_manager.generation_enabled;
 			std::cout << (game.chunk_generation_manager.generation_enabled ? "Enable" : "Disable")
 				<< " sun shadows." << std::endl;
-		}}));
+		});
 
-	BuiltinCommandName::table.insert(std::make_pair("toggle_vsync"sv, BuiltinCommandName {
+	/* Toggle VSync. Letting VSync on is recommened unless it is a problem for some reason. */
+	register_one_builtin_command_name("toggle_vsync"sv, 
 		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			if (SDL_GL_GetSwapInterval() == 0)
@@ -259,17 +305,21 @@ void register_builtin_command_names()
 			}
 			std::cout << ((SDL_GL_GetSwapInterval() != 0) ? "Enable" : "Disable")
 				<< " vsync." << std::endl;
-		}}));
+		});
 
-	BuiltinCommandName::table.insert(std::make_pair("place_block_below_player"sv, BuiltinCommandName {
+	/* Place a block below the player. This allows to stop falling or to place blocks in an
+	 * empty area with nothing to place blocks on with `player_place_block`. */
+	register_one_builtin_command_name("place_block_below_player"sv, 
 		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
 			BlockCoords const coords = game.player.box.center - glm::vec3{0.0f, 0.0f, 1.9f};
 			game.chunk_grid->set_block(game.nature, coords, 3);
 			std::cout << "Place block below the player." << std::endl;
-		}}));
+		});
 
-	BuiltinCommandName::table.insert(std::make_pair("teleport_player"sv, BuiltinCommandName {
+	/* Teleports the (center of the) player to the point at the given coordinates
+	 * x (arg 0), y (arg 1) and z (arg 2). */
+	register_one_builtin_command_name("teleport_player"sv, 
 		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.size() == 3);
 			assert(std::holds_alternative<int>(args[0]));
@@ -283,8 +333,10 @@ void register_builtin_command_names()
 			game.player.box.center.z = static_cast<float>(z);
 			std::cout << "Teleport player at "
 				<< "(" << x << ", " << y << ", " << z << ")." << std::endl;
-		}}));
-	BuiltinCommandName::table.insert(std::make_pair("teleport_relative_player"sv, BuiltinCommandName {
+		});
+	/* Teleports the (center of the) player to the point at the given displacement along the 3 axis
+	 * +x (arg 0), +y (arg 1) and +z (arg 2). */
+	register_one_builtin_command_name("teleport_relative_player"sv, 
 		[]([[maybe_unused]] Game& game, [[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.size() == 3);
 			assert(std::holds_alternative<int>(args[0]));
@@ -302,7 +354,7 @@ void register_builtin_command_names()
 				<< ", " << static_cast<int>(game.player.box.center.z)
 				<< ") with the relative move "
 				<< "(" << x << ", " << y << ", " << z << ")." << std::endl;
-		}}));
+		});
 }
 
 Command::Command(BuiltinCommandName name):
@@ -331,6 +383,9 @@ static inline bool is_key_name_char(char c)
 
 Command* parse_command(std::string_view string_command, unsigned int* out_command_length)
 {
+	/* TODO: Make this better! Implement proper abstractions to make this parser eaiser
+	 * to read and extend */
+	
 	unsigned int i = 0;
 	while (i < string_command.length() && string_command[i] == ' ')
 	{
@@ -418,7 +473,7 @@ Command* parse_command(std::string_view string_command, unsigned int* out_comman
 					i++;
 				}
 
-				ControlEvent control_event{KeyPress(key_code), when_down};
+				ControlEvent control_event{KeyboardKey(key_code), when_down};
 				command->args.push_back(control_event);
 			}
 			else
@@ -433,8 +488,8 @@ Command* parse_command(std::string_view string_command, unsigned int* out_comman
 				std::string_view key_name =
 					string_command.substr(key_name_start, key_name_end - key_name_start);
 				
-				SDL_Keycode sdl_keycode = key_name_to_sdl_keycode(key_name);
-				ControlEvent control_event{KeyPress(sdl_keycode), when_down};
+				SDL_Keycode sdl_keycode = keyboard_key_name_to_code(key_name);
+				ControlEvent control_event{KeyboardKey(sdl_keycode), when_down};
 				command->args.push_back(control_event);
 			}
 		}
@@ -454,7 +509,7 @@ Command* parse_command(std::string_view string_command, unsigned int* out_comman
 				string_command.substr(button_name_start, button_name_end - button_name_start);
 
 			unsigned char sdl_button = mouse_button_name_to_code(button_name_string);
-			ControlEvent control_event{MouseClick(sdl_button), when_down};
+			ControlEvent control_event{MouseButton(sdl_button), when_down};
 			command->args.push_back(control_event);
 		}
 		else
@@ -487,6 +542,7 @@ Control::Control(ControlEvent event, Command* command):
 
 void InputEventHandler::handle_events(Game& game)
 {
+	/* TODO: Is this the right or best place for this? */
 	game.player_controls.will_jump = false;
 	game.player_controls.horizontal_angle_motion = 0.0f;
 	game.player_controls.vertical_angle_motion = 0.0f;
@@ -509,8 +565,8 @@ void InputEventHandler::handle_events(Game& game)
 				for (Control const& control : this->controls)
 				{
 					if (control.event.when_down == (event.type == SDL_KEYDOWN) &&
-						std::holds_alternative<KeyPress>(control.event.control) &&
-						std::get<KeyPress>(control.event.control).sdl_keycode ==
+						std::holds_alternative<KeyboardKey>(control.event.control) &&
+						std::get<KeyboardKey>(control.event.control).sdl_keycode ==
 							event.key.keysym.sym)
 					{
 						control.command->run(game);
@@ -525,8 +581,8 @@ void InputEventHandler::handle_events(Game& game)
 				for (Control const& control : this->controls)
 				{
 					if (control.event.when_down == (event.type == SDL_MOUSEBUTTONDOWN) &&
-						std::holds_alternative<MouseClick>(control.event.control) &&
-						std::get<MouseClick>(control.event.control).sdl_button ==
+						std::holds_alternative<MouseButton>(control.event.control) &&
+						std::get<MouseButton>(control.event.control).sdl_button ==
 							event.button.button)
 					{
 						control.command->run(game);

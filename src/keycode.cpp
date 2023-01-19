@@ -247,7 +247,7 @@ static std::pair<std::string_view, SDL_Keycode> key_name_and_code_table[] = {
 	{"audiofastforward"sv, SDLK_AUDIOFASTFORWARD},
 };
 
-SDL_Keycode key_name_to_sdl_keycode(std::string_view key_name)
+SDL_Keycode keyboard_key_name_to_code(std::string_view key_name)
 {
 	for (auto& key_name_and_code : key_name_and_code_table)
 	{
@@ -263,7 +263,7 @@ SDL_Keycode key_name_to_sdl_keycode(std::string_view key_name)
 	return -1;
 }
 
-std::string_view key_sdl_keycode_to_name(SDL_Keycode sdl_keycode)
+std::string_view keyboard_key_code_to_name(SDL_Keycode sdl_keycode)
 {
 	for (auto& key_name_and_code : key_name_and_code_table)
 	{
@@ -278,6 +278,9 @@ std::string_view key_sdl_keycode_to_name(SDL_Keycode sdl_keycode)
 		<< "\x1b[39m" << std::endl;
 	return "unkown"sv;
 }
+
+/* Not making a table for mouse button names to codes feels like its breaking consistency
+ * but it would really be overkill for 5 values. */
 
 unsigned char mouse_button_name_to_code(std::string_view button_name)
 {

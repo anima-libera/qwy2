@@ -17,11 +17,11 @@ Qwy2 is a [C++17](https://en.cppreference.com/w/cpp/compiler_support/17) project
 
 C++ compilers tested and supported by the build system include [GCC](https://gcc.gnu.org/) (`g++`) and [Clang](https://clang.llvm.org/) (`clang`). The build system is written in [Python 3](https://www.python.org/downloads/) (`python3`) (Python 3.9 or higher should do (but not older versions as this script uses some dictionary operators added in 3.9), it was out in 2020 so it seems reasonable).
 
-The building process has only been tested on Linux (Ubuntu 18.04 LTS) yet, it is likely to fail on very different systems for now.
+The building process has only been tested on Linux (Ubuntu 18.04 LTS in the past and Ubuntu 22.04 LTS for the last commit by me) yet, it is likely to fail on very different systems for now.
 
 ### Build
 
-The build system is in the `buildsystem` Python 3 package and can be invoked with the `bs.py` Python script.
+The build system is in `buildsystem/`, written in Python 3, and can be invoked with the `bs.py` Python script in the repo's root folder.
 
 For a *release build*, simply run it:
 
@@ -33,9 +33,11 @@ It can take some command line arguments such as `-d` for a *debug build*. Use `-
 
 The compiled binary will be `bin/Qwy2`, build artifacts will be in the `build` directory.
 
+If the build fails (on Linux) for some reason, please post an issue, I want it to be as portable as possible (but only on Linux for now).
+
 ### Build and run
 
-The `-l` command line argument given to `bs.py` will make it run the compiled binary (with `bin` as the current directory) if the compilation is successful, and arguments that follow `-l` are forwarded to the compiled binary.
+The `-l` command line argument given to `bs.py` will make it run the compiled binary (with `bin` as the current directory) if the compilation is successful, and arguments that follow `-l` are forwarded to the compiled binary (so arguments that are for the build system must be before the `-l`).
 
 Thus the most useful command during development is the following:
 
@@ -55,11 +57,13 @@ python3 bs.py --clear --dont-build
 
 It is in a so early state that everything is subject to change anytime soon.
 
-### Controls
+### Controls and commands
 
 When running the game, a `commands.qwy2` file will be created in the current directory (which will be `bin` if the game is run via the recommended `python3 bs.py -l` command) and filled with default commands, if this file did not already exist. These commands are run at the beginning of execution of the game, and some of these commands bind keyboard keys and mouse buttons to other commands. The idiomatic Qwy2 way of configuring the controls is to modify this file to bind whatever you want to whatever commands you want. For example, one of the commands that is generated when creating `commands.qwy2` at the first execution is `bind_control KD:space [player_jump]`, it binds the event `space` `K`ey `D`own to the command `player_jump`, so that when the keyboard `K`ey named `space` is pressed (`D`down), the command `player_jump` is run (which makes the player jump, there is no trap here). The syntax for commands may change, but for now: one line per command, empty lines and lines starting with `#` are ignored, a command consists of a command name followed by its space-separated arguments. An event that `bind_control` accepts must match `(K|M)(U|D):([a-z0-9_]+)` with `K` being for keyboard keys and `M` for mouse buttons, `U` for up (released) and `D` for down (pressed), and the name of the key/button in snake case, no spaces in this. Stuff between brackets like `[player_jump]` is actually a command that can be passed as an argument to an other command (as is done with each `bind_control`), any command can be in brackets and passed like that, even an other `bind_control` command. Note that a key can be bound to multiple commands (by running multiple `bind_control`s on the same key), this might (or might not) change.
 
-The list of command names and their soure code can be found in `src/command.cpp`. The list pf key/button names can be found in `keycode.cpp`.
+The list of command names and their soure code can be found in `src/command.cpp`. The list of key/button names can be found in `keycode.cpp`.
+
+If your keyboard layout is QWERTY for example, you want to exchange `z`s with `w`s and `q`s with `a`s in `bin/commands.qwy2` (run the game once if this file does not exist yet) after `KD:`s and `KU:`s, because the default commands configure controls for AZERTY keyboards. Default controls adapting to keyboard layouts shall be added in the future.
 
 ### What this project will become (if my motivation does not disappear into the void too soon)?
 
