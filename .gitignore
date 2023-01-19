@@ -4,6 +4,11 @@
 /build/
 __pycache__/
 
+# If one runs the binary while the current directory is not `bin/`, then
+# a command file will be generated in the current directory and it must be
+# ignored (maybe this will no longer happen in the future).
+commands.qwy2
+
 # Dependency graph that the build system may produce
 /dependency_graph.dot
 /dependency_graph.svg

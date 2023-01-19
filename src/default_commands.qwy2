@@ -1,11 +1,8 @@
 
 log "Commands start."
 
-# Controls
-bind_control KD:9 [log "GAMING"]
-bind_control KD:escape [quit_game]
-bind_control KD:a [player_place_block]
-bind_control MD:left [player_break_block]
+# ZQSD walking controls (for AZERTY keyboards).
+# TODO: Make it so that the default controls can adapt to keyboard layout or something.
 bind_control KD:z [player_move_forward]
 bind_control KU:z [player_move_backward]
 bind_control KD:s [player_move_backward]
@@ -14,11 +11,36 @@ bind_control KD:d [player_move_rightward]
 bind_control KU:d [player_move_leftward]
 bind_control KD:q [player_move_leftward]
 bind_control KU:q [player_move_rightward]
-bind_control MD:right [player_jump]
-bind_control KD:l [toggle_capture_cursor]
-bind_control KD:m [toggle_see_from_sun]
-bind_control KD:j [teleport_player 0 0 0]
-bind_control KD:u [teleport_relative_player 0 0 30]
-bind_control KD:f [toggle_fast_and_infinite_jumps]
+
+# Controls (inspired from the default Minecraft controls).
+bind_control KD:space [player_jump]
+bind_control MD:left  [player_break_block]
+bind_control MD:right [player_place_block]
+bind_control KD:lctrl [toggle_fast_and_infinite_jumps]
+bind_control KD:f5    [toggle_see_from_behind]
+
+# Some other useful controls.
+# Note that according to https://minecraft.fandom.com/wiki/Controls?file=Kbd-minecraft.svg#Semi-configurable_controls
+# the F8, F9, F10 and F12 keys are not default-bound to controls in Minecraft,
+# so there is no risk of conflict when default-binding stuff to these keys here.
+# Same for V, B and N (which are at the bottom of both AZERTY and QWERTY keyboards).
+bind_control KD:escape [quit_game]
+bind_control KD:f8     [toggle_see_from_sun]
+bind_control KD:f9     [toggle_capture_cursor]
+bind_control KD:f10    [toggle_see_chunk_borders]
+bind_control KD:n      [teleport_relative_player 0 0 30]
+
+# Note: Here are some of MY cringe controls (which I can't play without, but
+# also which you probably can't play with, which is why controls were made
+# configurable so early in development).
+#bind_control KD:a [player_place_block]
+#bind_control MD:left [player_break_block]
+#bind_control MD:right [player_jump]
+# These are not particularly cringe.
+#bind_control KD:l [toggle_capture_cursor]
+#bind_control KD:m [toggle_see_from_sun]
+#bind_control KD:j [teleport_player 0 0 0]
+#bind_control KD:u [teleport_relative_player 0 0 30]
+#bind_control KD:f [toggle_fast_and_infinite_jumps]
 
 log "Commands end."

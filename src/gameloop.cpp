@@ -28,6 +28,10 @@ Game::Game(Config const& config)
 {
 	register_builtin_command_names();
 
+	/* A user-editable file named `commands.qwy2` containing command to be run
+	 * at the beginning of execution (now) is to be found in the current directory.
+	 * If there is no such file, then we generate the default file (the content
+	 * of which is in `src/default_commands.qwy2`). */
 	{
 		std::ifstream command_file{"commands.qwy2"};
 		if (not command_file.is_open())
@@ -36,8 +40,9 @@ Game::Game(Config const& config)
 			command_file.write(g_default_commands, strlen(g_default_commands));
 		}
 	}
-
 	std::ifstream command_file{"commands.qwy2"};
+
+	/* Run said commands. */
 	std::string line;
 	while (std::getline(command_file, line))
 	{
@@ -223,12 +228,9 @@ Game::Game(Config const& config)
 	std::cout
 		<< "\x1b[33m" /* Yellow. */
 		<< "Please wait a bit, rendering the first chunk requires a bit of generation first.\n"
-		<< "Press [M] to toggle the view from the sun's point of view.\n"
-		<< "Use [ZQSD] to walk around and [right-click] to jump.\n"
-		<< "Press [F] to toggle infinite jumping and higher speed.\n"
-		<< "Other controls are available, try mashing the keyboard.\n"
-		<< "You can read or modify `commands.qwy2` to customize controls.\n"
+		<< "You can read or modify `commands.qwy2` to learn or customize controls.\n"
 		<< "You can read `src/command.cpp` to get a list of commands.\n"
+		<< "You can read `src/keycode.cpp` to get the name of keyboard keys.\n"
 		<< "\x1b[39m" << std::endl;
 }
 

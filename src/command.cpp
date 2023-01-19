@@ -514,7 +514,8 @@ void InputEventHandler::handle_events(Game& game)
 							event.key.keysym.sym)
 					{
 						control.command->run(game);
-						break;
+						/* Don't break, there might be other bindings
+						 * to the same control event. */
 					}
 				}
 			break;
@@ -529,7 +530,8 @@ void InputEventHandler::handle_events(Game& game)
 							event.button.button)
 					{
 						control.command->run(game);
-						break;
+						/* Don't break, there might be other bindings
+						 * to the same control event. */
 					}
 				}
 			break;

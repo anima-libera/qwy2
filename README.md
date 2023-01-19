@@ -35,7 +35,7 @@ The compiled binary will be `bin/Qwy2`, build artifacts will be in the `build` d
 
 ### Build and run
 
-The `-l` command line argument given to `bs.py` will make it run the compiled binary (from `bin`) if the compilation is successful, and arguments that follow `-l` are forwarded to the compiled binary.
+The `-l` command line argument given to `bs.py` will make it run the compiled binary (with `bin` as the current directory) if the compilation is successful, and arguments that follow `-l` are forwarded to the compiled binary.
 
 Thus the most useful command during development is the following:
 
@@ -57,9 +57,9 @@ It is in a so early state that everything is subject to change anytime soon.
 
 ### Controls
 
-At the time of writing this README (that may not be quite kept in sync with the changes made to Qwy2), I have hardcoded some of my personal Minecraft controls, which is why *jumping is right-click* (don't ask), and forward/left/backward/right is ZQSD (AZERTY keyboard). This should change in the (near?) future and be configurable! The rest of the controls can be found either by searching the event loop in the source code or by trying all the keys (keys that have an effect on settings will result in some message being printed, that should help).
+When running the game, a `commands.qwy2` file will be created in the current directory (which will be `bin` if the game is run via the recommended `python3 bs.py -l` command) and filled with default commands, if this file did not already exist. These commands are run at the beginning of execution of the game, and some of these commands bind keyboard keys and mouse buttons to other commands. The idiomatic Qwy2 way of configuring the controls is to modify this file to bind whatever you want to whatever commands you want. For example, one of the commands that is generated when creating `commands.qwy2` at the first execution is `bind_control KD:space [player_jump]`, it binds the event `space` `K`ey `D`own to the command `player_jump`, so that when the keyboard `K`ey named `space` is pressed (`D`down), the command `player_jump` is run (which makes the player jump, there is no trap here). The syntax for commands may change, but for now: one line per command, empty lines and lines starting with `#` are ignored, a command consists of a command name followed by its space-separated arguments. An event that `bind_control` accepts must match `(K|M)(U|D):([a-z0-9_]+)` with `K` being for keyboard keys and `M` for mouse buttons, `U` for up (released) and `D` for down (pressed), and the name of the key/button in snake case, no spaces in this. Stuff between brackets like `[player_jump]` is actually a command that can be passed as an argument to an other command (as is done with each `bind_control`), any command can be in brackets and passed like that, even an other `bind_control` command. Note that a key can be bound to multiple commands (by running multiple `bind_control`s on the same key), this might (or might not) change.
 
-The A key and Left Click can be used to place and remove blocks.
+The list of command names and their soure code can be found in `src/command.cpp`. The list pf key/button names can be found in `keycode.cpp`.
 
 ### What this project will become (if my motivation does not disappear into the void too soon)?
 
