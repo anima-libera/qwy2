@@ -45,7 +45,7 @@ void StructureInstance::generate(
 	while (true)
 	{
 		BlockCoords below_writing_head = writing_head - BlockCoords{0, 0, 1};
-		if (chunk_neighborhood_ptt_field[below_writing_head] == 1)
+		if (chunk_neighborhood_ptt_field[below_writing_head] != 0)
 		{
 			break;
 		}

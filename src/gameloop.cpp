@@ -72,9 +72,14 @@ Game::Game(Config const& config)
 	this->nature->world_generator.homogenous = config.get<bool>("homogenous"sv);
 	this->nature->world_generator.plane = config.get<bool>("plane"sv);
 	this->nature->world_generator.planes = config.get<bool>("planes"sv);
+	this->nature->world_generator.vertical_pillar = config.get<bool>("vertical_pillar"sv);
+	this->nature->world_generator.vertical_hole = config.get<bool>("vertical_hole"sv);
+	this->nature->world_generator.horizontal_pillar = config.get<bool>("horizontal_pillar"sv);
+	this->nature->world_generator.horizontal_hole = config.get<bool>("horizontal_hole"sv);
 	this->nature->world_generator.noise_size = config.get<float>("noise_size"sv);
 	this->nature->world_generator.density = config.get<float>("density"sv);
 	this->nature->world_generator.structures_enabled = config.get<bool>("structures"sv);
+	this->nature->world_generator.stone_terrain = config.get<bool>("stone_terrain"sv);
 	/* Block type id 0 is air. */
 	this->nature->nature_generator.generate_block_type(*this->nature);
 	/* Block type id 1 is dirt covered with grass. */

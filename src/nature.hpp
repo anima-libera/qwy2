@@ -109,9 +109,14 @@ public:
 	bool homogenous;
 	bool plane;
 	bool planes;
+	bool vertical_pillar;
+	bool vertical_hole;
+	bool horizontal_pillar;
+	bool horizontal_hole;
 	float noise_size;
 	float density;
 	bool structures_enabled;
+	bool stone_terrain;
 
 public:
 	WorldGenerator(NoiseGenerator::SeedType seed);

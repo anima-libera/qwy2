@@ -115,6 +115,18 @@ Config::Config()
 	/* If ture, then the terrain generation will be infinitely many flat planes with holes. */
 	this->parameter_table.insert({"planes"sv, false});
 
+	/* If ture, then the terrain generation will consist of a vertical pillar. */
+	this->parameter_table.insert({"vertical_pillar"sv, false});
+
+	/* If ture, then the terrain generation will consist of a vertical hole. */
+	this->parameter_table.insert({"vertical_hole"sv, false});
+
+	/* If ture, then the terrain generation will consist of a horizontal pillar. */
+	this->parameter_table.insert({"horizontal_pillar"sv, false});
+
+	/* If ture, then the terrain generation will consist of a horizontal hole. */
+	this->parameter_table.insert({"horizontal_hole"sv, false});
+
 	/* The size (in blocks) of noise detail level used by world generation. */
 	this->parameter_table.insert({"noise_size"sv, 15.0f});
 	this->corrector_table.insert({"noise_size"sv, [](ParameterType& variant_value){
@@ -150,6 +162,9 @@ Config::Config()
 
 	/* If FALSE, then no structures will be generated (only terrain). */
 	this->parameter_table.insert({"structures"sv, true});
+
+	/* If true, then the plain terrain will be composed only of stone. */
+	this->parameter_table.insert({"stone_terrain"sv, false});
 
 	/* If true, then the texture atlas will be emitted as a bitmap file. */
 	this->parameter_table.insert({"emit_bitmap"sv, false});
