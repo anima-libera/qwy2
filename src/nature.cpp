@@ -272,6 +272,15 @@ void paint_rock_pixel(NoiseGenerator& noise_generator, int x, int y, PixelData& 
 	pixel.a = 255;
 }
 
+void paint_white_pixel(NoiseGenerator& noise_generator, int x, int y, PixelData& pixel)
+{
+	float const grey_value = noise_generator.base_noise(x, y, 0);
+	pixel.r = (grey_value * 0.05f + 0.95f) * 255.0f;
+	pixel.g = (grey_value * 0.05f + 0.95f) * 255.0f;
+	pixel.b = (grey_value * 0.05f + 0.95f) * 255.0f;
+	pixel.a = 255;
+}
+
 void paint_grass_top(NoiseGenerator& noise_generator, PixelRect& pixel_rect)
 {
 	for (int y = 0; y < static_cast<int>(pixel_rect.h); y++)
@@ -321,6 +330,16 @@ void paint_rock(NoiseGenerator& noise_generator, PixelRect& pixel_rect)
 	}
 }
 
+void paint_white(NoiseGenerator& noise_generator, PixelRect& pixel_rect)
+{
+	for (int y = 0; y < static_cast<int>(pixel_rect.h); y++)
+	for (int x = 0; x < static_cast<int>(pixel_rect.w); x++)
+	{
+		PixelData& pixel = pixel_rect.pixel(x, y);
+		paint_white_pixel(noise_generator, x, y, pixel);
+	}
+}
+
 } /* Anonymous namespace. */
 
 BlockTypeId NatureGenerator::generate_block_type(Nature& nature)
@@ -343,11 +362,17 @@ BlockTypeId NatureGenerator::generate_block_type(Nature& nature)
 		paint_dirt(this->noise_generator, pixel_rect_vertical);
 		paint_dirt(this->noise_generator, pixel_rect_bottom);
 	}
-	else
+	else if (block_type_index == 3)
 	{
 		paint_rock(this->noise_generator, pixel_rect_top);
 		paint_rock(this->noise_generator, pixel_rect_vertical);
 		paint_rock(this->noise_generator, pixel_rect_bottom);
+	}
+	else
+	{
+		paint_white(this->noise_generator, pixel_rect_top);
+		paint_white(this->noise_generator, pixel_rect_vertical);
+		paint_white(this->noise_generator, pixel_rect_bottom);
 	}
 
 	nature.atlas.update_opengl_data();

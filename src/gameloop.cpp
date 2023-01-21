@@ -74,6 +74,7 @@ Game::Game(Config const& config)
 	this->nature->world_generator.planes = config.get<bool>("planes"sv);
 	this->nature->world_generator.noise_size = config.get<float>("noise_size"sv);
 	this->nature->world_generator.density = config.get<float>("density"sv);
+	this->nature->world_generator.structures_enabled = config.get<bool>("structures"sv);
 	/* Block type id 0 is air. */
 	this->nature->nature_generator.generate_block_type(*this->nature);
 	/* Block type id 1 is dirt covered with grass. */
@@ -84,6 +85,9 @@ Game::Game(Config const& config)
 		this->nature->nature_generator.generate_block_type(*this->nature);
 	/* Block type id 3 is plain rock. */
 	this->nature->world_generator.secondary_block_type =
+		this->nature->nature_generator.generate_block_type(*this->nature);
+	/* Block type id 4 is a white test block. */
+	this->nature->world_generator.test_block_type =
 		this->nature->nature_generator.generate_block_type(*this->nature);
 	
 	/* Emit the texture atlas if requested. */
@@ -456,7 +460,7 @@ void Game::loop()
 				this->line_rect_drawer.color = glm::vec3{0.0f, 0.4f, 0.8f};
 				for (auto const& [chunk_coords, chunk_ptg_field] : this->chunk_grid->ptg_field)
 				{
-					BlockRect const rect = chunk_rect(chunk_coords);
+					BlockRect const rect = chunk_block_rect(chunk_coords);
 					glm::vec3 const coords_min =
 						static_cast<glm::vec3>(rect.coords_min) - glm::vec3{0.5f, 0.5f, 0.5f};
 					glm::vec3 const coords_max =

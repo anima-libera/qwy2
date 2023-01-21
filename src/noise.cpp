@@ -65,6 +65,17 @@ float NoiseGenerator::base_noise(int x, int y, int z) const
 	return value - std::floor(value);
 }
 
+float NoiseGenerator::base_noise(int x, int y, int z, int w) const
+{
+	float const value =
+		std::cos(static_cast<float>(x ^ 3738831 ^ this->seed) * 4537.3f) +
+		std::cos(static_cast<float>(y ^ 8373628 ^ this->seed) * 4502.3f) +
+		std::cos(static_cast<float>(z ^ 2093799 ^ this->seed) * 4564.3f) +
+		std::cos(static_cast<float>(w ^ 6624391 ^ this->seed) * 4593.3f) +
+		std::cos(this->base_noise((x ^ y ^ z ^ w) + x + y + z + w) * 4526.3f);
+	return value - std::floor(value);
+}
+
 float NoiseGenerator::base_noise(float x) const
 {
 	int const xi = static_cast<int>(std::floor(x));

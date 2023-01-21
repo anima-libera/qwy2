@@ -3,6 +3,7 @@
 #include "nature.hpp"
 #include "threadpool.hpp"
 #include "utils.hpp"
+#include "structure.hpp"
 #include <cassert>
 #include <iostream>
 #include <iterator>
@@ -39,13 +40,29 @@ BlockCoords chunk_most_positiveward_block_coords(ChunkCoords chunk_coords)
 		static_cast<int>(g_chunk_side) / 2};
 }
 
-BlockRect chunk_rect(ChunkCoords chunk_coords)
+BlockRect chunk_block_rect(ChunkCoords chunk_coords)
 {
 	BlockCoords const center_coords = chunk_center_coords(chunk_coords);
 	int const margin = g_chunk_side / 2;
 	return BlockRect{
 		BlockCoords{center_coords.x - margin, center_coords.y - margin, center_coords.z - margin},
 		BlockCoords{center_coords.x + margin, center_coords.y + margin, center_coords.z + margin}};
+}
+
+BlockRect chunk_rect_block_rect(ChunkRect chunk_rect)
+{
+	BlockCoords const center_coords_min = chunk_center_coords(chunk_rect.coords_min);
+	BlockCoords const center_coords_max = chunk_center_coords(chunk_rect.coords_max);
+	int const margin = g_chunk_side / 2;
+	return BlockRect{
+		BlockCoords{
+			center_coords_min.x - margin,
+			center_coords_min.y - margin,
+			center_coords_min.z - margin},
+		BlockCoords{
+			center_coords_max.x + margin,
+			center_coords_max.y + margin,
+			center_coords_max.z + margin}};
 }
 
 ChunkCoords containing_chunk_coords(BlockCoords coords)
@@ -165,13 +182,25 @@ typename ChunkNeighborhood<ChunkFieldType>::ValueType const&
 	return field[coords];
 }
 
+template<typename ChunkFieldType>
+ChunkRect ChunkNeighborhood<ChunkFieldType>::chunk_rect() const
+{
+	return ChunkRect{
+		this->field_table[0].chunk_coords,
+		this->field_table[3*3*3-1].chunk_coords};
+}
+
+template ChunkNeighborhood<ChunkPttField>::ValueType const&
+	ChunkNeighborhood<ChunkPttField>::operator[](BlockCoords coords) const;
+template ChunkRect ChunkNeighborhood<ChunkPttField>::chunk_rect() const;
+
 ChunkPtgField generate_chunk_ptg_field(
 	ChunkCoords chunk_coords,
 	[[maybe_unused]] Nature const& nature)
 {
 	/* Placeholder. */
 	ChunkPtgField ptg_field{chunk_coords};
-	for (BlockCoords coords : chunk_rect(chunk_coords))
+	for (BlockCoords coords : chunk_block_rect(chunk_coords))
 	{
 		if (nature.world_generator.flat)
 		{
@@ -237,7 +266,7 @@ ChunkPttField generate_chunk_ptt_field(
 {
 	/* Placeholder. */
 	ChunkPttField ptt_field{chunk_coords};
-	for (BlockCoords coords : chunk_rect(chunk_coords))
+	for (BlockCoords coords : chunk_block_rect(chunk_coords))
 	{
 		if (chunk_neighborhood_ptg_field[coords] == 0)
 		{
@@ -266,10 +295,39 @@ ChunkBField generate_chunk_b_field(
 {
 	/* Placeholder. */
 	ChunkBField b_field{chunk_coords};
-	for (BlockCoords coords : chunk_rect(chunk_coords))
+	for (BlockCoords coords : chunk_block_rect(chunk_coords))
 	{
 		b_field[coords].type_id = chunk_neighborhood_ptt_field[coords];
 	}
+
+	if (nature.world_generator.structures_enabled)
+	{
+		int const structure_bound_rect_max_radius = 12;
+		BlockRect structure_head_rect_of_influence =
+			chunk_rect_block_rect(chunk_neighborhood_ptt_field.chunk_rect());
+		structure_head_rect_of_influence.coords_min.x += structure_bound_rect_max_radius;
+		structure_head_rect_of_influence.coords_min.y += structure_bound_rect_max_radius;
+		structure_head_rect_of_influence.coords_min.z += structure_bound_rect_max_radius;
+		structure_head_rect_of_influence.coords_max.x -= structure_bound_rect_max_radius;
+		structure_head_rect_of_influence.coords_max.y -= structure_bound_rect_max_radius;
+		structure_head_rect_of_influence.coords_max.z -= structure_bound_rect_max_radius;
+
+		/* Placeholder. */
+		for (BlockCoords coords : structure_head_rect_of_influence)
+		{
+			float const coords_noise = nature.world_generator.noise_generator.base_noise(
+				coords.x, coords.y, coords.z);
+			float const structure_probability = 0.0001f;
+			if (coords_noise < structure_probability)
+			{
+				BlockCoords head_start = coords;
+				BlockRect bound_rect{head_start, structure_bound_rect_max_radius - 3};
+				StructureInstance structure{head_start, bound_rect};
+				structure.generate(b_field, chunk_coords, chunk_neighborhood_ptt_field, nature);
+			}
+		}
+	}
+
 	return b_field;
 }
 
@@ -435,7 +493,7 @@ ChunkMeshData* generate_chunk_complete_mesh(
 	Nature const& nature)
 {
 	ChunkMeshData* mesh_data = new ChunkMeshData{};
-	for (BlockCoords coords_interior : chunk_rect(chunk_coords))
+	for (BlockCoords coords_interior : chunk_block_rect(chunk_coords))
 	{
 		Block const& block_interior = chunk_neighborhood_b_field[coords_interior];
 		if (block_interior.is_air())

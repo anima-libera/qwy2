@@ -31,7 +31,10 @@ BlockCoords chunk_most_negativeward_block_coords(ChunkCoords chunk_coords);
 BlockCoords chunk_most_positiveward_block_coords(ChunkCoords chunk_coords);
 
 /* Returns the block rect that contains exactly the blocks of the chunk given by chunk_coords. */
-BlockRect chunk_rect(ChunkCoords chunk_coords);
+BlockRect chunk_block_rect(ChunkCoords chunk_coords);
+
+/* Returns the block rect that contains exactly the blocks of the given chunk rect. */
+BlockRect chunk_rect_block_rect(ChunkRect chunk_rect);
 
 /* Returns the chunk-level coords of the chunk that contains the block at the given coords. */
 ChunkCoords containing_chunk_coords(BlockCoords coords);
@@ -104,6 +107,8 @@ public:
 	ValueType& operator[](BlockCoords coords);
 	ValueType const& operator[](BlockCoords coords) const;
 
+	ChunkRect chunk_rect() const;
+
 	friend class ChunkGrid;
 };
 
@@ -140,6 +145,11 @@ ChunkMeshData* generate_chunk_complete_mesh(
 	ChunkCoords chunk_coords,
 	ChunkNeighborhood<ChunkBField> const chunk_neighborhood_b_field,
 	Nature const& nature);
+
+/* TODO: See if passing stuff typed like `ChunkNeighborhood<ChunkPtgField>` to functions
+ * performs an allocation and copy of the data or not. If it does, then this is something
+ * to optimize (and beware the unloading of chunks while generating a neighbor which
+ * may use-after-free across threads some data). */
 
 template <typename ComponentType>
 using ChunkComponentGrid = std::unordered_map<ChunkCoords, ComponentType, ChunkCoords::Hash>;

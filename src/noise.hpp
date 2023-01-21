@@ -23,6 +23,7 @@ public:
 	float base_noise(int x) const;
 	float base_noise(int x, int y) const;
 	float base_noise(int x, int y, int z) const;
+	float base_noise(int x, int y, int z, int w) const;
 	float base_noise(float x) const;
 	float base_noise(float x, float y) const;
 	float base_noise(float x, float y, float z) const;

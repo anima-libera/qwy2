@@ -148,6 +148,9 @@ Config::Config()
 		return true;
 	}});
 
+	/* If FALSE, then no structures will be generated (only terrain). */
+	this->parameter_table.insert({"structures"sv, true});
+
 	/* If true, then the texture atlas will be emitted as a bitmap file. */
 	this->parameter_table.insert({"emit_bitmap"sv, false});
 
