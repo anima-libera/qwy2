@@ -107,6 +107,7 @@ public:
 	bool hills;
 	bool homogenous;
 	bool plane;
+	bool planes;
 	float noise_size;
 	float density;
 

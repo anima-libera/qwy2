@@ -109,8 +109,11 @@ Config::Config()
 	/* If ture, then the terrain generation will be homogenous in all directions. */
 	this->parameter_table.insert({"homogenous"sv, false});
 
-	/* If ture, then the terrain generation will be a flat plane with holed. */
+	/* If ture, then the terrain generation will be a flat plane with holes. */
 	this->parameter_table.insert({"plane"sv, false});
+
+	/* If ture, then the terrain generation will be infinitely many flat planes with holes. */
+	this->parameter_table.insert({"planes"sv, false});
 
 	/* The size (in blocks) of noise detail level used by world generation. */
 	this->parameter_table.insert({"noise_size"sv, 15.0f});

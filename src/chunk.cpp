@@ -2,6 +2,7 @@
 #include "chunk.hpp"
 #include "nature.hpp"
 #include "threadpool.hpp"
+#include "utils.hpp"
 #include <cassert>
 #include <iostream>
 #include <iterator>
@@ -199,6 +200,17 @@ ChunkPtgField generate_chunk_ptg_field(
 				static_cast<float>(coords.z) / nature.world_generator.noise_size);
 			float const value_plane =
 				value + static_cast<float>(std::abs(coords.z - (-20))) / 30.0f;
+			ptg_field[coords] = (value_plane - nature.world_generator.density < 0.0f) ? 1 : 0;
+		}
+		else if (nature.world_generator.planes)
+		{
+			float const value = nature.world_generator.noise_generator.base_noise(
+				static_cast<float>(coords.x) / nature.world_generator.noise_size,
+				static_cast<float>(coords.y) / nature.world_generator.noise_size,
+				static_cast<float>(coords.z) / nature.world_generator.noise_size);
+			int nearest_plane_z = coords.z - cool_mod(coords.z, 60) + 30;
+			float const value_plane =
+				value + static_cast<float>(std::abs(coords.z - nearest_plane_z)) / 30.0f;
 			ptg_field[coords] = (value_plane - nature.world_generator.density < 0.0f) ? 1 : 0;
 		}
 		else
@@ -605,6 +617,10 @@ void ChunkGrid::set_block(Nature const* nature,
 		containing_chunk_rect(concerned_blocks);
 	for (ChunkCoords const chunk_coords : concerned_chunks)
 	{
+		/* TODO: Make the remeshing in other threads with highest priority or something.
+		 * Without this, when the remeshing happens to take too long (it happens sometimes)
+		 * it blocks the main thread and the game freezes for a bit. */
+		
 		Mesh<VertexDataClassic>& mesh =
 			this->mesh.at(chunk_coords);
 		ChunkMeshData* data = generate_chunk_complete_mesh(chunk_coords,

@@ -71,6 +71,7 @@ Game::Game(Config const& config)
 	this->nature->world_generator.hills = config.get<bool>("hills"sv);
 	this->nature->world_generator.homogenous = config.get<bool>("homogenous"sv);
 	this->nature->world_generator.plane = config.get<bool>("plane"sv);
+	this->nature->world_generator.planes = config.get<bool>("planes"sv);
 	this->nature->world_generator.noise_size = config.get<float>("noise_size"sv);
 	this->nature->world_generator.density = config.get<float>("density"sv);
 	/* Block type id 0 is air. */
