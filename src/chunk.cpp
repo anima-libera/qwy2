@@ -8,6 +8,7 @@
 #include <iostream>
 #include <iterator>
 #include <algorithm>
+#include <sstream>
 
 namespace qwy2
 {
@@ -112,6 +113,14 @@ ChunkField<FieldValueType>::ChunkField(ChunkCoords chunk_coords):
 }
 
 template<typename FieldValueType>
+ChunkField<FieldValueType>::ChunkField(ChunkCoords chunk_coords, ValueType* data):
+	chunk_coords{chunk_coords},
+	data{data}
+{
+	;
+}
+
+template<typename FieldValueType>
 ChunkField<FieldValueType>::~ChunkField()
 {
 	//delete[] this->data;
@@ -139,9 +148,16 @@ FieldValueType const& ChunkField<FieldValueType>::operator[](BlockCoords coords)
 		g_chunk_side * g_chunk_side * local_coords.z];
 }
 
+template<typename FieldValueType>
+FieldValueType* ChunkField<FieldValueType>::raw_data()
+{
+	return this->data;
+}
+
 template ChunkField<Block>::~ChunkField();
 template Block& ChunkField<Block>::operator[](BlockCoords coords);
 template Block const& ChunkField<Block>::operator[](BlockCoords coords) const;
+template Block* ChunkField<Block>::raw_data();
 
 bool Block::is_air() const
 {
@@ -566,6 +582,74 @@ ChunkMeshData* generate_chunk_complete_mesh(
 	return mesh_data;
 }
 
+namespace
+{
+
+std::string chunk_file_name(ChunkCoords chunk_coords)
+{
+	std::stringstream file_name_stream;
+	file_name_stream << "save/chunks/chunk_"
+		<< chunk_coords.x << "_" << chunk_coords.y << "_" << chunk_coords.z
+		<< ".qwy2_chunk";
+	return file_name_stream.str();
+}
+
+} /* Anonymous namespace. */
+
+ChunkDiskStorage::ChunkDiskStorage():
+	file_name("e")
+{
+	;
+}
+
+ChunkDiskStorage::ChunkDiskStorage(ChunkCoords chunk_coords):
+	chunk_coords(chunk_coords), file_name(chunk_file_name(chunk_coords))
+{
+	this->exist = std::ifstream{this->file_name, std::ifstream::binary}.good();
+}
+
+ChunkDiskStorage search_disk_for_chunk(ChunkCoords chunk_coords)
+{
+	ChunkDiskStorage storage{chunk_coords};
+	return storage;
+}
+
+ChunkBField read_disk_chunk_b_field(ChunkCoords chunk_coords,
+	ChunkDiskStorage& chunk_disk_storage)
+{
+	/* TODO: Make this better. */
+	unsigned int const size = sizeof (Block) * chunk_volume();
+	Block* b_field_data = static_cast<Block*>(operator new(size));
+	std::fstream file{chunk_disk_storage.file_name,
+		std::ios::binary | std::ios::in | std::ios::out};
+	file.read(static_cast<char*>(static_cast<void*>(b_field_data)), size);
+	ChunkBField b_field{chunk_coords, b_field_data};
+	return b_field;
+}
+
+void write_disk_chunk_b_field(ChunkCoords chunk_coords,
+	ChunkDiskStorage& chunk_disk_storage, ChunkBField chunk_b_field)
+{
+	/* TODO: Make this better. */
+	//std::cout << chunk_disk_storage.file_name << std::endl;
+	std::fstream file;
+	if (chunk_disk_storage.exist)
+	{
+		file.open(chunk_disk_storage.file_name,
+			std::ios::binary | std::ios::in | std::ios::out);
+	}
+	else
+	{
+		file.open(chunk_disk_storage.file_name,
+			std::ios::binary | std::ios::out);
+	}
+	file.seekp(0, std::ios_base::beg);
+	unsigned int const size = sizeof (Block) * chunk_volume();
+	file.write(static_cast<char*>(static_cast<void*>(chunk_b_field.raw_data())), size);
+	file.flush();
+	file.close();
+}
+
 bool ChunkGrid::has_ptg_field(ChunkCoords chunk_coords) const
 {
 	return this->ptg_field.find(chunk_coords) != this->ptg_field.end();
@@ -584,6 +668,11 @@ bool ChunkGrid::has_b_field(ChunkCoords chunk_coords) const
 bool ChunkGrid::has_complete_mesh(ChunkCoords chunk_coords) const
 {
 	return this->mesh.find(chunk_coords) != this->mesh.end();
+}
+
+bool ChunkGrid::has_disk_storage(ChunkCoords chunk_coords) const
+{
+	return this->disk.find(chunk_coords) != this->disk.end();
 }
 
 bool ChunkGrid::has_ptg_field_neighborhood(ChunkCoords center_chunk_coords) const
@@ -731,6 +820,17 @@ void ChunkGrid::set_block(Nature const* nature,
 	}
 }
 
+void ChunkGrid::write_all_to_disk()
+{
+	for (auto coords_and_b_field : this->b_field)
+	{
+		ChunkCoords const chunk_coords = coords_and_b_field.first;
+		ChunkBField const& b_field = coords_and_b_field.second;
+		ChunkDiskStorage chunk_disk_storage{chunk_coords};
+		write_disk_chunk_b_field(chunk_coords, chunk_disk_storage, b_field);
+	}
+}
+
 ChunkGenerationManager::ChunkGenerationManager():
 	thread_pool{nullptr},
 	chunk_grid{nullptr},
@@ -835,10 +935,17 @@ void ChunkGenerationManager::manage(Nature const& nature)
 							chunk_coords, std::get<ChunkPttField>(some_data)));
 					break;
 					case ChunkGeneratingStep::B_FIELD:
+					case ChunkGeneratingStep::DISK_READ:
 						assert(std::holds_alternative<ChunkBField>(some_data));
 						assert(not this->chunk_grid->has_b_field(chunk_coords));
 						this->chunk_grid->b_field.insert(std::make_pair(
 							chunk_coords, std::get<ChunkBField>(some_data)));
+					break;
+					case ChunkGeneratingStep::DISK_SEARCH:
+						assert(std::holds_alternative<ChunkBField>(some_data));
+						assert(not this->chunk_grid->has_b_field(chunk_coords));
+						this->chunk_grid->disk.insert(std::make_pair(
+							chunk_coords, std::get<ChunkDiskStorage>(some_data)));
 					break;
 					case ChunkGeneratingStep::MESH:
 						assert(std::holds_alternative<ChunkMeshData*>(some_data));
@@ -870,7 +977,7 @@ void ChunkGenerationManager::manage(Nature const& nature)
 
 				if (not this->needs_generation_step(chunk_coords, ChunkGeneratingStep::MESH))
 				{
-					/* Nevermind. */
+					/* Nevermind, that chunk seem to be already finished. */
 					continue;
 				}
 				std::optional<std::pair<ChunkCoords, ChunkGeneratingStep>> const required =
@@ -915,7 +1022,29 @@ void ChunkGenerationManager::manage(Nature const& nature)
 							required_chunk_coords,
 							this->chunk_grid->get_b_field_neighborhood(required_chunk_coords),
 							std::cref(nature)));
-						break;
+					break;
+					case ChunkGeneratingStep::DISK_SEARCH:
+						generating_data.future = this->thread_pool->give_task(std::bind(
+							[](
+								ChunkCoords chunk_coords
+							){
+								return SomeChunkData{search_disk_for_chunk(
+									chunk_coords)};
+							},
+							required_chunk_coords));
+					break;
+					case ChunkGeneratingStep::DISK_READ:
+						generating_data.future = this->thread_pool->give_task(std::bind(
+							[](
+								ChunkCoords chunk_coords,
+								ChunkDiskStorage& chunk_disk_storage
+							){
+								return SomeChunkData{read_disk_chunk_b_field(
+									chunk_coords, chunk_disk_storage)};
+							},
+							required_chunk_coords,
+							std::ref(this->chunk_grid->disk[required_chunk_coords])));
+					break;
 					case ChunkGeneratingStep::B_FIELD:
 						generating_data.future = this->thread_pool->give_task(std::bind(
 							[](
@@ -993,6 +1122,9 @@ bool ChunkGenerationManager::needs_generation_step(
 		case ChunkGeneratingStep::PTT_FIELD:
 			return not this->chunk_grid->has_ptt_field(chunk_coords);
 		break;
+		case ChunkGeneratingStep::DISK_SEARCH:
+			return not this->chunk_grid->has_disk_storage(chunk_coords);
+		break;
 		case ChunkGeneratingStep::B_FIELD:
 			return not this->chunk_grid->has_b_field(chunk_coords);
 		break;
@@ -1040,7 +1172,16 @@ std::optional<std::pair<ChunkCoords, ChunkGeneratingStep>>
 			}
 		break;
 		case ChunkGeneratingStep::B_FIELD:
-			if (this->chunk_grid->has_ptt_field_neighborhood(chunk_coords))
+			if (this->chunk_grid->has_disk_storage(chunk_coords) &&
+				this->chunk_grid->disk[chunk_coords].exist)
+			{
+				return std::make_pair(chunk_coords, ChunkGeneratingStep::DISK_READ);
+			}
+			else if (not this->chunk_grid->has_disk_storage(chunk_coords))
+			{
+				return std::make_pair(chunk_coords, ChunkGeneratingStep::DISK_SEARCH);
+			}
+			else if (this->chunk_grid->has_ptt_field_neighborhood(chunk_coords))
 			{
 				return std::make_pair(chunk_coords, step);
 			}

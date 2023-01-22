@@ -13,6 +13,7 @@
 #include <variant>
 #include <future>
 #include <tuple>
+#include <fstream>
 
 namespace qwy2
 {
@@ -61,9 +62,14 @@ private:
 public:
 	ChunkField();
 	ChunkField(ChunkCoords chunk_coords);
+	ChunkField(ChunkCoords chunk_coords, ValueType* data);
 	~ChunkField();
 	ValueType& operator[](BlockCoords coords);
 	ValueType const& operator[](BlockCoords coords) const;
+
+	/* Access raw field data. Access to values should be performed via [] operator,
+	 * this is intended for use in stuff like write to disk. */
+	ValueType* raw_data();
 };
 
 /* The PTG field (Plain Terrain Generation)
@@ -154,6 +160,29 @@ ChunkMeshData* generate_chunk_complete_mesh(
 template <typename ComponentType>
 using ChunkComponentGrid = std::unordered_map<ChunkCoords, ComponentType, ChunkCoords::Hash>;
 
+/* Handles the disk storage of a chunk's data.
+ * TODO: Make this better. */
+class ChunkDiskStorage
+{
+public:
+	ChunkCoords chunk_coords;
+public:
+	/* Does the chunk actually has data stored on disk? */
+	bool exist;
+
+	std::string file_name;
+
+public:
+	ChunkDiskStorage();
+	ChunkDiskStorage(ChunkCoords chunk_coords);
+};
+
+ChunkDiskStorage search_disk_for_chunk(ChunkCoords chunk_coords);
+ChunkBField read_disk_chunk_b_field(ChunkCoords chunk_coords,
+	ChunkDiskStorage& chunk_disk_storage);
+void write_disk_chunk_b_field(ChunkCoords chunk_coords,
+	ChunkDiskStorage& chunk_disk_storage, ChunkBField chunk_b_field);
+
 class ChunkGrid
 {
 private:
@@ -162,12 +191,14 @@ public:
 	ChunkComponentGrid<ChunkPttField> ptt_field;
 	ChunkComponentGrid<ChunkBField> b_field;
 	ChunkComponentGrid<Mesh<VertexDataClassic>> mesh;
+	ChunkComponentGrid<ChunkDiskStorage> disk;
 
 public:
 	bool has_ptg_field(ChunkCoords chunk_coords) const;
 	bool has_ptt_field(ChunkCoords chunk_coords) const;
 	bool has_b_field(ChunkCoords chunk_coords) const;
 	bool has_complete_mesh(ChunkCoords chunk_coords) const;
+	bool has_disk_storage(ChunkCoords chunk_coords) const;
 
 	bool has_ptg_field_neighborhood(ChunkCoords center_chunk_coords) const;
 	bool has_ptt_field_neighborhood(ChunkCoords center_chunk_coords) const;
@@ -185,16 +216,24 @@ public:
 	void set_block(Nature const* nature,
 		BlockCoords coords, BlockTypeId new_type_id);
 
+	void write_all_to_disk();
+
 	friend class ChunkGenerationManager;
 };
 
+class Nothing{};
+
 using SomeChunkData =
-	std::variant<ChunkPtgField, ChunkPttField, ChunkBField, ChunkMeshData*>;
+	std::variant<
+		ChunkPtgField, ChunkPttField, ChunkBField, ChunkMeshData*,
+		ChunkDiskStorage, Nothing>;
 
 enum class ChunkGeneratingStep
 {
 	PTG_FIELD,
 	PTT_FIELD,
+	DISK_SEARCH,
+	DISK_READ,
 	B_FIELD,
 	MESH,
 };
@@ -233,11 +272,12 @@ public:
 public:
 	ChunkGenerationManager();
 
-	/* Should be called at every game loop iteration. */
+	/* Should be called at every game loop iteration.
+	 * This method is the core of `ChunkGenerationManager`, it manages generating thread jobs. */
 	void manage(Nature const& nature);
 
 private:
-	/* Does the given chunk needs to have the given generation step to be started ?
+	/* Does the given chunk needs to have the given generation step to be started?
 	 * Returning false means that the given step is already done or on its way. */
 	bool needs_generation_step(ChunkCoords chunk_coords, ChunkGeneratingStep step) const;
 

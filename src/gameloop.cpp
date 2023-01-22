@@ -18,6 +18,7 @@
 #include <optional>
 #include <limits>
 #include <fstream>
+#include <filesystem>
 
 namespace qwy2
 {
@@ -554,6 +555,14 @@ void Game::loop()
 	#ifdef GLOP_ENABLED
 		this->glop.close_output_stream();
 	#endif
+
+	/* TODO: Make this better. */
+	std::string_view save_directory = "save/chunks"sv;
+	std::cout << "[Cleanup] "
+		<< "Saved chunk B fields to \"" << save_directory << "\"." << std::endl;
+	std::filesystem::create_directories(save_directory);
+	this->chunk_grid->write_all_to_disk();
+
 	cleanup_window_graphics();
 }
 
