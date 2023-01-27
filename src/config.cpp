@@ -171,6 +171,9 @@ Config::Config()
 
 	/* If true, then the game loop will end after one iteration. */
 	this->parameter_table.insert({"close"sv, false});
+
+	/* If true, then the world will be loaded from the disk and saved to the disk. */
+	this->parameter_table.insert({"load_save"sv, false});
 }
 
 ErrorCode Config::parse_command_line(int argc, char const* const* argv)

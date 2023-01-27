@@ -266,6 +266,8 @@ public:
 
 	bool generation_enabled;
 
+	bool load_save_enabled;
+
 	/* The data that are undergoing generation (possibly in an other thread). */
 	std::vector<std::optional<ChunkGeneratingData>> generating_data_vector;
 

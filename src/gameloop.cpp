@@ -182,6 +182,7 @@ Game::Game(Config const& config)
 	this->chunk_generation_manager.chunk_grid = this->chunk_grid;
 	this->loaded_radius = config.get<float>("loaded_radius"sv);
 	this->chunk_generation_manager.generation_radius = this->loaded_radius;
+	this->chunk_generation_manager.load_save_enabled = config.get<bool>("load_save"sv);
 
 	/* Define the sky color and make the fog correspond to it. */
 	this->sky_color = glm::vec3{0.0f, 0.7f, 0.9f};
@@ -557,11 +558,14 @@ void Game::loop()
 	#endif
 
 	/* TODO: Make this better. */
-	std::string_view save_directory = "save/chunks"sv;
-	std::cout << "[Cleanup] "
-		<< "Saved chunk B fields to \"" << save_directory << "\"." << std::endl;
-	std::filesystem::create_directories(save_directory);
-	this->chunk_grid->write_all_to_disk();
+	if (this->chunk_generation_manager.load_save_enabled)
+	{
+		std::string_view save_directory = "save/chunks"sv;
+		std::cout << "[Cleanup] "
+			<< "Saved chunk B fields to \"" << save_directory << "\"." << std::endl;
+		std::filesystem::create_directories(save_directory);
+		this->chunk_grid->write_all_to_disk();
+	}
 
 	cleanup_window_graphics();
 }

@@ -1126,6 +1126,7 @@ bool ChunkGenerationManager::needs_generation_step(
 			return not this->chunk_grid->has_disk_storage(chunk_coords);
 		break;
 		case ChunkGeneratingStep::B_FIELD:
+		case ChunkGeneratingStep::DISK_READ:
 			return not this->chunk_grid->has_b_field(chunk_coords);
 		break;
 		case ChunkGeneratingStep::MESH:
@@ -1172,12 +1173,14 @@ std::optional<std::pair<ChunkCoords, ChunkGeneratingStep>>
 			}
 		break;
 		case ChunkGeneratingStep::B_FIELD:
-			if (this->chunk_grid->has_disk_storage(chunk_coords) &&
+			if (this->load_save_enabled &&
+				this->chunk_grid->has_disk_storage(chunk_coords) &&
 				this->chunk_grid->disk[chunk_coords].exist)
 			{
 				return std::make_pair(chunk_coords, ChunkGeneratingStep::DISK_READ);
 			}
-			else if (not this->chunk_grid->has_disk_storage(chunk_coords))
+			else if (this->load_save_enabled &&
+				not this->chunk_grid->has_disk_storage(chunk_coords))
 			{
 				return std::make_pair(chunk_coords, ChunkGeneratingStep::DISK_SEARCH);
 			}
