@@ -4,6 +4,7 @@
 #include "threadpool.hpp"
 #include "utils.hpp"
 #include "structure.hpp"
+#include "gameloop.hpp"
 #include <cassert>
 #include <iostream>
 #include <iterator>
@@ -588,7 +589,7 @@ namespace
 std::string chunk_file_name(ChunkCoords chunk_coords)
 {
 	std::stringstream file_name_stream;
-	file_name_stream << "save/chunks/chunk_"
+	file_name_stream << "saves/" << g_game->save_name << "/chunks/chunk_"
 		<< chunk_coords.x << "_" << chunk_coords.y << "_" << chunk_coords.z
 		<< ".qwy2_chunk";
 	return file_name_stream.str();

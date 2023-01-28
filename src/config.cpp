@@ -174,6 +174,48 @@ Config::Config()
 
 	/* If true, then the world will be loaded from the disk and saved to the disk. */
 	this->parameter_table.insert({"load_save"sv, false});
+
+	/* The name of the save directory to be used (and created if necessary) for loading/saving. */
+	this->parameter_table.insert({"save_name"sv, "the"sv});
+	this->corrector_table.insert({"save_name"sv, [](ParameterType& variant_value){
+		std::string_view const save_name = std::get<std::string_view>(variant_value);
+		/* Let's try to make sure that save names do not violate file and directory name rules
+		 * on popular desktop OSs, see https://stackoverflow.com/a/31976060 for such rules. */
+		for (char c : save_name)
+		{
+			/* Overly strict rules, just to be sure. */
+			/* TODO: Make these less needlessly strict at some point. */
+			if (
+				(c < 'a' || 'z' < c) &&
+				(c < 'A' || 'Z' < c) &&
+				(c < '0' || '9' < c) &&
+				(c != '_') && (c != '-'))
+			{
+				std::cout << "\x1b[31mCommand line error:\x1b[39m "
+					<< "The save_name value cannot contain the character '" << c << "' "
+					<< "(character code " << static_cast<int>(c) << ")."
+					<< std::endl;
+				return false;
+			}
+		}
+		static constexpr std::string_view forbidden_names[] = {
+			/* Forbidden names on Windows (for funny legacy reasons). */
+			"CON"sv, "PRN"sv, "AUX"sv, "NUL"sv,
+			"COM1"sv, "COM2"sv, "COM3"sv, "COM4"sv, "COM5"sv, "COM6"sv, "COM7"sv, "COM8"sv, "COM9"sv,
+			"LPT1"sv, "LPT2"sv, "LPT3"sv, "LPT4"sv, "LPT5"sv, "LPT6"sv, "LPT7"sv, "LPT8"sv, "LPT9"sv
+		};
+		for (std::string_view forbidden_name : forbidden_names)
+		{
+			if (save_name == forbidden_name)
+			{
+				std::cout << "\x1b[31mCommand line error:\x1b[39m "
+					<< "The save_name value cannot be \"" << save_name << "\"."
+					<< std::endl;
+				return false;
+			}
+		}
+		return true;
+	}});
 }
 
 ErrorCode Config::parse_command_line(int argc, char const* const* argv)

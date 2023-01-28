@@ -5,6 +5,7 @@
 #include "chunk.hpp"
 #include "keycode.hpp"
 #include <iostream>
+#include <sstream>
 
 namespace qwy2
 {
@@ -532,6 +533,19 @@ Command* parse_command(std::string_view string_command, unsigned int* out_comman
 		*out_command_length = i;
 	}
 	return command;
+}
+
+void run_commands(std::string const& string_commands, Game& game)
+{
+	std::istringstream iss{string_commands};
+	std::string line;
+	while (std::getline(iss, line))
+	{
+		if (line.length() >= 1 && line[0] != '#')
+		{
+			parse_command(line)->run(game);
+		}
+	}
 }
 
 Control::Control(ControlEvent event, Command* command):

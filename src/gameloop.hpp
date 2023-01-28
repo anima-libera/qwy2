@@ -26,6 +26,9 @@ class Config;
 class Game
 {
 public:
+	bool load_save_enabled;
+	std::string_view save_name;
+	std::string save_directory;
 	bool cursor_is_captured;
 	float loaded_radius;
 	LineRectDrawer line_rect_drawer;
@@ -66,6 +69,8 @@ public:
 	/* Run the main game loop of Qwy2. */
 	void loop();
 };
+
+extern Game* g_game;
 
 } /* qwy2 */
 

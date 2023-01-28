@@ -22,8 +22,8 @@ int main(int argc, char const* const* argv)
 		return EXIT_FAILURE;
 	}
 
-	Game game{config};
-	game.loop();
+	g_game = new Game{config};
+	g_game->loop();
 
 	return 0;
 }

@@ -93,7 +93,7 @@ class Chunk;
 class IsolatedChunk;
 class Nature;
 
-using BlockTypeId = unsigned int;
+using BlockTypeId = std::uint16_t;
 
 class WorldGenerator
 {

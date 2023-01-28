@@ -101,6 +101,9 @@ public:
  * TODO: Make it better. */
 Command* parse_command(std::string_view string_command, unsigned int* out_command_length = nullptr);
 
+/* Parses and runs all the commands in the given string. */
+void run_commands(std::string const& string_commands, Game& game);
+
 /* One binding of a control event to a command. */
 class Control
 {

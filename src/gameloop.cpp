@@ -29,28 +29,59 @@ Game::Game(Config const& config)
 {
 	register_builtin_command_names();
 
-	/* A user-editable file named `commands.qwy2` containing command to be run
-	 * at the beginning of execution (now) is to be found in the current directory.
-	 * If there is no such file, then we generate the default file (the content
-	 * of which is in `src/default_commands.qwy2`). */
-	{
-		std::ifstream command_file{"commands.qwy2"};
-		if (not command_file.is_open())
-		{
-			std::ofstream command_file{"commands.qwy2"};
-			command_file.write(g_default_commands, strlen(g_default_commands));
-		}
-	}
-	std::ifstream command_file{"commands.qwy2"};
+	this->load_save_enabled = config.get<bool>("load_save"sv);
+	this->save_name = config.get<std::string_view>("save_name"sv);
 
-	/* Run said commands. */
-	std::string line;
-	while (std::getline(command_file, line))
+	this->save_directory += "saves/";
+	this->save_directory += this->save_name;
+	this->save_directory += "/";
+	if (this->load_save_enabled)
 	{
-		if (line.length() >= 1 && line[0] != '#')
+		std::filesystem::create_directories(this->save_directory);
+		std::cout << "[Init] "
+			<< "Save directory is \"" << save_directory << "\"."
+			<< std::endl;
+	}
+
+	/* There are user-editable command files named `commands.qwy2`, one of which is
+	 * to be run at the beginning of execution (now).
+	 * There is one such file in the current directory (the common one), and one in
+	 * the current save if load/save is enabled.
+	 * If the one in the common one does not exist then we create it by copying the
+	 * embedded `src/default_commands.qwy2`. If the one in the save does not exist
+	 * and load/save is enabled then we create it by copying the one in the common one. */
+	{
+		/* The command file that will be run. */
+		std::string command_file_path;
+		if (this->load_save_enabled)
 		{
-			parse_command(line)->run(*this);
+			command_file_path += this->save_directory;
 		}
+		command_file_path += "commands.qwy2";
+		
+		/* Making sure that the command file that will be run exists, and if not
+		 * then create and fill it with the default content (hardcoded for the . */
+		std::ifstream command_file_check{"commands.qwy2"};
+		if (not command_file_check.is_open())
+		{
+			std::ofstream command_file_check{"commands.qwy2"};
+			command_file_check.write(g_default_commands, strlen(g_default_commands));
+		}
+		if (this->load_save_enabled)
+		{
+			std::ifstream command_file_check{command_file_path};
+			if (not command_file_check.is_open())
+			{
+				std::filesystem::copy_file("commands.qwy2", command_file_path);
+			}
+		}
+
+		/* Run the commands in the command file that is in the save,
+		 * or in the current directory if load/save is disabled. */
+		std::ifstream command_file{command_file_path};
+		std::stringstream buffer;
+		buffer << command_file.rdbuf();
+		run_commands(buffer.str(), *this);
 	}
 
 	/* Initialize graphics. */
@@ -242,7 +273,7 @@ Game::Game(Config const& config)
 		<< "Please wait a bit, rendering the first chunk requires a bit of generation first.\n"
 		<< "You can read or modify `commands.qwy2` to learn or customize controls.\n"
 		<< "You can read `src/command.cpp` to get a list of commands.\n"
-		<< "You can read `src/keycode.cpp` to get the name of keyboard keys.\n"
+		<< "You can read `src/keycode.cpp` to get the name of keyboard keys."
 		<< "\x1b[39m" << std::endl;
 }
 
@@ -560,14 +591,16 @@ void Game::loop()
 	/* TODO: Make this better. */
 	if (this->chunk_generation_manager.load_save_enabled)
 	{
-		std::string_view save_directory = "save/chunks"sv;
+		std::string chunk_save_directory{std::string(this->save_directory) + "chunks/"};
 		std::cout << "[Cleanup] "
-			<< "Saved chunk B fields to \"" << save_directory << "\"." << std::endl;
-		std::filesystem::create_directories(save_directory);
+			<< "Saved chunk B fields to \"" << chunk_save_directory << "\"." << std::endl;
+		std::filesystem::create_directories(chunk_save_directory);
 		this->chunk_grid->write_all_to_disk();
 	}
 
 	cleanup_window_graphics();
 }
+
+Game* g_game = nullptr;
 
 } /* qwy2 */
