@@ -7,6 +7,7 @@
 #include "noise.hpp"
 #include "bitmap.hpp"
 #include "embedded.hpp"
+#include "opengl.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
@@ -93,6 +94,9 @@ Game::Game(Config const& config)
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT);
 	glFrontFace(GL_CW);
+
+	std::cout << "[Init] " << "OpenGL used vendor: " << glGetString(GL_VENDOR) << std::endl;
+	std::cout << "[Init] " << "OpenGL used renderer: " << glGetString(GL_RENDERER) << std::endl;
 
 	/* Compile shaders. */
 	this->shader_table.init();
