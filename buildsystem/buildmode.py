@@ -34,9 +34,9 @@ def get_build_mode(options: Options) -> BuildMode:
 		compilation_command_args.append("-g")
 		compilation_command_args.append("-Og")
 	else:
-		compilation_command_args.append("-DNDEBUG") # Should discard asserts.
+		#compilation_command_args.append("-DNDEBUG") # Should discard asserts.
 		compilation_command_args.append("-O3")
-	#	compilation_command_args.append("-no-pie")
+		#compilation_command_args.append("-no-pie")
 		compilation_command_args.append("-fno-stack-protector")
 	if options.glop:
 		compilation_command_args.append("-DGLOP_ENABLED")
