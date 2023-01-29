@@ -8,6 +8,7 @@
 #include <string_view>
 #include <functional>
 #include <variant>
+#include <iostream>
 #include <SDL2/SDL.h>
 
 namespace qwy2
@@ -52,6 +53,8 @@ public:
 
 public:
 	ControlEvent(std::variant<KeyboardKey, MouseButton> control, bool when_down);
+
+	friend std::ostream& operator<<(std::ostream& out_stream, ControlEvent const& control_event);
 };
 
 using CommandObject = std::variant<std::string, int, ControlEvent, Command*>;
@@ -67,7 +70,7 @@ public:
 	static BuiltinCommandName* get(std::string_view name);
 
 public:
-	using Callback = std::function<void(Game& game, std::vector<CommandObject> const& args)>;
+	using Callback = std::function<void(std::vector<CommandObject> const& args)>;
 	Callback callback;
 
 public:
@@ -94,7 +97,7 @@ public:
 	Command(BuiltinCommandName name);
 
 	/* Executes the command, calling the corresponding callback. */
-	void run(Game& game);
+	void run();
 };
 
 /* Parses a command's source code text line into a callable command allocated on the heap.
@@ -102,29 +105,32 @@ public:
 Command* parse_command(std::string_view string_command, unsigned int* out_command_length = nullptr);
 
 /* Parses and runs all the commands in the given string. */
-void run_commands(std::string const& string_commands, Game& game);
+void run_commands(std::string const& string_commands);
 
-/* One binding of a control event to a command. */
-class Control
+/* One binding of a control event to a command.
+ * Whenever the control event is recieved (and handled by the `InputEventHandler`)
+ * it triggers the execution of the associated command. */
+class ControlBinding
 {
 public:
 	ControlEvent event;
 	Command* command;
 
 public:
-	Control(ControlEvent event, Command* command);
+	ControlBinding(ControlEvent event, Command* command);
 };
 
 class InputEventHandler
 {
 public:
-	/* Control bindings. */
-	std::vector<Control> controls;
+	std::vector<ControlBinding> control_bindings;
 
 public:
+	void add_binding(ControlBinding control_binding);
+
 	/* The classic SDL2 event loop, it will run the commands bound to triggered control events
 	 * and other small stuff. */
-	void handle_events(Game& game);
+	void handle_events();
 };
 
 } /* qwy2 */

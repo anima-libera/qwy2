@@ -16,36 +16,34 @@ namespace qwy2
 
 /* TODO: Reduce code duplication accross this file. */
 
-unsigned int g_chunk_side = 0;
-
 BlockCoords chunk_center_coords(ChunkCoords chunk_coords)
 {
 	return BlockCoords{
-		chunk_coords.x * static_cast<int>(g_chunk_side),
-		chunk_coords.y * static_cast<int>(g_chunk_side),
-		chunk_coords.z * static_cast<int>(g_chunk_side)};
+		chunk_coords.x * static_cast<int>(g_game->chunk_side),
+		chunk_coords.y * static_cast<int>(g_game->chunk_side),
+		chunk_coords.z * static_cast<int>(g_game->chunk_side)};
 }
 
 BlockCoords chunk_most_negativeward_block_coords(ChunkCoords chunk_coords)
 {
 	return chunk_center_coords(chunk_coords) - BlockCoords{
-		static_cast<int>(g_chunk_side) / 2,
-		static_cast<int>(g_chunk_side) / 2,
-		static_cast<int>(g_chunk_side) / 2};
+		static_cast<int>(g_game->chunk_side) / 2,
+		static_cast<int>(g_game->chunk_side) / 2,
+		static_cast<int>(g_game->chunk_side) / 2};
 }
 
 BlockCoords chunk_most_positiveward_block_coords(ChunkCoords chunk_coords)
 {
 	return chunk_center_coords(chunk_coords) + BlockCoords{
-		static_cast<int>(g_chunk_side) / 2,
-		static_cast<int>(g_chunk_side) / 2,
-		static_cast<int>(g_chunk_side) / 2};
+		static_cast<int>(g_game->chunk_side) / 2,
+		static_cast<int>(g_game->chunk_side) / 2,
+		static_cast<int>(g_game->chunk_side) / 2};
 }
 
 BlockRect chunk_block_rect(ChunkCoords chunk_coords)
 {
 	BlockCoords const center_coords = chunk_center_coords(chunk_coords);
-	int const margin = g_chunk_side / 2;
+	int const margin = g_game->chunk_side / 2;
 	return BlockRect{
 		BlockCoords{center_coords.x - margin, center_coords.y - margin, center_coords.z - margin},
 		BlockCoords{center_coords.x + margin, center_coords.y + margin, center_coords.z + margin}};
@@ -55,7 +53,7 @@ BlockRect chunk_rect_block_rect(ChunkRect chunk_rect)
 {
 	BlockCoords const center_coords_min = chunk_center_coords(chunk_rect.coords_min);
 	BlockCoords const center_coords_max = chunk_center_coords(chunk_rect.coords_max);
-	int const margin = g_chunk_side / 2;
+	int const margin = g_game->chunk_side / 2;
 	return BlockRect{
 		BlockCoords{
 			center_coords_min.x - margin,
@@ -69,7 +67,7 @@ BlockRect chunk_rect_block_rect(ChunkRect chunk_rect)
 
 ChunkCoords containing_chunk_coords(BlockCoords coords)
 {
-	int const chunk_side_int = static_cast<int>(g_chunk_side);
+	int const chunk_side_int = static_cast<int>(g_game->chunk_side);
 	return ChunkCoords{
 		(coords.x + (coords.x < 0 ? -1 : 1) * chunk_side_int / 2) / chunk_side_int,
 		(coords.y + (coords.y < 0 ? -1 : 1) * chunk_side_int / 2) / chunk_side_int,
@@ -94,7 +92,7 @@ ChunkRect containing_chunk_rect(BlockRect block_rect)
 
 inline static unsigned int chunk_volume()
 {
-	return g_chunk_side * g_chunk_side * g_chunk_side;
+	return g_game->chunk_side * g_game->chunk_side * g_game->chunk_side;
 }
 
 template<typename FieldValueType>
@@ -134,8 +132,8 @@ FieldValueType& ChunkField<FieldValueType>::operator[](BlockCoords coords)
 		coords - chunk_most_negativeward_block_coords(this->chunk_coords);
 	return this->data[
 		local_coords.x +
-		g_chunk_side * local_coords.y + 
-		g_chunk_side * g_chunk_side * local_coords.z];
+		g_game->chunk_side * local_coords.y + 
+		g_game->chunk_side * g_game->chunk_side * local_coords.z];
 }
 
 template<typename FieldValueType>
@@ -145,8 +143,8 @@ FieldValueType const& ChunkField<FieldValueType>::operator[](BlockCoords coords)
 		coords - chunk_most_negativeward_block_coords(this->chunk_coords);
 	return this->data[
 		local_coords.x +
-		g_chunk_side * local_coords.y + 
-		g_chunk_side * g_chunk_side * local_coords.z];
+		g_game->chunk_side * local_coords.y + 
+		g_game->chunk_side * g_game->chunk_side * local_coords.z];
 }
 
 template<typename FieldValueType>
@@ -845,7 +843,7 @@ ChunkGenerationManager::ChunkGenerationManager():
 void ChunkGenerationManager::manage(Nature const& nature)
 {
 	unsigned int const chunk_generation_radius = 1 + static_cast<unsigned int>(
-		this->generation_radius / static_cast<float>(g_chunk_side));
+		this->generation_radius / static_cast<float>(g_game->chunk_side));
 	ChunkCoords const chunk_generation_center =
 		containing_chunk_coords(this->generation_center);
 	/* Cube of chunks that contains the zone to be generated. */
@@ -863,7 +861,7 @@ void ChunkGenerationManager::manage(Nature const& nature)
 		}
 		float const distance_to_center = glm::distance(
 			static_cast<glm::vec3>(chunk_center_coords(walker)), this->generation_center);
-		if (distance_to_center > this->generation_radius + g_chunk_side)
+		if (distance_to_center > this->generation_radius + g_game->chunk_side)
 		{
 			/* Don't generate chunks that are too far.
 			 * The condition leaves a little room for chunks too far to get generated anyway,
@@ -883,10 +881,10 @@ void ChunkGenerationManager::manage(Nature const& nature)
 			ChunkCoords const& left, ChunkCoords const& right
 		){
 			glm::vec3 const left_center =
-				static_cast<glm::vec3>(left) * static_cast<float>(g_chunk_side);
+				static_cast<glm::vec3>(left) * static_cast<float>(g_game->chunk_side);
 			float const left_distance = glm::distance(left_center, generation_center);
 			glm::vec3 const right_center =
-				static_cast<glm::vec3>(right) * static_cast<float>(g_chunk_side);
+				static_cast<glm::vec3>(right) * static_cast<float>(g_game->chunk_side);
 			float const right_distance = glm::distance(right_center, generation_center);
 			/* Note: Make sure that this order is strict (ie that it returns false when
 			 * left and right are equal) or else std::sort will proceed to perform some

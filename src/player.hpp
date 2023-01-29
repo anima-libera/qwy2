@@ -11,18 +11,31 @@ namespace qwy2
 
 class ChunkGrid;
 
-/* This type sums up what some input events tell the player to do. */
+/* This type sums up what some input events tell the player to do in terms of motions. */
 class PlayerControls
 {
-public:
+private:
 	int walking_forward; /* -1, 0 or 1 */
 	int walking_rightward; /* -1, 0 or 1 */
-	bool will_jump;
+	bool will_jump_if_allowed;
 	float horizontal_angle_motion;
 	float vertical_angle_motion;
 
+	friend class Player;
+
 public:
 	PlayerControls();
+
+	/* Resets controls that are to be reset between game loop iterations. */
+	void reset();
+
+	void walk_forward();
+	void walk_backward();
+	void walk_rightward();
+	void walk_leftward();
+	void jump_if_allowed();
+
+	void move_camera_angle(float horizontal_angle_motion, float vertical_angle_motion);
 };
 
 /* Note that this class was only made as a way to take away a part of the gameloop code

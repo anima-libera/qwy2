@@ -35,6 +35,9 @@ public:
 	ShaderTable shader_table;
 	Nature* nature;
 	ChunkGrid* chunk_grid;
+	/* The length of the edges of the chunks, in blocks.
+	* It must be odd, and should be at least 15 or something. */
+	unsigned int chunk_side;
 	glm::vec3 sun_position;
 	Camera<OrthographicProjection> sun_camera;
 	unsigned int shadow_framebuffer_openglid;
@@ -45,7 +48,8 @@ public:
 	Player player;
 	PlayerControls player_controls;
 	std::chrono::time_point<std::chrono::high_resolution_clock> clock_time_beginning;
-	float time; /* In seconds. */
+	/* Time since some moment during the initialization, in seconds. */
+	float time;
 	float previous_time;
 	bool see_from_sun;
 	bool see_through_walls;
@@ -64,12 +68,20 @@ public:
 	#endif
 
 public:
-	Game(Config const& config);
+	Game();
+
+	/* Initializes the whole `Game` (at a time when `g_game` already points
+	 * to a valid `Game` instance, which would not be the case in the constructor
+	 * (and a placement new operator hack does not solves the issue of the in-construction
+	 * instance being invalid until the constructor's initializer list finishes)). */
+	void init(Config const& config);
 	
-	/* Run the main game loop of Qwy2. */
+	/* Runs the main game loop of Qwy2. */
 	void loop();
 };
 
+/* The global and only `Game` instance.
+ * Note that global variables are not *always* a bad thing. */
 extern Game* g_game;
 
 } /* qwy2 */

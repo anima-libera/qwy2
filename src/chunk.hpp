@@ -19,10 +19,6 @@
 namespace qwy2
 {
 
-/* The length of the edges of the chunks, in blocks.
- * It must be odd, and should be at least 15 or something. */
-extern unsigned int g_chunk_side;
-
 /* Returns the coords of the block at the center of the chunk given by chunk_coords. */
 BlockCoords chunk_center_coords(ChunkCoords chunk_coords);
 

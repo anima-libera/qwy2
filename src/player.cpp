@@ -16,11 +16,53 @@ namespace qwy2
 PlayerControls::PlayerControls():
 	walking_forward{0},
 	walking_rightward{0},
-	will_jump{false},
+	will_jump_if_allowed{false},
 	horizontal_angle_motion{0.0f},
 	vertical_angle_motion{0.0f}
 {
 	;
+}
+
+void PlayerControls::reset()
+{
+	this->will_jump_if_allowed = false;
+	this->horizontal_angle_motion = 0.0f;
+	this->vertical_angle_motion = 0.0f;
+}
+
+void PlayerControls::walk_forward()
+{
+	this->walking_forward += 1;
+	assert(this->walking_forward <= 1);
+}
+
+void PlayerControls::walk_backward()
+{
+	this->walking_forward -= 1;
+	assert(-1 <= this->walking_forward);
+}
+
+void PlayerControls::walk_rightward()
+{
+	this->walking_rightward += 1;
+	assert(this->walking_rightward <= 1);
+}
+
+void PlayerControls::walk_leftward()
+{
+	this->walking_rightward -= 1;
+	assert(-1 <= this->walking_rightward);
+}
+
+void PlayerControls::jump_if_allowed()
+{
+	this->will_jump_if_allowed = true;
+}
+
+void PlayerControls::move_camera_angle(float horizontal_angle_motion, float vertical_angle_motion)
+{
+	this->horizontal_angle_motion += -horizontal_angle_motion;
+	this->vertical_angle_motion += -vertical_angle_motion;
 }
 
 Player::Player():
@@ -46,8 +88,8 @@ void Player::apply_motion(ChunkGrid const& chunk_grid, PlayerControls const& con
 	constexpr float falling_friction_factor = 0.99f;
 	constexpr float floor_friction_factor = 0.4f;
 
-	this->horizontal_angle += controls.horizontal_angle_motion;
-	this->vertical_angle += controls.vertical_angle_motion;
+	this->horizontal_angle += controls.horizontal_angle_motion * this->moving_angle_factor;
+	this->vertical_angle += controls.vertical_angle_motion * this->moving_angle_factor;
 	if (this->vertical_angle < -TAU / 4.0f + 0.0001f)
 	{
 		this->vertical_angle = -TAU / 4.0f + 0.0001f;
@@ -89,9 +131,14 @@ void Player::apply_motion(ChunkGrid const& chunk_grid, PlayerControls const& con
 	this->motion -= friction * delta_time_in_60_fps_frames;
 	this->motion.z -= falling_factor * delta_time_in_60_fps_frames;
 	this->motion += walking_motion * delta_time_in_60_fps_frames;
-	if (controls.will_jump)
+	if (controls.will_jump_if_allowed)
 	{
-		this->motion.z = jump_boost_value;
+		bool const jump_is_allowed =
+			(this->is_falling && this->allowed_fast_and_infinite_jumps) || (not this->is_falling);
+		if (jump_is_allowed)
+		{
+			this->motion.z = jump_boost_value;
+		}
 	}
 
 	glm::vec3 motion_remaining = this->motion * delta_time_in_60_fps_frames;

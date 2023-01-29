@@ -26,7 +26,12 @@ namespace qwy2
 
 using namespace std::literals::string_view_literals;
 
-Game::Game(Config const& config)
+Game::Game()
+{
+	;
+}
+
+void Game::init(Config const& config)
 {
 	register_builtin_command_names();
 
@@ -82,7 +87,7 @@ Game::Game(Config const& config)
 		std::ifstream command_file{command_file_path};
 		std::stringstream buffer;
 		buffer << command_file.rdbuf();
-		run_commands(buffer.str(), *this);
+		run_commands(buffer.str());
 	}
 
 	/* Initialize graphics. */
@@ -212,7 +217,7 @@ Game::Game(Config const& config)
 	this->chunk_generation_manager.generating_data_vector.resize(loading_threads + 2);
 
 	/* Initialize the grid of chunks and related fields. */
-	g_chunk_side = config.get<int>("chunk_side"sv);
+	this->chunk_side = config.get<int>("chunk_side"sv);
 	this->chunk_grid = new ChunkGrid{};
 	this->chunk_generation_manager.chunk_grid = this->chunk_grid;
 	this->loaded_radius = config.get<float>("loaded_radius"sv);
@@ -323,7 +328,7 @@ void Game::loop()
 		/* Handle input events. */
 		{
 			TIME_BLOCK(glop_time_event_handling);
-			this->input_event_handler.handle_events(*this);
+			this->input_event_handler.handle_events();
 		}
 
 		/* Apply controls, motion and collisions to the player. */
