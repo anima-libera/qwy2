@@ -127,6 +127,14 @@ Config::Config()
 	/* If ture, then the terrain generation will consist of a horizontal hole. */
 	this->parameter_table.insert({"horizontal_hole"sv, false});
 
+	/* If ture, then the terrain generation will consist of something you have to try
+	 * to see what it looks like (or read the corresponding code). */
+	this->parameter_table.insert({"terrain_test_1"sv, false});
+
+	/* If ture, then the terrain generation will consist of something you have to try
+	 * to see what it looks like (or read the corresponding code). */
+	this->parameter_table.insert({"terrain_test_2"sv, false});
+
 	/* The size (in blocks) of noise detail level used by world generation. */
 	this->parameter_table.insert({"noise_size"sv, 15.0f});
 	this->corrector_table.insert({"noise_size"sv, [](ParameterType& variant_value){
@@ -159,6 +167,18 @@ Config::Config()
 		}
 		return true;
 	}});
+
+	/* This is a parameter that influences the terrain generation in some way defined by
+	 * the type of terrain generator selected. */
+	this->parameter_table.insert({"terrain_param_a"sv, 1.0f});
+
+	/* This is a parameter that influences the terrain generation in some way defined by
+	 * the type of terrain generator selected. */
+	this->parameter_table.insert({"terrain_param_b"sv, 1.0f});
+
+	/* This is a parameter that influences the terrain generation in some way defined by
+	 * the type of terrain generator selected. */
+	this->parameter_table.insert({"terrain_param_c"sv, 1.0f});
 
 	/* If FALSE, then no structures will be generated (only terrain). */
 	this->parameter_table.insert({"structures"sv, true});

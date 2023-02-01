@@ -113,8 +113,13 @@ public:
 	bool vertical_hole;
 	bool horizontal_pillar;
 	bool horizontal_hole;
+	bool terrain_test_1;
+	bool terrain_test_2;
 	float noise_size;
 	float density;
+	float terrain_param_a;
+	float terrain_param_b;
+	float terrain_param_c;
 	bool structures_enabled;
 	bool stone_terrain;
 

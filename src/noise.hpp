@@ -27,6 +27,7 @@ public:
 	float base_noise(float x) const;
 	float base_noise(float x, float y) const;
 	float base_noise(float x, float y, float z) const;
+	float base_noise(float x, float y, float z, int w) const;
 	/* TODO: Overload base_noise with block-level coords types,
 	 * and with template parameter packs. */
 };

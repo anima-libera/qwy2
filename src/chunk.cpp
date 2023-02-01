@@ -297,6 +297,56 @@ ChunkPtgField generate_chunk_ptg_field(
 				glm::distance(glm::vec2(coords.y, coords.z), glm::vec2(0.0f, 0.0f));
 			ptg_field[coords] = (value - dist * 0.01f < 0.0f) ? 1 : 0;
 		}
+		else if (nature.world_generator.terrain_test_1)
+		{
+			glm::vec3 d;
+			for (int i = 0; i < 3; i++)
+			{
+				d[i] = nature.world_generator.noise_generator.base_noise(
+					static_cast<float>(coords.x) / nature.world_generator.noise_size,
+					static_cast<float>(coords.y) / nature.world_generator.noise_size,
+					static_cast<float>(coords.z) / nature.world_generator.noise_size,
+					42 + i) * 2.0f - 1.0f;
+			}
+			glm::vec3 c = coords;
+			d *= 10.0f * nature.world_generator.terrain_param_a;
+			c += d;
+			int const h = 20.0f * nature.world_generator.terrain_param_b;
+			glm::ivec3 ci{
+				static_cast<int>(c.x) - (static_cast<int>(c.x) % h),
+				static_cast<int>(c.y) - (static_cast<int>(c.y) % h),
+				static_cast<int>(c.z) - (static_cast<int>(c.z) % h)};
+			float const value = nature.world_generator.noise_generator.base_noise(
+				ci.x, ci.y, ci.z, 69);
+			ptg_field[coords] = (value - nature.world_generator.density < 0.0f) ? 1 : 0;
+		}
+		else if (nature.world_generator.terrain_test_2)
+		{
+			glm::vec3 d;
+			for (int i = 0; i < 3; i++)
+			{
+				d[i] = nature.world_generator.noise_generator.base_noise(
+					static_cast<float>(coords.x) / nature.world_generator.noise_size,
+					static_cast<float>(coords.y) / nature.world_generator.noise_size,
+					static_cast<float>(coords.z) / nature.world_generator.noise_size,
+					42 + i) * 2.0f - 1.0f;
+			}
+			glm::vec3 c = coords;
+			d *= 10.0f * nature.world_generator.terrain_param_a;
+			c += d;
+			int const h = 20.0f * nature.world_generator.terrain_param_b;
+			glm::ivec3 ci{
+				static_cast<int>(c.x) - (static_cast<int>(c.x) % h),
+				static_cast<int>(c.y) - (static_cast<int>(c.y) % h),
+				static_cast<int>(c.z) - (static_cast<int>(c.z) % h)};
+			float const fard = 8.0f * nature.world_generator.terrain_param_c;
+			float const value = nature.world_generator.noise_generator.base_noise(
+				static_cast<float>(ci.x) / (static_cast<float>(h) * fard),
+				static_cast<float>(ci.y) / (static_cast<float>(h) * fard),
+				static_cast<float>(ci.z) / (static_cast<float>(h) * fard),
+				69);
+			ptg_field[coords] = (value - nature.world_generator.density < 0.0f) ? 1 : 0;
+		}
 		else
 		{
 			float const value = nature.world_generator.noise_generator.base_noise(

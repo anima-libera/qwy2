@@ -117,6 +117,11 @@ void Game::init(Config const& config)
 	this->nature->world_generator.vertical_hole = config.get<bool>("vertical_hole"sv);
 	this->nature->world_generator.horizontal_pillar = config.get<bool>("horizontal_pillar"sv);
 	this->nature->world_generator.horizontal_hole = config.get<bool>("horizontal_hole"sv);
+	this->nature->world_generator.terrain_test_1 = config.get<bool>("terrain_test_1"sv);
+	this->nature->world_generator.terrain_test_2 = config.get<bool>("terrain_test_2"sv);
+	this->nature->world_generator.terrain_param_a = config.get<float>("terrain_param_a"sv);
+	this->nature->world_generator.terrain_param_b = config.get<float>("terrain_param_b"sv);
+	this->nature->world_generator.terrain_param_c = config.get<float>("terrain_param_c"sv);
 	this->nature->world_generator.noise_size = config.get<float>("noise_size"sv);
 	this->nature->world_generator.density = config.get<float>("density"sv);
 	this->nature->world_generator.structures_enabled = config.get<bool>("structures"sv);

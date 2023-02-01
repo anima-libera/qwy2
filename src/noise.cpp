@@ -134,4 +134,32 @@ float NoiseGenerator::base_noise(float x, float y, float z) const
 	return value_x_y_z;
 }
 
+float NoiseGenerator::base_noise(float x, float y, float z, int w) const
+{
+	int const xi = static_cast<int>(std::floor(x));
+	int const yi = static_cast<int>(std::floor(y));
+	int const zi = static_cast<int>(std::floor(z));
+
+	float const noise_i_i_i = this->base_noise(xi + 0, yi + 0, zi + 0, w);
+	float const noise_i_i_s = this->base_noise(xi + 0, yi + 0, zi + 1, w);
+	float const noise_i_s_i = this->base_noise(xi + 0, yi + 1, zi + 0, w);
+	float const noise_i_s_s = this->base_noise(xi + 0, yi + 1, zi + 1, w);
+	float const noise_s_i_i = this->base_noise(xi + 1, yi + 0, zi + 0, w);
+	float const noise_s_i_s = this->base_noise(xi + 1, yi + 0, zi + 1, w);
+	float const noise_s_s_i = this->base_noise(xi + 1, yi + 1, zi + 0, w);
+	float const noise_s_s_s = this->base_noise(xi + 1, yi + 1, zi + 1, w);
+
+	float const value_x_i_i = interpolate(x - std::floor(x), noise_i_i_i, noise_s_i_i);
+	float const value_x_i_s = interpolate(x - std::floor(x), noise_i_i_s, noise_s_i_s);
+	float const value_x_s_i = interpolate(x - std::floor(x), noise_i_s_i, noise_s_s_i);
+	float const value_x_s_s = interpolate(x - std::floor(x), noise_i_s_s, noise_s_s_s);
+
+	float const value_x_y_i = interpolate(y - std::floor(y), value_x_i_i, value_x_s_i);
+	float const value_x_y_s = interpolate(y - std::floor(y), value_x_i_s, value_x_s_s);
+
+	float const value_x_y_z = interpolate(z - std::floor(z), value_x_y_i, value_x_y_s);
+
+	return value_x_y_z;
+}
+
 } /* qwy2 */
