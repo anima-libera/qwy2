@@ -94,6 +94,7 @@ class IsolatedChunk;
 class Nature;
 
 using BlockTypeId = std::uint16_t;
+class PlainTerrainGenerator;
 
 class WorldGenerator
 {
@@ -104,6 +105,7 @@ public:
 	BlockTypeId primary_block_type;
 	BlockTypeId secondary_block_type;
 	BlockTypeId test_block_type;
+	#if 0
 	bool flat;
 	bool hills;
 	bool homogenous;
@@ -115,6 +117,8 @@ public:
 	bool horizontal_hole;
 	bool terrain_test_1;
 	bool terrain_test_2;
+	#endif
+	PlainTerrainGenerator* plain_terrain_generator;
 	float noise_size;
 	float density;
 	float terrain_param_a;

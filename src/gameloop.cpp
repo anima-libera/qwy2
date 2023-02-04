@@ -4,6 +4,7 @@
 #include "window.hpp"
 #include "shaders/table.hpp"
 #include "nature.hpp"
+#include "terrain_gen.hpp"
 #include "noise.hpp"
 #include "bitmap.hpp"
 #include "embedded.hpp"
@@ -108,17 +109,8 @@ void Game::init(Config const& config)
 
 	/* Generate the laws of nature. */
 	this->nature = new Nature{config.get<int>("seed"sv)};
-	this->nature->world_generator.flat = config.get<bool>("flat"sv);
-	this->nature->world_generator.hills = config.get<bool>("hills"sv);
-	this->nature->world_generator.homogenous = config.get<bool>("homogenous"sv);
-	this->nature->world_generator.plane = config.get<bool>("plane"sv);
-	this->nature->world_generator.planes = config.get<bool>("planes"sv);
-	this->nature->world_generator.vertical_pillar = config.get<bool>("vertical_pillar"sv);
-	this->nature->world_generator.vertical_hole = config.get<bool>("vertical_hole"sv);
-	this->nature->world_generator.horizontal_pillar = config.get<bool>("horizontal_pillar"sv);
-	this->nature->world_generator.horizontal_hole = config.get<bool>("horizontal_hole"sv);
-	this->nature->world_generator.terrain_test_1 = config.get<bool>("terrain_test_1"sv);
-	this->nature->world_generator.terrain_test_2 = config.get<bool>("terrain_test_2"sv);
+	this->nature->world_generator.plain_terrain_generator =
+		plain_terrain_generator_from_name(config.get<std::string_view>("terrain_generator"sv));
 	this->nature->world_generator.terrain_param_a = config.get<float>("terrain_param_a"sv);
 	this->nature->world_generator.terrain_param_b = config.get<float>("terrain_param_b"sv);
 	this->nature->world_generator.terrain_param_c = config.get<float>("terrain_param_c"sv);

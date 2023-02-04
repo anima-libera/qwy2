@@ -100,40 +100,13 @@ Config::Config()
 		return true;
 	}});
 
-	/* If ture, then the terrain generation will produce a flat world. */
-	this->parameter_table.insert({"flat"sv, false});
-
-	/* If ture, then the terrain generation will produce a flat-ish world with hills. */
-	this->parameter_table.insert({"hills"sv, false});
-
-	/* If ture, then the terrain generation will be homogenous in all directions. */
-	this->parameter_table.insert({"homogenous"sv, false});
-
-	/* If ture, then the terrain generation will be a flat plane with holes. */
-	this->parameter_table.insert({"plane"sv, false});
-
-	/* If ture, then the terrain generation will be infinitely many flat planes with holes. */
-	this->parameter_table.insert({"planes"sv, false});
-
-	/* If ture, then the terrain generation will consist of a vertical pillar. */
-	this->parameter_table.insert({"vertical_pillar"sv, false});
-
-	/* If ture, then the terrain generation will consist of a vertical hole. */
-	this->parameter_table.insert({"vertical_hole"sv, false});
-
-	/* If ture, then the terrain generation will consist of a horizontal pillar. */
-	this->parameter_table.insert({"horizontal_pillar"sv, false});
-
-	/* If ture, then the terrain generation will consist of a horizontal hole. */
-	this->parameter_table.insert({"horizontal_hole"sv, false});
-
-	/* If ture, then the terrain generation will consist of something you have to try
-	 * to see what it looks like (or read the corresponding code). */
-	this->parameter_table.insert({"terrain_test_1"sv, false});
-
-	/* If ture, then the terrain generation will consist of something you have to try
-	 * to see what it looks like (or read the corresponding code). */
-	this->parameter_table.insert({"terrain_test_2"sv, false});
+	/* The selected plain terrain generator to use among the built-in ones. */
+	this->parameter_table.insert({"terrain_generator"sv, "classic"sv});
+	this->corrector_table.insert({"terrain_generator"sv, [](ParameterType& variant_value){
+		/* TODO: Find some way to validate the name here (see `plain_terrain_generator_from_name`
+		 * for the list of valid names) without having to duplicate this list even further. */
+		return true;
+	}});
 
 	/* The size (in blocks) of noise detail level used by world generation. */
 	this->parameter_table.insert({"noise_size"sv, 15.0f});

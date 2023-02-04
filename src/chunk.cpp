@@ -1,6 +1,7 @@
 
 #include "chunk.hpp"
 #include "nature.hpp"
+#include "terrain_gen.hpp"
 #include "threadpool.hpp"
 #include "utils.hpp"
 #include "structure.hpp"
@@ -153,6 +154,12 @@ FieldValueType* ChunkField<FieldValueType>::raw_data()
 	return this->data;
 }
 
+template ChunkField<PtgFieldValue>::ChunkField(ChunkCoords chunk_coords);
+template ChunkField<PtgFieldValue>::~ChunkField();
+template PtgFieldValue& ChunkField<PtgFieldValue>::operator[](BlockCoords coords);
+template PtgFieldValue const& ChunkField<PtgFieldValue>::operator[](BlockCoords coords) const;
+template PtgFieldValue* ChunkField<PtgFieldValue>::raw_data();
+
 template ChunkField<Block>::~ChunkField();
 template Block& ChunkField<Block>::operator[](BlockCoords coords);
 template Block const& ChunkField<Block>::operator[](BlockCoords coords) const;
@@ -213,155 +220,8 @@ ChunkPtgField generate_chunk_ptg_field(
 	ChunkCoords chunk_coords,
 	[[maybe_unused]] Nature const& nature)
 {
-	/* Placeholder. */
-	ChunkPtgField ptg_field{chunk_coords};
-	for (BlockCoords coords : chunk_block_rect(chunk_coords))
-	{
-		if (nature.world_generator.flat)
-		{
-			ptg_field[coords] = (coords.z <= 0) ? 1 : 0;
-		}
-		else if (nature.world_generator.hills)
-		{
-			float const value = nature.world_generator.noise_generator.base_noise(
-				static_cast<float>(coords.x) / nature.world_generator.noise_size,
-				static_cast<float>(coords.y) / nature.world_generator.noise_size);
-			ptg_field[coords] = (coords.z <= -value * 5.0f) ? 1 : 0;
-		}
-		else if (nature.world_generator.homogenous)
-		{
-			float const value = nature.world_generator.noise_generator.base_noise(
-				static_cast<float>(coords.x) / nature.world_generator.noise_size,
-				static_cast<float>(coords.y) / nature.world_generator.noise_size,
-				static_cast<float>(coords.z) / nature.world_generator.noise_size);
-			ptg_field[coords] = (value - nature.world_generator.density < 0.0f) ? 1 : 0;
-		}
-		else if (nature.world_generator.plane)
-		{
-			float const value = nature.world_generator.noise_generator.base_noise(
-				static_cast<float>(coords.x) / nature.world_generator.noise_size,
-				static_cast<float>(coords.y) / nature.world_generator.noise_size,
-				static_cast<float>(coords.z) / nature.world_generator.noise_size);
-			float const value_plane =
-				value + static_cast<float>(std::abs(coords.z - (-20))) / 30.0f;
-			ptg_field[coords] = (value_plane - nature.world_generator.density < 0.0f) ? 1 : 0;
-		}
-		else if (nature.world_generator.planes)
-		{
-			float const value = nature.world_generator.noise_generator.base_noise(
-				static_cast<float>(coords.x) / nature.world_generator.noise_size,
-				static_cast<float>(coords.y) / nature.world_generator.noise_size,
-				static_cast<float>(coords.z) / nature.world_generator.noise_size);
-			int nearest_plane_z = coords.z - cool_mod(coords.z, 60) + 30;
-			float const value_plane =
-				value + static_cast<float>(std::abs(coords.z - nearest_plane_z)) / 30.0f;
-			ptg_field[coords] = (value_plane - nature.world_generator.density < 0.0f) ? 1 : 0;
-		}
-		else if (nature.world_generator.vertical_pillar)
-		{
-			float const value = nature.world_generator.noise_generator.base_noise(
-				static_cast<float>(coords.x) / nature.world_generator.noise_size,
-				static_cast<float>(coords.y) / nature.world_generator.noise_size,
-				static_cast<float>(coords.z) / nature.world_generator.noise_size);
-			float const dist =
-				glm::distance(glm::vec2(coords.x, coords.y), glm::vec2(0.0f, 0.0f));
-			ptg_field[coords] = (-(value - dist * 0.01f) < 0.0f) ? 1 : 0;
-		}
-		else if (nature.world_generator.vertical_hole)
-		{
-			float const value = nature.world_generator.noise_generator.base_noise(
-				static_cast<float>(coords.x) / nature.world_generator.noise_size,
-				static_cast<float>(coords.y) / nature.world_generator.noise_size,
-				static_cast<float>(coords.z) / nature.world_generator.noise_size);
-			float const dist =
-				glm::distance(glm::vec2(coords.x, coords.y), glm::vec2(0.0f, 0.0f));
-			ptg_field[coords] = (value - dist * 0.01f < 0.0f) ? 1 : 0;
-		}
-		else if (nature.world_generator.horizontal_pillar)
-		{
-			float const value = nature.world_generator.noise_generator.base_noise(
-				static_cast<float>(coords.x) / nature.world_generator.noise_size,
-				static_cast<float>(coords.y) / nature.world_generator.noise_size,
-				static_cast<float>(coords.z) / nature.world_generator.noise_size);
-			float const dist =
-				glm::distance(glm::vec2(coords.y, coords.z), glm::vec2(0.0f, 0.0f));
-			ptg_field[coords] = (-(value - dist * 0.01f) < 0.0f) ? 1 : 0;
-		}
-		else if (nature.world_generator.horizontal_hole)
-		{
-			float const value = nature.world_generator.noise_generator.base_noise(
-				static_cast<float>(coords.x) / nature.world_generator.noise_size,
-				static_cast<float>(coords.y) / nature.world_generator.noise_size,
-				static_cast<float>(coords.z) / nature.world_generator.noise_size);
-			float const dist =
-				glm::distance(glm::vec2(coords.y, coords.z), glm::vec2(0.0f, 0.0f));
-			ptg_field[coords] = (value - dist * 0.01f < 0.0f) ? 1 : 0;
-		}
-		else if (nature.world_generator.terrain_test_1)
-		{
-			glm::vec3 d;
-			for (int i = 0; i < 3; i++)
-			{
-				d[i] = nature.world_generator.noise_generator.base_noise(
-					static_cast<float>(coords.x) / nature.world_generator.noise_size,
-					static_cast<float>(coords.y) / nature.world_generator.noise_size,
-					static_cast<float>(coords.z) / nature.world_generator.noise_size,
-					42 + i) * 2.0f - 1.0f;
-			}
-			glm::vec3 c = coords;
-			d *= 10.0f * nature.world_generator.terrain_param_a;
-			c += d;
-			int const h = 20.0f * nature.world_generator.terrain_param_b;
-			glm::ivec3 ci{
-				static_cast<int>(c.x) - (static_cast<int>(c.x) % h),
-				static_cast<int>(c.y) - (static_cast<int>(c.y) % h),
-				static_cast<int>(c.z) - (static_cast<int>(c.z) % h)};
-			float const value = nature.world_generator.noise_generator.base_noise(
-				ci.x, ci.y, ci.z, 69);
-			ptg_field[coords] = (value - nature.world_generator.density < 0.0f) ? 1 : 0;
-		}
-		else if (nature.world_generator.terrain_test_2)
-		{
-			glm::vec3 d;
-			for (int i = 0; i < 3; i++)
-			{
-				d[i] = nature.world_generator.noise_generator.base_noise(
-					static_cast<float>(coords.x) / nature.world_generator.noise_size,
-					static_cast<float>(coords.y) / nature.world_generator.noise_size,
-					static_cast<float>(coords.z) / nature.world_generator.noise_size,
-					42 + i) * 2.0f - 1.0f;
-			}
-			glm::vec3 c = coords;
-			d *= 10.0f * nature.world_generator.terrain_param_a;
-			c += d;
-			int const h = 20.0f * nature.world_generator.terrain_param_b;
-			glm::ivec3 ci{
-				static_cast<int>(c.x) - (static_cast<int>(c.x) % h),
-				static_cast<int>(c.y) - (static_cast<int>(c.y) % h),
-				static_cast<int>(c.z) - (static_cast<int>(c.z) % h)};
-			float const fard = 8.0f * nature.world_generator.terrain_param_c;
-			float const value = nature.world_generator.noise_generator.base_noise(
-				static_cast<float>(ci.x) / (static_cast<float>(h) * fard),
-				static_cast<float>(ci.y) / (static_cast<float>(h) * fard),
-				static_cast<float>(ci.z) / (static_cast<float>(h) * fard),
-				69);
-			ptg_field[coords] = (value - nature.world_generator.density < 0.0f) ? 1 : 0;
-		}
-		else
-		{
-			float const value = nature.world_generator.noise_generator.base_noise(
-				static_cast<float>(coords.x) / nature.world_generator.noise_size,
-				static_cast<float>(coords.y) / nature.world_generator.noise_size,
-				static_cast<float>(coords.z) / nature.world_generator.noise_size);
-			float const dist =
-				glm::distance(glm::vec2(coords.x, coords.y), glm::vec2(0.0f, 0.0f));
-			float const crazy =
-				dist < 20.0f ? 2.0f :
-				(dist - 20.0f + 2.0f) * 3.0f;
-			ptg_field[coords] = ((value - (1.0f - nature.world_generator.density)) * crazy > coords.z) ? 1 : 0;
-		}
-	}
-	return ptg_field;
+	return nature.world_generator.plain_terrain_generator->generate_chunk_ptg_field(
+		chunk_coords, nature);
 }
 
 ChunkPttField generate_chunk_ptt_field(
