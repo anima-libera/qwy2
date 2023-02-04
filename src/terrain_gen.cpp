@@ -233,6 +233,33 @@ ChunkPtgField PlainTerrainGeneratorFunky2::generate_chunk_ptg_field(
 	return ptg_field;
 }
 
+ChunkPtgField PlainTerrainGeneratorOctaves1::generate_chunk_ptg_field(
+	ChunkCoords chunk_coords, Nature const& nature)
+{
+	ChunkPtgField ptg_field{chunk_coords};
+	for (BlockCoords coords : chunk_block_rect(chunk_coords))
+	{
+		constexpr unsigned int octave_number = 4;
+		float value_sum = 0.0f, coef_sum = 0.0f;
+		for (int i = 0; i < octave_number; i++)
+		{
+			float value = nature.world_generator.noise_generator.base_noise(
+				#define H(axis_) \
+					static_cast<float>(coords.axis_) / \
+						(nature.world_generator.noise_size * 2.5f / static_cast<float>(1 << i))
+					H(x), H(y), H(z),
+				#undef H
+				2 + i);
+			float coef = 1.0f / static_cast<float>(1 << i);
+			value_sum += value * coef;
+			coef_sum += coef;
+		}
+		float const value = value_sum / coef_sum;
+		ptg_field[coords] = (value + static_cast<float>(coords.z) * 0.01f < 0.0f) ? 1 : 0;
+	}
+	return ptg_field;
+}
+
 PlainTerrainGenerator* plain_terrain_generator_from_name(std::string_view name)
 {
 	using namespace std::literals::string_view_literals;
@@ -248,6 +275,7 @@ PlainTerrainGenerator* plain_terrain_generator_from_name(std::string_view name)
 	if (name == "horizontal_hole"sv)   return new PlainTerrainGeneratorHorizontalHole{};
 	if (name == "funky_1"sv)           return new PlainTerrainGeneratorFunky1{};
 	if (name == "funky_2"sv)           return new PlainTerrainGeneratorFunky2{};
+	if (name == "octaves_1"sv)         return new PlainTerrainGeneratorOctaves1{};
 	assert(false /* Unknown plain terrain generator name. */);
 	std::exit(EXIT_FAILURE);
 }
