@@ -505,14 +505,16 @@ std::string chunk_file_name(ChunkCoords chunk_coords)
 
 } /* Anonymous namespace. */
 
-ChunkDiskStorage::ChunkDiskStorage():
-	file_name("e")
+ChunkDiskStorage::ChunkDiskStorage()
 {
-	;
+	assert(false
+		/* This default constructor is required by the `std::unsorted_map<ChunkDiskStorage>`
+		 * but it makes no sense and should never be called. */);
+	std::exit(EXIT_FAILURE);
 }
 
 ChunkDiskStorage::ChunkDiskStorage(ChunkCoords chunk_coords):
-	chunk_coords(chunk_coords), file_name(chunk_file_name(chunk_coords))
+	chunk_coords(chunk_coords), modified(false), file_name(chunk_file_name(chunk_coords))
 {
 	this->exist = std::ifstream{this->file_name, std::ifstream::binary}.good();
 }
@@ -557,6 +559,8 @@ void write_disk_chunk_b_field(ChunkCoords chunk_coords,
 	file.write(static_cast<char*>(static_cast<void*>(chunk_b_field.raw_data())), size);
 	file.flush();
 	file.close();
+
+	chunk_disk_storage.modified = false;
 }
 
 bool ChunkGrid::has_ptg_field(ChunkCoords chunk_coords) const
@@ -703,10 +707,12 @@ bool ChunkGrid::block_is_air_or_unloaded(BlockCoords coords) const
 void ChunkGrid::set_block(Nature const* nature,
 	BlockCoords coords, BlockTypeId new_type_id)
 {
-	/* Modify the B field (the actual blocks). */
 	ChunkCoords const chunk_coords = containing_chunk_coords(coords);
+
+	/* Modify the B field (the actual blocks). */
 	ChunkBField& b_field = this->b_field.at(chunk_coords);
 	b_field[coords].type_id = new_type_id;
+
 	/* Update the meshes.
 	 * Due to concerns such as ambiant occlusion, nearby chunks may
 	 * also have to also be remeshed. */
@@ -727,6 +733,14 @@ void ChunkGrid::set_block(Nature const* nature,
 		mesh.vertex_data = std::move(*data);
 		mesh.needs_update_opengl_data = true;
 	}
+
+	/* Mark the chunk as modified, which makes sure it will be saved to the disk (if required). */
+	if (not this->has_disk_storage(chunk_coords))
+	{
+		this->disk[chunk_coords] = ChunkDiskStorage{chunk_coords};
+	}
+	ChunkDiskStorage& chunk_disk_storage = this->disk.at(chunk_coords);
+	chunk_disk_storage.modified = true;
 }
 
 void ChunkGrid::write_all_to_disk()
@@ -735,8 +749,16 @@ void ChunkGrid::write_all_to_disk()
 	{
 		ChunkCoords const chunk_coords = coords_and_b_field.first;
 		ChunkBField const& b_field = coords_and_b_field.second;
-		ChunkDiskStorage chunk_disk_storage{chunk_coords};
-		write_disk_chunk_b_field(chunk_coords, chunk_disk_storage, b_field);
+		if (not this->has_disk_storage(chunk_coords))
+		{
+			this->disk[chunk_coords] = ChunkDiskStorage{chunk_coords};
+		}
+		ChunkDiskStorage& chunk_disk_storage = this->disk.at(chunk_coords);
+		if (chunk_disk_storage.modified ||
+			(not g_game->chunk_generation_manager.save_only_modified))
+		{
+			write_disk_chunk_b_field(chunk_coords, chunk_disk_storage, b_field);
+		}
 	}
 }
 
@@ -821,9 +843,9 @@ void ChunkGenerationManager::manage(Nature const& nature)
 				std::cout << "Data generated: "
 					<< chunk_coords << " "
 					<< (
-						step == ChunkGeneratingStep::PTG_FIELD ? "PTG" :
-						step == ChunkGeneratingStep::PTT_FIELD ? "PTT" :
-						step == ChunkGeneratingStep::B_FIELD ? "B" :
+						step == ChunkGeneratingStep::GENERATE_PTG_FIELD ? "PTG" :
+						step == ChunkGeneratingStep::GENERATE_PTT_FIELD ? "PTT" :
+						step == ChunkGeneratingStep::GENERATE_B_FIELD ? "B" :
 						step == ChunkGeneratingStep::MESH ? "mesh" :
 						"?")
 					<< std::endl;
@@ -831,28 +853,28 @@ void ChunkGenerationManager::manage(Nature const& nature)
 
 				switch (step)
 				{
-					case ChunkGeneratingStep::PTG_FIELD:
+					case ChunkGeneratingStep::GENERATE_PTG_FIELD:
 						assert(std::holds_alternative<ChunkPtgField>(some_data));
 						assert(not this->chunk_grid->has_ptg_field(chunk_coords));
 						this->chunk_grid->ptg_field.insert(std::make_pair(
 							chunk_coords, std::get<ChunkPtgField>(some_data)));
 					break;
-					case ChunkGeneratingStep::PTT_FIELD:
+					case ChunkGeneratingStep::GENERATE_PTT_FIELD:
 						assert(std::holds_alternative<ChunkPttField>(some_data));
 						assert(not this->chunk_grid->has_ptt_field(chunk_coords));
 						this->chunk_grid->ptt_field.insert(std::make_pair(
 							chunk_coords, std::get<ChunkPttField>(some_data)));
 					break;
-					case ChunkGeneratingStep::B_FIELD:
-					case ChunkGeneratingStep::DISK_READ:
+					case ChunkGeneratingStep::GENERATE_B_FIELD:
+					case ChunkGeneratingStep::DISK_READ_B_FIELD:
 						assert(std::holds_alternative<ChunkBField>(some_data));
 						assert(not this->chunk_grid->has_b_field(chunk_coords));
 						this->chunk_grid->b_field.insert(std::make_pair(
 							chunk_coords, std::get<ChunkBField>(some_data)));
 					break;
 					case ChunkGeneratingStep::DISK_SEARCH:
-						assert(std::holds_alternative<ChunkBField>(some_data));
-						assert(not this->chunk_grid->has_b_field(chunk_coords));
+						assert(std::holds_alternative<ChunkDiskStorage>(some_data));
+						assert(not this->chunk_grid->has_disk_storage(chunk_coords));
 						this->chunk_grid->disk.insert(std::make_pair(
 							chunk_coords, std::get<ChunkDiskStorage>(some_data)));
 					break;
@@ -904,9 +926,9 @@ void ChunkGenerationManager::manage(Nature const& nature)
 				std::cout << "Data request: "
 					<< required_chunk_coords << " "
 					<< (
-						required_step == ChunkGeneratingStep::PTG_FIELD ? "PTG" :
-						required_step == ChunkGeneratingStep::PTT_FIELD ? "PTT" :
-						required_step == ChunkGeneratingStep::B_FIELD ? "B" :
+						required_step == ChunkGeneratingStep::GENERATE_PTG_FIELD ? "PTG" :
+						required_step == ChunkGeneratingStep::GENERATE_PTT_FIELD ? "PTT" :
+						required_step == ChunkGeneratingStep::GENERATE_B_FIELD ? "B" :
 						required_step == ChunkGeneratingStep::MESH ? "mesh" :
 						"?")
 					<< std::endl;
@@ -942,7 +964,16 @@ void ChunkGenerationManager::manage(Nature const& nature)
 							},
 							required_chunk_coords));
 					break;
-					case ChunkGeneratingStep::DISK_READ:
+					case ChunkGeneratingStep::B_FIELD:
+						assert(false
+							/* The `B_FIELD` variant is not a true generating step, it is a dummy
+							 * step that must be converted into `GENERATE_B_FIELD` or
+							 * `DISK_READ_B_FIELD` to know via which way to generate the B field.
+							 * If we end up here then it means something went wrong and there is a
+							 * bug to fix. */);
+						std::exit(EXIT_FAILURE);
+					break;
+					case ChunkGeneratingStep::DISK_READ_B_FIELD:
 						generating_data.future = this->thread_pool->give_task(std::bind(
 							[](
 								ChunkCoords chunk_coords,
@@ -954,7 +985,7 @@ void ChunkGenerationManager::manage(Nature const& nature)
 							required_chunk_coords,
 							std::ref(this->chunk_grid->disk[required_chunk_coords])));
 					break;
-					case ChunkGeneratingStep::B_FIELD:
+					case ChunkGeneratingStep::GENERATE_B_FIELD:
 						generating_data.future = this->thread_pool->give_task(std::bind(
 							[](
 								ChunkCoords chunk_coords,
@@ -969,7 +1000,7 @@ void ChunkGenerationManager::manage(Nature const& nature)
 							this->chunk_grid->get_ptt_field_neighborhood(required_chunk_coords),
 							std::cref(nature)));
 					break;
-					case ChunkGeneratingStep::PTT_FIELD:
+					case ChunkGeneratingStep::GENERATE_PTT_FIELD:
 						generating_data.future = this->thread_pool->give_task(std::bind(
 							[](
 								ChunkCoords chunk_coords,
@@ -984,7 +1015,7 @@ void ChunkGenerationManager::manage(Nature const& nature)
 							this->chunk_grid->get_ptg_field_neighborhood(required_chunk_coords),
 							std::cref(nature)));
 					break;
-					case ChunkGeneratingStep::PTG_FIELD:
+					case ChunkGeneratingStep::GENERATE_PTG_FIELD:
 						generating_data.future = this->thread_pool->give_task(std::bind(
 							[](
 								ChunkCoords chunk_coords,
@@ -1007,6 +1038,31 @@ void ChunkGenerationManager::manage(Nature const& nature)
 	}
 }
 
+namespace
+{
+
+/* Is the `given_step` being done by the `step_being_done`? */
+bool given_step_is_being_done(ChunkGeneratingStep step_being_done, ChunkGeneratingStep given_step)
+{
+	assert(step_being_done != ChunkGeneratingStep::B_FIELD
+		/* The `B_FIELD` variant is not a step that can be "being done", it is a dummy
+		 * step that must be converted into `GENERATE_B_FIELD` or `DISK_READ_B_FIELD`
+		 * to be done. If it ends up being considered as a step that is "being done"
+		 * then it means something went wrong and there is a bug to fix. */);
+	if (given_step == ChunkGeneratingStep::B_FIELD)
+	{
+		return
+			step_being_done == ChunkGeneratingStep::GENERATE_B_FIELD ||
+			step_being_done == ChunkGeneratingStep::DISK_READ_B_FIELD;
+	}
+	else
+	{
+		return step_being_done == given_step;
+	}
+}
+
+} /* Anonymous namespace. */
+
 bool ChunkGenerationManager::needs_generation_step(
 	ChunkCoords chunk_coords, ChunkGeneratingStep step) const
 {
@@ -1016,7 +1072,7 @@ bool ChunkGenerationManager::needs_generation_step(
 	{
 		if (generating_data_opt.has_value()
 			&& generating_data_opt.value().chunk_coords == chunk_coords
-			&& generating_data_opt.value().step == step)
+			&& given_step_is_being_done(generating_data_opt.value().step, step))
 		{
 			return false;
 		}
@@ -1025,17 +1081,18 @@ bool ChunkGenerationManager::needs_generation_step(
 	/* Check if the given step is already done and stored in the chunk grid. */
 	switch (step)
 	{
-		case ChunkGeneratingStep::PTG_FIELD:
+		case ChunkGeneratingStep::GENERATE_PTG_FIELD:
 			return not this->chunk_grid->has_ptg_field(chunk_coords);
 		break;
-		case ChunkGeneratingStep::PTT_FIELD:
+		case ChunkGeneratingStep::GENERATE_PTT_FIELD:
 			return not this->chunk_grid->has_ptt_field(chunk_coords);
 		break;
 		case ChunkGeneratingStep::DISK_SEARCH:
 			return not this->chunk_grid->has_disk_storage(chunk_coords);
 		break;
 		case ChunkGeneratingStep::B_FIELD:
-		case ChunkGeneratingStep::DISK_READ:
+		case ChunkGeneratingStep::GENERATE_B_FIELD:
+		case ChunkGeneratingStep::DISK_READ_B_FIELD:
 			return not this->chunk_grid->has_b_field(chunk_coords);
 		break;
 		case ChunkGeneratingStep::MESH:
@@ -1086,14 +1143,37 @@ std::optional<std::pair<ChunkCoords, ChunkGeneratingStep>>
 				this->chunk_grid->has_disk_storage(chunk_coords) &&
 				this->chunk_grid->disk[chunk_coords].exist)
 			{
-				return std::make_pair(chunk_coords, ChunkGeneratingStep::DISK_READ);
+				if (this->needs_generation_step(chunk_coords,
+					ChunkGeneratingStep::B_FIELD))
+				{
+					return std::make_pair(chunk_coords, ChunkGeneratingStep::DISK_READ_B_FIELD);
+				}
+				else
+				{
+					return std::nullopt;
+				}
 			}
 			else if (this->load_save_enabled &&
 				not this->chunk_grid->has_disk_storage(chunk_coords))
 			{
-				return std::make_pair(chunk_coords, ChunkGeneratingStep::DISK_SEARCH);
+				if (this->needs_generation_step(chunk_coords,
+					ChunkGeneratingStep::DISK_SEARCH))
+				{
+					return std::make_pair(chunk_coords, ChunkGeneratingStep::DISK_SEARCH);
+				}
+				else
+				{
+					return std::nullopt;
+				}
 			}
-			else if (this->chunk_grid->has_ptt_field_neighborhood(chunk_coords))
+			else
+			{
+				return this->required_generation_step(chunk_coords,
+					ChunkGeneratingStep::GENERATE_B_FIELD);
+			}
+		break;
+		case ChunkGeneratingStep::GENERATE_B_FIELD:
+			if (this->chunk_grid->has_ptt_field_neighborhood(chunk_coords))
 			{
 				return std::make_pair(chunk_coords, step);
 			}
@@ -1106,16 +1186,16 @@ std::optional<std::pair<ChunkCoords, ChunkGeneratingStep>>
 					ChunkCoords const chunk_coords_neighboor =
 						chunk_coords + ChunkCoords{dx, dy, dz};
 					if (this->needs_generation_step(chunk_coords_neighboor,
-						ChunkGeneratingStep::PTT_FIELD))
+						ChunkGeneratingStep::GENERATE_PTT_FIELD))
 					{
 						return this->required_generation_step(chunk_coords_neighboor,
-							ChunkGeneratingStep::PTT_FIELD);
+							ChunkGeneratingStep::GENERATE_PTT_FIELD);
 					}
 				}
 				return std::nullopt;
 			}
 		break;
-		case ChunkGeneratingStep::PTT_FIELD:
+		case ChunkGeneratingStep::GENERATE_PTT_FIELD:
 			if (this->chunk_grid->has_ptg_field_neighborhood(chunk_coords))
 			{
 				return std::make_pair(chunk_coords, step);
@@ -1129,16 +1209,16 @@ std::optional<std::pair<ChunkCoords, ChunkGeneratingStep>>
 					ChunkCoords const chunk_coords_neighboor =
 						chunk_coords + ChunkCoords{dx, dy, dz};
 					if (this->needs_generation_step(chunk_coords_neighboor,
-						ChunkGeneratingStep::PTG_FIELD))
+						ChunkGeneratingStep::GENERATE_PTG_FIELD))
 					{
 						return this->required_generation_step(chunk_coords_neighboor,
-							ChunkGeneratingStep::PTG_FIELD);
+							ChunkGeneratingStep::GENERATE_PTG_FIELD);
 					}
 				}
 				return std::nullopt;
 			}
 		break;
-		case ChunkGeneratingStep::PTG_FIELD:
+		case ChunkGeneratingStep::GENERATE_PTG_FIELD:
 			return std::make_pair(chunk_coords, step);
 		break;
 		default:

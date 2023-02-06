@@ -168,6 +168,10 @@ Config::Config()
 	/* If true, then the world will be loaded from the disk and saved to the disk. */
 	this->parameter_table.insert({"load_save"sv, false});
 
+	/* If FALSE, then even not-modified chunks will be saved (given load/save is enabled)
+	 * instead of just saving modified chunks. */
+	this->parameter_table.insert({"save_only_modified"sv, true});
+
 	/* The name of the save directory to be used (and created if necessary) for loading/saving. */
 	this->parameter_table.insert({"save_name"sv, "the"sv});
 	this->corrector_table.insert({"save_name"sv, [](ParameterType& variant_value){

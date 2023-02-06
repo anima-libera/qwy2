@@ -158,9 +158,12 @@ class ChunkDiskStorage
 {
 public:
 	ChunkCoords chunk_coords;
-public:
+
 	/* Does the chunk actually has data stored on disk? */
 	bool exist;
+
+	/* Was this chunk's B field modified since the last saving? */
+	bool modified;
 
 	std::string file_name;
 
@@ -222,11 +225,12 @@ using SomeChunkData =
 
 enum class ChunkGeneratingStep
 {
-	PTG_FIELD,
-	PTT_FIELD,
+	GENERATE_PTG_FIELD,
+	GENERATE_PTT_FIELD,
 	DISK_SEARCH,
-	DISK_READ,
-	B_FIELD,
+	B_FIELD, /* Can "resolves" itself into either `DISK_READ_B_FIELD` or `GENERATE_B_FIELD`. */
+	DISK_READ_B_FIELD,
+	GENERATE_B_FIELD,
 	MESH,
 };
 
@@ -262,6 +266,11 @@ public:
 	/* If set to true then chunks will be loaded (if previously saved) from the disk
 	 * and saved to the disk. */
 	bool load_save_enabled;
+
+	/* If set to true, then not-modified chunks will NOT be saved (given load/save is enabled)
+	 * as they can just be re-generated. This allows to save a lot of disk space.
+	 * If set to false, then all generated chunks will be saved to the disk. */
+	bool save_only_modified;
 
 	/* The data that are undergoing generation (possibly in an other thread). */
 	std::vector<std::optional<ChunkGeneratingData>> generating_data_vector;
