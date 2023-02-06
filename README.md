@@ -57,6 +57,27 @@ python3 bs.py --clear --dont-build
 
 It is in a so early state that everything is subject to change anytime soon.
 
+### Some command line options
+
+These are given here with their default value (at the time of writing this).
+
+- **Performances and memory usage:** `--loaded-radius=160` sets the radius (in blocks) of the visible spherical zone of the world that is generated, bigger means more chunks to generate and load in memory and to manage, smaller means you see less cool stuff. `--loading-threads=2` sets the number of threads used for generating the terrain (setting it to about the number of physical cores of your computer seem to work fine, try and see what works best (and get these fans running, you didn't buy all these CPU cores to let them idle!)). `--chunk-side=31` sets the length (in blocks) of the edges of the chunks (must be an odd number btw), bigger means more time to generate and mesh (and remesh (which can cause the game to freeze if chunks are too big when modifying their meshes)), smaller means more chunks to manage (see what works best on your machine, maybe try odd values in the range 17~33).
+- **Saving and loading:** `--load-save=false` disables/enables the saving and loading of the world data (set it to `true` if you want whatever you do in the world to be saved when quitting the game). `--save-name=the` selects the save directory to save to and to load from (and creates it if it does not exist), accepted characters in names are currently restricted to `a`-`z`, `A`-`Z`, `0`-`9`, `_` and `-`. `--save-only-modified=true` keeps untouched chunks from being saved to the disk, which saves a lot of disk space, but these unsaved chunks will have to be regenerated next time (generation of a chunk takes longer than loading from disk).
+- **Terrain generation:** `--terrain-generator=classic` selects a terrain generator. The list of terrain generator names is in the implementation of `plain_terrain_generator_from_name` in `src/terrain_gen.cpp`. The ones to check (at the time of writing) are `octaves_2`, `funky_2` and maybe `planes`. There are also `flat` and `hills` that are less fancy (for quick tests). Some parameters that influence some terrain generators are `--noise-size=15.0`, `--density=0.5`, `--terrain-param-a=1.0`, `--terrain-param-b=1.0`, `--terrain-param-c=1.0` and`--seed=9`. `--structures=true` enables/disables the generation of structures.
+- **Graphics:** `--shadow-map-resolution=4096` sets the length (in fragments (pixels)) of the side of the square shadow map framebuffer (it must be a power of two (2)), bigger means better shadows (try `8192`, `16384` or even `32768` if your graphics card is gaming enough ^^), smaller means quicker shadow mapping.
+
+Here is a base example (stuff may take some time to appear, try pressing F10 to display chunk borders and see that stuff is actually generating (just that it may be empty for a time until you hit ground)):
+
+```sh
+python3 bs.py -l --loading-threads=6 --loaded-radius=200 --terrain-generator=octaves_2 --noise-size=35 --load-save=true --save-name=gaming-moment
+```
+
+Here is the same example with saving everything for a faster loading the second time:
+
+```sh
+python3 bs.py -l --loading-threads=6 --loaded-radius=200 --terrain-generator=octaves_2 --noise-size=35 --load-save=true --save-name=gaming-moment --save-only-modified=false
+```
+
 ### Controls and commands
 
 When running the game, a `commands.qwy2` file will be created in the current directory (which will be `bin` if the game is run via the recommended `python3 bs.py -l` command) and filled with default commands, if this file did not already exist. These commands are run at the beginning of execution of the game, and some of these commands bind keyboard keys and mouse buttons to other commands. The idiomatic Qwy2 way of configuring the controls is to modify this file to bind whatever you want to whatever commands you want. For example, one of the commands that is generated when creating `commands.qwy2` at the first execution is `bind_control KD:space [player_jump]`, it binds the event `space` `K`ey `D`own to the command `player_jump`, so that when the keyboard `K`ey named `space` is pressed (`D`down), the command `player_jump` is run (which makes the player jump, there is no trap here). The syntax for commands may change, but for now: one line per command, empty lines and lines starting with `#` are ignored, a command consists of a command name followed by its space-separated arguments. An event that `bind_control` accepts must match `(K|M)(U|D):([a-z0-9_]+)` with `K` being for keyboard keys and `M` for mouse buttons, `U` for up (released) and `D` for down (pressed), and the name of the key/button in snake case, no spaces in this. Stuff between brackets like `[player_jump]` is actually a command that can be passed as an argument to an other command (as is done with each `bind_control`), any command can be in brackets and passed like that, even an other `bind_control` command. Note that a key can be bound to multiple commands (by running multiple `bind_control`s on the same key), this might (or might not) change.

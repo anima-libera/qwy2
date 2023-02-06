@@ -737,7 +737,7 @@ void ChunkGrid::set_block(Nature const* nature,
 	/* Mark the chunk as modified, which makes sure it will be saved to the disk (if required). */
 	if (not this->has_disk_storage(chunk_coords))
 	{
-		this->disk[chunk_coords] = ChunkDiskStorage{chunk_coords};
+		this->disk.insert(std::make_pair(chunk_coords, ChunkDiskStorage{chunk_coords}));
 	}
 	ChunkDiskStorage& chunk_disk_storage = this->disk.at(chunk_coords);
 	chunk_disk_storage.modified = true;
