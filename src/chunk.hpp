@@ -67,6 +67,8 @@ public:
 	/* Access raw field data. Access to values should be performed via [] operator,
 	 * this is intended for use in stuff like write to disk. */
 	ValueType* raw_data();
+
+	void free_data();
 };
 
 /* The PTG field (Plain Terrain Generation)
@@ -211,7 +213,9 @@ public:
 	void set_block(Nature const* nature,
 		BlockCoords coords, BlockTypeId new_type_id);
 
-	void write_all_to_disk();
+	void unload(ChunkCoords chunk_coords);
+	void save_b_field_if_necessary(ChunkCoords chunk_coords);
+	void save_all_that_is_necessary();
 
 	friend class ChunkGenerationManager;
 };
@@ -232,6 +236,8 @@ enum class ChunkGeneratingStep
 	DISK_READ_B_FIELD,
 	GENERATE_B_FIELD,
 	MESH,
+
+	DISK_WRITE_B_FIELD,
 };
 
 class ChunkGeneratingData
@@ -259,6 +265,11 @@ public:
 
 	/* The radius (in blocks) of the generated zone. */
 	float generation_radius;
+
+	/* The width of the intermediary zone outside of the generated zone where
+	 * stuff does not get actively loaded but already loaded stuff does not get unloeaded either.
+	 * Stuff outside of this intermediary zone does gets actively unloaded. */
+	float unloading_margin;
 
 	/* If set to false then no new chunks will be generated. */
 	bool generation_enabled;

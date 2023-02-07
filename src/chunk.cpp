@@ -154,16 +154,26 @@ FieldValueType* ChunkField<FieldValueType>::raw_data()
 	return this->data;
 }
 
+template<typename FieldValueType>
+void ChunkField<FieldValueType>::free_data()
+{
+	delete[] this->data;
+}
+
 template ChunkField<PtgFieldValue>::ChunkField(ChunkCoords chunk_coords);
 template ChunkField<PtgFieldValue>::~ChunkField();
 template PtgFieldValue& ChunkField<PtgFieldValue>::operator[](BlockCoords coords);
 template PtgFieldValue const& ChunkField<PtgFieldValue>::operator[](BlockCoords coords) const;
 template PtgFieldValue* ChunkField<PtgFieldValue>::raw_data();
+template void ChunkField<PtgFieldValue>::free_data();
+
+template void ChunkField<PttFieldValue>::free_data();
 
 template ChunkField<Block>::~ChunkField();
 template Block& ChunkField<Block>::operator[](BlockCoords coords);
 template Block const& ChunkField<Block>::operator[](BlockCoords coords) const;
 template Block* ChunkField<Block>::raw_data();
+template void ChunkField<Block>::free_data();
 
 bool Block::is_air() const
 {
@@ -743,22 +753,64 @@ void ChunkGrid::set_block(Nature const* nature,
 	chunk_disk_storage.modified = true;
 }
 
-void ChunkGrid::write_all_to_disk()
+void ChunkGrid::unload(ChunkCoords chunk_coords)
 {
-	for (auto coords_and_b_field : this->b_field)
+	std::cout << "Unload chunk " << chunk_coords << std::endl;
+	if (this->has_ptg_field(chunk_coords))
 	{
-		ChunkCoords const chunk_coords = coords_and_b_field.first;
-		ChunkBField const& b_field = coords_and_b_field.second;
-		if (not this->has_disk_storage(chunk_coords))
+		auto it = this->ptg_field.find(chunk_coords);
+		it->second.free_data();
+		this->ptg_field.erase(it);
+	}
+	if (this->has_ptt_field(chunk_coords))
+	{
+		auto it = this->ptt_field.find(chunk_coords);
+		it->second.free_data();
+		this->ptt_field.erase(it);
+	}
+	if (this->has_b_field(chunk_coords))
+	{
+		this->save_b_field_if_necessary(chunk_coords);
+		auto it = this->b_field.find(chunk_coords);
+		it->second.free_data();
+		this->b_field.erase(it);
+	}
+	if (this->has_complete_mesh(chunk_coords))
+	{
+		/* The destruction of the OpenGL buffer and the freeing of the CPU-side buffer
+		 * is done in the `Mesh` destructor. */
+		this->mesh.erase(this->mesh.find(chunk_coords));
+	}
+	if (this->has_disk_storage(chunk_coords))
+	{
+		this->disk.erase(this->disk.find(chunk_coords));
+	}
+}
+
+void ChunkGrid::save_b_field_if_necessary(ChunkCoords chunk_coords)
+{
+	if (not this->has_disk_storage(chunk_coords))
+	{
+		this->disk.insert(std::make_pair(chunk_coords,ChunkDiskStorage{chunk_coords}));
+	}
+	ChunkDiskStorage& chunk_disk_storage = this->disk.at(chunk_coords);
+
+	if (chunk_disk_storage.modified ||
+		(not g_game->chunk_generation_manager.save_only_modified))
+	{
+		if (this->has_b_field(chunk_coords))
 		{
-			this->disk[chunk_coords] = ChunkDiskStorage{chunk_coords};
-		}
-		ChunkDiskStorage& chunk_disk_storage = this->disk.at(chunk_coords);
-		if (chunk_disk_storage.modified ||
-			(not g_game->chunk_generation_manager.save_only_modified))
-		{
+			ChunkBField& b_field = this->b_field.at(chunk_coords);
 			write_disk_chunk_b_field(chunk_coords, chunk_disk_storage, b_field);
 		}
+	}
+}
+
+void ChunkGrid::save_all_that_is_necessary()
+{
+	for (auto& [chunk_coords, b_field] : this->b_field)
+	{
+		this->save_b_field_if_necessary(chunk_coords);
 	}
 }
 
@@ -774,6 +826,24 @@ ChunkGenerationManager::ChunkGenerationManager():
 
 void ChunkGenerationManager::manage(Nature const& nature)
 {
+	/* Priority to unloading chunks that are too far.
+	 * It seems fast enough for now that it can be done in the main thread. */
+	for (auto& [chunk_coords, chunk_b_field] : this->chunk_grid->b_field)
+	{
+		BlockCoords center_coords = chunk_center_coords(chunk_coords);
+		float dist = glm::distance(
+			static_cast<glm::vec3>(center_coords), this->generation_center);
+		dist += g_game->chunk_side; /* Just to be sure the chunk is completely out. */
+		if (this->generation_radius + this->unloading_margin < dist)
+		{
+			this->chunk_grid->unload(chunk_coords);
+			/* Invalidates the loop iterator. One each frame is enough anyway. */
+			/* TODO: Make better iterators on the chunks that don't break when a chunk
+			 * is deleted or something. */
+			break;
+		}
+	}
+
 	unsigned int const chunk_generation_radius = 1 + static_cast<unsigned int>(
 		this->generation_radius / static_cast<float>(g_game->chunk_side));
 	ChunkCoords const chunk_generation_center =
@@ -883,7 +953,9 @@ void ChunkGenerationManager::manage(Nature const& nature)
 						assert(not this->chunk_grid->has_complete_mesh(chunk_coords));
 						{
 							Mesh<VertexDataClassic> mesh;
-							mesh.vertex_data = std::move(*std::get<ChunkMeshData*>(some_data));
+							ChunkMeshData* chunk_mesh_data = std::get<ChunkMeshData*>(some_data);
+							mesh.vertex_data = std::move(*chunk_mesh_data);
+							delete chunk_mesh_data;
 							mesh.needs_update_opengl_data = true;
 							this->chunk_grid->mesh.insert(std::make_pair(
 								chunk_coords, mesh));

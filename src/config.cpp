@@ -35,6 +35,25 @@ Config::Config()
 		return true;
 	}});
 
+	/* Length (in blocks) that gets added to the `loaded_radius` of the spherical zone
+	 * around the player outside of which the world is unloaded. Stuff does not gets
+	 * unloaded as soon as they get outside of the `loaded_radius`, there is an
+	 * intermediate zone (of width defined by this config variable) where chunks are
+	 * neither loaded nor unloaded. */
+	this->parameter_table.insert({"unloaded_margin"sv, 250.0f});
+	this->corrector_table.insert({"unloaded_margin"sv, [](ParameterType& variant_value){
+		float const value = std::get<float>(variant_value);
+		if (value < 0.0f)
+		{
+			std::cout << "\x1b[31mCommand line error:\x1b[39m "
+				<< "The unloaded_margin value should be positive (or zero), "
+				<< "thus " << value << " is not valid."
+				<< std::endl;
+			return false;
+		}
+		return true;
+	}});
+
 	/* The length (in blocks) of an edge of the cube that is the shape of all chunks.
 	 * It should be odd for chunks to have a singe block at their center
 	 * (I'm pretty sure I had a good reason when that decision was taken).

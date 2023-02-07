@@ -218,7 +218,9 @@ void Game::init(Config const& config)
 	this->chunk_grid = new ChunkGrid{};
 	this->chunk_generation_manager.chunk_grid = this->chunk_grid;
 	this->loaded_radius = config.get<float>("loaded_radius"sv);
+	this->unloaded_margin = config.get<float>("unloaded_margin"sv);
 	this->chunk_generation_manager.generation_radius = this->loaded_radius;
+	this->chunk_generation_manager.unloading_margin = this->unloaded_margin;
 
 	this->chunk_generation_manager.load_save_enabled = config.get<bool>("load_save"sv);
 	this->chunk_generation_manager.save_only_modified = config.get<bool>("save_only_modified"sv);
@@ -607,7 +609,7 @@ void Game::loop()
 		std::string chunk_save_directory{std::string(this->save_directory) + "chunks/"};
 		std::cout << "[Cleanup] "
 			<< "Saved chunk B fields to \"" << chunk_save_directory << "\"." << std::endl;
-		this->chunk_grid->write_all_to_disk();
+		this->chunk_grid->save_all_that_is_necessary();
 	}
 
 	cleanup_window_graphics();

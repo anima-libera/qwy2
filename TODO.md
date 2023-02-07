@@ -12,9 +12,9 @@
 
 ## Qwy2
 
+- **Fix:** Find and fix the *big memory leak* on chunks that are supposed to be unloaded. When moving around, RAM usage keeps rising and rising despite the number of loaded chunks supposed to be kept low by unloading chunks that are too far. It probably means that unloading a chunk leaks some memory (and probably something big like a field of values or the mesh data or something).
 - **Feature:** Save/load player position.
 - **Feature:** Save/load configuration info such as chunk side, the terrain generator and its parameters, etc.
-- **Feature:** Chunks too far to be seen shall be unloaded, and saved if required.
 - **Optimization:** Compress chunk data saved to the disk.
 - **Feature:** Display 2D text (with some pixely font inspired by Minecraft's or PICO-8's?), and add modes to display all kinds of info in corners (such as number of chunks at each generating step, player coords, pointed block coords, player chunk coords, FPS count, etc.).
 - **Feature:** Allow typing commands at run-time.

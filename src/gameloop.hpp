@@ -31,6 +31,7 @@ public:
 	std::string save_directory;
 	bool cursor_is_captured;
 	float loaded_radius;
+	float unloaded_margin;
 	LineRectDrawer line_rect_drawer;
 	ShaderTable shader_table;
 	Nature* nature;
