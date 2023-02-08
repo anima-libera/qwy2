@@ -12,7 +12,10 @@
 
 ## Qwy2
 
-- **Fix:** Find and fix the *big memory leak* on chunks that are supposed to be unloaded. When moving around, RAM usage keeps rising and rising despite the number of loaded chunks supposed to be kept low by unloading chunks that are too far. It probably means that unloading a chunk leaks some memory (and probably something big like a field of values or the mesh data or something).
+- **Fix:** Find and fix the *big memory leak* on chunks that are supposed to be unloaded. When moving around, RAM usage keeps rising and rising despite the number of loaded chunks supposed to be kept low by unloading chunks that are too far. It probably means that unloading a chunk leaks some memory (and probably something big like a field of values or the mesh data or something). **Probable solution:** Make sure to unload chunks that only have a PTG or a PTT field (a B field is not required to need unloading); I believe that remaining PTG and PTT fields are the cause of the "leak" (which would just be incomplete unloading).
+- **Optimization:** When the player is falling towards unloaded chunks, these chunks should be generated as fast as possible (put all the threads on these chunks) so that the player hits ground faster.
+- **Optimization:** Do not load chunks that are completely covered, focus on the surface instead. 
+- **Optimization:** Unload PTG and PTT fields that are no longer required for any chunk generation. 
 - **Feature:** Save/load player position.
 - **Feature:** Save/load configuration info such as chunk side, the terrain generator and its parameters, etc.
 - **Optimization:** Compress chunk data saved to the disk.
