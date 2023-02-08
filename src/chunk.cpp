@@ -828,20 +828,32 @@ void ChunkGenerationManager::manage(Nature const& nature)
 {
 	/* Priority to unloading chunks that are too far.
 	 * It seems fast enough for now that it can be done in the main thread. */
-	for (auto& [chunk_coords, chunk_b_field] : this->chunk_grid->b_field)
-	{
+	std::vector<ChunkCoords> chunks_to_unload;
+	auto consider_unloading = [this, &chunks_to_unload](ChunkCoords chunk_coords){
 		BlockCoords center_coords = chunk_center_coords(chunk_coords);
 		float dist = glm::distance(
 			static_cast<glm::vec3>(center_coords), this->generation_center);
 		dist += g_game->chunk_side; /* Just to be sure the chunk is completely out. */
 		if (this->generation_radius + this->unloading_margin < dist)
 		{
-			this->chunk_grid->unload(chunk_coords);
-			/* Invalidates the loop iterator. One each frame is enough anyway. */
-			/* TODO: Make better iterators on the chunks that don't break when a chunk
-			 * is deleted or something. */
-			break;
+			chunks_to_unload.push_back(chunk_coords);
 		}
+	};
+	/* Should cover chunks that have a B field and chunks that have a mesh. */
+	for (auto& [chunk_coords, field] : this->chunk_grid->b_field)
+	{
+		consider_unloading(chunk_coords);
+	}
+	/* Should cover chunks that have a PTG field and chunks that have a PTT field. */
+	for (auto& [chunk_coords, field] : this->chunk_grid->ptg_field)
+	{
+		consider_unloading(chunk_coords);
+	}
+	/* Unloading a chunk invalidates iterators on the affected `std::unsorted_map`s,
+	 * thus instead we iterate over a vector of chunk coordinates. */
+	for (ChunkCoords chunk_coords : chunks_to_unload)
+	{
+		this->chunk_grid->unload(chunk_coords);
 	}
 
 	unsigned int const chunk_generation_radius = 1 + static_cast<unsigned int>(
