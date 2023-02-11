@@ -13,9 +13,8 @@
 ## Qwy2
 
 - **Optimization:** When the player is falling towards unloaded chunks, these chunks should be generated as fast as possible (put all the threads on these chunks) so that the player hits ground faster.
-- **Optimization:** Do not load chunks that are completely covered, focus on the surface instead. 
-- **Optimization:** Unload PTG and PTT fields that are no longer required for any chunk generation. 
-- **Feature:** Save/load player position.
+- **Optimization:** Do not load chunks that are completely covered, focus on the surface instead.
+- **Optimization:** Unload PTG and PTT fields that are no longer required for any chunk generation.
 - **Feature:** Save/load configuration info such as chunk side, the terrain generator and its parameters, etc.
 - **Feature:** Add simple entities that are displayed, have directional shadows, move around, collide with blocks, are saved, do not randomly dispawn.
 - **Optimization:** Compress chunk data saved to the disk.
