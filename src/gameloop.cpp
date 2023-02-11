@@ -50,6 +50,37 @@ void Game::init(Config const& config)
 			<< std::endl;
 	}
 
+	/* Loads some data from the save file if they exist. */
+	std::optional<glm::vec3> loaded_player_box_center_coords;
+	{
+		std::string some_data_save_file{std::string(this->save_directory) + "somedata"};
+		std::ifstream file{some_data_save_file};
+		std::string player_position_prefix{"player_position"};
+		if (file.good())
+		{
+			std::stringstream buffer;
+			buffer << file.rdbuf();
+			std::string content{buffer.str()};
+			std::stringstream content_stream{content};
+			std::string line;
+			while (std::getline(content_stream, line))
+			{
+				if (std::equal(player_position_prefix.begin(), player_position_prefix.end(),
+					line.begin()))
+				{
+					std::stringstream line_ss{line};
+					std::string pp;
+					char c;
+					float x, y, z;
+					line_ss >> pp >> c >> x >> c >> y >> c >> z >> c;
+					//std::cout << x << ", " << y << ", " << z << std::endl;
+					loaded_player_box_center_coords = glm::vec3{x, y, z};
+				}
+			}
+			file.close();
+		}
+	}
+
 	/* There are user-editable command files named `commands.qwy2`, one of which is
 	 * to be run at the beginning of execution (now).
 	 * There is one such file in the current directory (the common one), and one in
@@ -228,6 +259,12 @@ void Game::init(Config const& config)
 	{
 		std::string chunk_save_directory{std::string(this->save_directory) + "chunks/"};
 		std::filesystem::create_directories(chunk_save_directory);
+	}
+
+	/* Place the player. */
+	if (loaded_player_box_center_coords.has_value())
+	{
+		this->player.box.center = loaded_player_box_center_coords.value();
 	}
 
 	/* Define the sky color and make the fog correspond to it. */
@@ -607,9 +644,60 @@ void Game::loop()
 	if (this->chunk_generation_manager.load_save_enabled)
 	{
 		std::string chunk_save_directory{std::string(this->save_directory) + "chunks/"};
+		this->chunk_grid->save_all_that_is_necessary();
 		std::cout << "[Cleanup] "
 			<< "Saved chunk B fields to \"" << chunk_save_directory << "\"." << std::endl;
-		this->chunk_grid->save_all_that_is_necessary();
+
+		/* TODO: Make this BETTER. Currently this is UGLY and it shall not remain that way! */
+		std::string some_data_save_file{std::string(this->save_directory) + "somedata"};
+		{
+			std::ifstream file{some_data_save_file};
+			bool player_position_stored = false;
+			std::stringstream new_content;
+			std::string player_position_prefix{"player_position"};
+			if (file.good())
+			{
+				std::stringstream buffer;
+				buffer << file.rdbuf();
+				std::string content{buffer.str()};
+				std::stringstream content_stream{content};
+				std::string line;
+				while (std::getline(content_stream, line))
+				{
+					if (std::equal(player_position_prefix.begin(), player_position_prefix.end(),
+						line.begin()))
+					{
+						new_content
+							<< player_position_prefix << ": "
+							<< "("
+								<< this->player.box.center.x << ", "
+								<< this->player.box.center.y << ", "
+								<< this->player.box.center.z << ")"
+							<< "\n";
+						player_position_stored = true;
+					}
+					else
+					{
+						new_content << line << "\n";
+					}
+				}
+				file.close();
+			}
+			if (not player_position_stored)
+			{
+				new_content
+					<< player_position_prefix << ": "
+					<< "("
+						<< this->player.box.center.x << ", "
+						<< this->player.box.center.y << ", "
+						<< this->player.box.center.z << ")"
+					<< "\n";
+			}
+			std::ofstream new_file{some_data_save_file, std::ios::trunc};
+			new_file << new_content.str();
+		}
+		std::cout << "[Cleanup] "
+			<< "Saved some data to \"" << some_data_save_file << "\"." << std::endl;
 	}
 
 	cleanup_window_graphics();

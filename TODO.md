@@ -15,6 +15,7 @@
 - **Fix:** Find and fix the *big memory leak* on chunks that are supposed to be unloaded. When moving around, RAM usage keeps rising and rising despite the number of loaded chunks supposed to be kept low by unloading chunks that are too far. It probably means that unloading a chunk leaks some memory (and probably something big like a field of values or the mesh data or something).
 - **Feature:** Save/load player position.
 - **Feature:** Save/load configuration info such as chunk side, the terrain generator and its parameters, etc.
+- **Feature:** Add simple entities that are displayed, have directional shadows, move around, collide with blocks, are saved, do not randomly dispawn.
 - **Optimization:** Compress chunk data saved to the disk.
 - **Feature:** Display 2D text (with some pixely font inspired by Minecraft's or PICO-8's?), and add modes to display all kinds of info in corners (such as number of chunks at each generating step, player coords, pointed block coords, player chunk coords, FPS count, etc.).
 - **Feature:** Allow typing commands at run-time.
@@ -38,7 +39,6 @@
 - **Feature (visual):** Keep the low-resolution shadow map that covers a big area, and add a smaller (thus higer-resolution) shadow map to get better shadows in a smaller area around the player (or rather around the camera).
 - **Feature (visual):** God rays.
 - **Feature:** Block face texture generator that can be tested without launching the whole game to allow easier tweaking and debugging of this specific feature.
-- **Design decision:** Entities will be handled via an Entity Component System (archetypal). The `Player` class will be removed.
 
 ### Ideas for some far future (don't think too much about it for now)
 
