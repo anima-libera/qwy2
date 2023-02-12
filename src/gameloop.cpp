@@ -51,6 +51,7 @@ void Game::init(Config const& config)
 	}
 
 	/* Loads some data from the save file if they exist. */
+	/* TODO: Make this BETTER. Currently this is UGLY and it shall not remain that way! */
 	std::optional<glm::vec3> loaded_player_box_center_coords;
 	{
 		std::string some_data_save_file{std::string(this->save_directory) + "somedata"};
@@ -317,6 +318,11 @@ void Game::init(Config const& config)
 	this->render_shadows = true;
 	this->auto_close = config.get<bool>("close"sv);
 
+	this->chunk_grid->add_entity(new Entity{
+		glm::vec3{5.0f, 0.0f, 5.0f}, EntityPhysics{glm::vec3{1.0f, 1.0f, 1.0f}}});
+	this->chunk_grid->add_entity(new Entity{
+		glm::vec3{2.0f, 5.0f, 3.0f}, EntityPhysics{glm::vec3{0.5f, 0.5f, 1.8f}}});
+
 	/* Temporary note. */
 	std::cout << "[Init] "
 		<< "Game loop ready." << std::endl;
@@ -344,11 +350,13 @@ void Game::loop()
 		/* Timers of different sections of the game loop. */
 		GlopColumnId glop_time_all = this->glop.add_column("Timer: All");
 		GlopColumnId glop_time_event_handling = this->glop.add_column("Timer: Event handling");
+		GlopColumnId glop_time_entity_behavior = this->glop.add_column("Timer: Entity behavior");
 		GlopColumnId glop_time_chunk_manager = this->glop.add_column("Timer: Chunk manager");
 		GlopColumnId glop_time_chunk_mesh_sync = this->glop.add_column("Timer: Chunk mesh sync");
 		GlopColumnId glop_time_sun_shadows = this->glop.add_column("Timer: Sun shadows");
 		GlopColumnId glop_time_chunk_mesh_render = this->glop.add_column("Timer: Chunk mesh render");
 		GlopColumnId glop_time_chunk_box_render = this->glop.add_column("Timer: Chunk box render");
+		GlopColumnId glop_time_entity_render = this->glop.add_column("Timer: Entity render");
 		GlopColumnId glop_time_sdl_swap_window = this->glop.add_column("Timer: SDL_GL_SwapWindow");
 		this->glop.open_output_stream();
 		#define TIME_BLOCK(column_id_) GlopTimer timer_{this->glop, column_id_}
@@ -382,6 +390,37 @@ void Game::loop()
 		{
 			TIME_BLOCK(glop_time_chunk_manager);
 			this->chunk_generation_manager.manage(*this->nature);
+		}
+
+		/* Apply behaviors and physics to entities. */
+		{
+			TIME_BLOCK(glop_time_entity_behavior);
+			for (auto& [chunk_coords, entity_table] : this->chunk_grid->entity_table)
+			{
+				for (Entity*& entity : entity_table.entities)
+				{
+					if (entity == nullptr)
+					{
+						continue;
+					}
+
+					if (entity->physics)
+					{
+						entity->apply_motion(delta_time);
+						
+						/* The entity may have moved out of the chunk, which
+						 * will require to move the entity to its new chunk. */
+						BlockCoords coords{entity->coords};
+						ChunkCoords new_chunk_coords = containing_chunk_coords(coords);
+						if (new_chunk_coords != chunk_coords)
+						{
+							Entity* entity_ptr = entity;
+							entity = nullptr;
+							this->chunk_grid->add_entity(entity_ptr);
+						}
+					}
+				}
+			}
 		}
 
 		/* Handle the player's camera. */
@@ -487,6 +526,31 @@ void Game::loop()
 			}
 		}
 		glCullFace(GL_FRONT);
+
+		/* Render the entities. */
+		{
+			TIME_BLOCK(glop_time_entity_render);
+			for (auto const& [chunk_coords, entity_table] : this->chunk_grid->entity_table)
+			{
+				for (Entity* entity : entity_table.entities)
+				{
+					if (entity == nullptr)
+					{
+						continue;
+					}
+
+					AlignedBox box{entity->coords,
+						glm::vec3{0.1f, 0.1f, 0.1f}};
+					if (entity->physics.has_value())
+					{
+						box.dimensions = entity->physics->box_dimensions;
+					}
+					this->line_rect_drawer.color = glm::vec3{1.0f, 1.0f, 0.0f};
+					this->line_rect_drawer.set_box(box);
+					this->shader_table.line().draw(this->line_rect_drawer.mesh);
+				}
+			}
+		}
 
 		/* Render the pointed face. */
 		if (this->pointed_face_opt.has_value())

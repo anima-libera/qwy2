@@ -6,6 +6,7 @@
 #include "utils.hpp"
 #include "structure.hpp"
 #include "gameloop.hpp"
+#include "entity.hpp"
 #include <cassert>
 #include <iostream>
 #include <iterator>
@@ -501,6 +502,11 @@ ChunkMeshData* generate_chunk_complete_mesh(
 	return mesh_data;
 }
 
+ChunkEntityTable::ChunkEntityTable()
+{
+	;	
+}
+
 namespace
 {
 
@@ -591,6 +597,11 @@ bool ChunkGrid::has_b_field(ChunkCoords chunk_coords) const
 bool ChunkGrid::has_complete_mesh(ChunkCoords chunk_coords) const
 {
 	return this->mesh.find(chunk_coords) != this->mesh.end();
+}
+
+bool ChunkGrid::has_entity_table(ChunkCoords chunk_coords) const
+{
+	return this->entity_table.find(chunk_coords) != this->entity_table.end();
 }
 
 bool ChunkGrid::has_disk_storage(ChunkCoords chunk_coords) const
@@ -751,6 +762,27 @@ void ChunkGrid::set_block(Nature const* nature,
 	}
 	ChunkDiskStorage& chunk_disk_storage = this->disk.at(chunk_coords);
 	chunk_disk_storage.modified = true;
+}
+
+void ChunkGrid::add_entity(Entity* entity)
+{
+	BlockCoords coords{entity->coords};
+	ChunkCoords chunk_coords = containing_chunk_coords(coords);
+	if (not this->has_entity_table(chunk_coords))
+	{
+		this->entity_table.insert(std::make_pair(chunk_coords, ChunkEntityTable{}));
+	}
+	ChunkEntityTable& chunk_entity_table = this->entity_table.at(chunk_coords);
+	
+	for (Entity*& entry : chunk_entity_table.entities)
+	{
+		if (entry == nullptr)
+		{
+			entry = entity;
+			return;
+		}
+	}
+	chunk_entity_table.entities.push_back(entity);
 }
 
 void ChunkGrid::unload(ChunkCoords chunk_coords)

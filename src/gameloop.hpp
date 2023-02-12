@@ -11,6 +11,7 @@
 #include "shaders/table.hpp"
 #include "threadpool.hpp"
 #include "glop.hpp"
+#include "entity.hpp"
 #include <glm/vec3.hpp>
 #include <vector>
 #include <chrono>

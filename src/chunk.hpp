@@ -151,8 +151,17 @@ ChunkMeshData* generate_chunk_complete_mesh(
 	ChunkNeighborhood<ChunkBField> const chunk_neighborhood_b_field,
 	Nature const& nature);
 
-template <typename ComponentType>
-using ChunkComponentGrid = std::unordered_map<ChunkCoords, ComponentType, ChunkCoords::Hash>;
+class Entity;
+
+class ChunkEntityTable
+{
+public:
+	/* Some entries might be `nullptr`s, beware! */
+	std::vector<Entity*> entities;
+
+public:
+	ChunkEntityTable();
+};
 
 /* Handles the disk storage of a chunk's data.
  * TODO: Make this better. */
@@ -180,6 +189,9 @@ ChunkBField read_disk_chunk_b_field(ChunkCoords chunk_coords,
 void write_disk_chunk_b_field(ChunkCoords chunk_coords,
 	ChunkDiskStorage& chunk_disk_storage, ChunkBField chunk_b_field);
 
+template <typename ComponentType>
+using ChunkComponentGrid = std::unordered_map<ChunkCoords, ComponentType, ChunkCoords::Hash>;
+
 class ChunkGrid
 {
 private:
@@ -188,6 +200,7 @@ public:
 	ChunkComponentGrid<ChunkPttField> ptt_field;
 	ChunkComponentGrid<ChunkBField> b_field;
 	ChunkComponentGrid<Mesh<VertexDataClassic>> mesh;
+	ChunkComponentGrid<ChunkEntityTable> entity_table;
 	ChunkComponentGrid<ChunkDiskStorage> disk;
 
 public:
@@ -195,6 +208,7 @@ public:
 	bool has_ptt_field(ChunkCoords chunk_coords) const;
 	bool has_b_field(ChunkCoords chunk_coords) const;
 	bool has_complete_mesh(ChunkCoords chunk_coords) const;
+	bool has_entity_table(ChunkCoords chunk_coords) const;
 	bool has_disk_storage(ChunkCoords chunk_coords) const;
 
 	bool has_ptg_field_neighborhood(ChunkCoords center_chunk_coords) const;
@@ -212,6 +226,8 @@ public:
 
 	void set_block(Nature const* nature,
 		BlockCoords coords, BlockTypeId new_type_id);
+
+	void add_entity(Entity* entity);
 
 	void unload(ChunkCoords chunk_coords);
 	void save_b_field_if_necessary(ChunkCoords chunk_coords);

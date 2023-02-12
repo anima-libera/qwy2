@@ -16,6 +16,7 @@
 - **Optimization:** Do not load chunks that are completely covered, focus on the surface instead.
 - **Optimization:** Unload PTG and PTT fields that are no longer required for any chunk generation.
 - **Feature:** Save/load configuration info such as chunk side, the terrain generator and its parameters, etc.
+- **Feature:** Save/load more stuff like the camera angle.
 - **Feature:** Add simple entities that are displayed, have directional shadows, move around, collide with blocks, are saved, do not randomly dispawn.
 - **Optimization:** Compress chunk data saved to the disk.
 - **Feature:** Display 2D text (with some pixely font inspired by Minecraft's or PICO-8's?), and add modes to display all kinds of info in corners (such as number of chunks at each generating step, player coords, pointed block coords, player chunk coords, FPS count, etc.).
