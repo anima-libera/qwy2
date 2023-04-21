@@ -278,7 +278,7 @@ void Game::init(Config const& config)
 	auto const [width, height] = window_width_height();
 	float const aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
 	this->player_camera = Camera<PerspectiveProjection>{
-		PerspectiveProjection{TAU / 8.0f, aspect_ratio},
+		PerspectiveProjection{TAU / 6.0f, aspect_ratio},
 		0.1f, this->loaded_radius * 2.5f};
 
 	/* Handle the cursor's capture and sensibility. */
