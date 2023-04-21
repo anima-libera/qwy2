@@ -26,7 +26,7 @@
 - **Feature:** Add procedurally generated *types* of structures.
 - **Feature:** Add biomes to some terrain generators. Biomes should only be terrain-generation-related (meaning that the game should behave as if biome information was lost once the terrain is generated).
 - **Feature:** Add procedurally generated *types* of biomes.
-- **Feature:** Add procedurally generated *types* of blocs.
+- **Feature:** Add procedurally generated *types* of blocks.
 - **Feature:** Add some kind of "survival" game mode.
 - **Fix:** Rewrite the player collision with blocks code entirely. It is currently so ugly it can be considered a bug.
 - **Optimization?:** Generate the chunk meshes sooner (without the whole neighborhood) and update the edges of the meshes as neighbors are generated.
