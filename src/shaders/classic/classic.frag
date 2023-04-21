@@ -36,6 +36,8 @@ void main()
 	}
 
 	/* Shadow calculation and effect. */
+	/* TODO: Make `shadow_ratio` a parameter. */
+	/* TODO: Make `ao_ratio_max` a parameter. */
 	float light = -dot(v_normal, normalize(u_sun_camera_direction));
 	const float shadow_depth = texture(u_shadow_depth, v_sun_camera_space_coords.xy).r;
 	const bool is_in_shadow = v_sun_camera_space_coords.z > shadow_depth;
@@ -43,10 +45,18 @@ void main()
 	{
 		light *= 0.0;
 	}
-	const float shadow_ratio = 0.7; /* How dark can it get in the shadows. */
+	const float shadow_ratio = 0.7; /* How dark is it in the shadows. */
 	out_color.rgb *= light * shadow_ratio + (1.0 - shadow_ratio);
-	const float ao_ratio = 0.7; /* How dark can it get in corners (ambiant occlusion). */
+	const float ao_ratio_max = 0.7; /* How dark is it in corners (ambiant occlusion). */
+	const float ao_ratio = ao_ratio_max / (light + 1.0); 
 	out_color.rgb *= v_ambient_occlusion * ao_ratio + (1.0 - ao_ratio);
+
+	/* Sun gold-ish color. */
+	/* TODO: Make `sun_light_color` a parameter. */
+	const vec3 sun_light_color = vec3(0.5, 0.35, 0.0);
+	out_color.rgb = mix(out_color.rgb,
+		out_color.rgb * (vec3(1.0, 1.0, 1.0) + sun_light_color),
+		light);
 
 	/* Fog effect. */
 	const float distance_to_user = distance(v_coords, u_user_coords);
