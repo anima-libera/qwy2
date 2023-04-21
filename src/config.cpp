@@ -231,6 +231,9 @@ Config::Config()
 		}
 		return true;
 	}});
+
+	/* Camera (which uses a perspective projection) FOV (Field Of View) value. */
+	this->parameter_table.insert({"fovy"sv, TAU / 6.0f});
 }
 
 ErrorCode Config::parse_command_line(int argc, char const* const* argv)

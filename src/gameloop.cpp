@@ -277,8 +277,9 @@ void Game::init(Config const& config)
 	/* Define the player's camera. */
 	auto const [width, height] = window_width_height();
 	float const aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
+	float const fovy = config.get<float>("fovy"sv);
 	this->player_camera = Camera<PerspectiveProjection>{
-		PerspectiveProjection{TAU / 6.0f, aspect_ratio},
+		PerspectiveProjection{fovy, aspect_ratio},
 		0.1f, this->loaded_radius * 2.5f};
 
 	/* Handle the cursor's capture and sensibility. */
