@@ -383,6 +383,17 @@ void register_builtin_command_names()
 				<< ", " << static_cast<int>(coords.z)
 				<< ")." << std::endl;
 		});
+
+	/* Throws the player in the direction it is looking towards. */
+	register_one_builtin_command_name("throw_player"sv, 
+		[]([[maybe_unused]] std::vector<CommandObject> const& args){
+			float speed = ARG_GET(0, float);
+			assert(args.size() == 1);
+
+			g_game->player.motion += g_game->player_camera.get_direction() * speed;
+			g_game->player.is_falling = true;
+			std::cout << "Throw player at speed " << speed << "." << std::endl;
+		});
 }
 
 Command::Command(BuiltinCommandName name):
@@ -478,6 +489,7 @@ Command* parse_command(std::string_view string_command, unsigned int* out_comman
 		}
 		else if (is_digit_char(string_command[i]))
 		{
+			/* Digits could mean either integer or floating point number. */
 			int value = 0;
 			while (i < string_command.length() && is_digit_char(string_command[i]))
 			{

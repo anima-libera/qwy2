@@ -35,7 +35,7 @@
 - **Optimization:** When in normal view, don't render chunks with empty meshes.
 - **Optimization:** When in normal view, don't render chunks that are completely covered.
 - **Optimization:** When in normal view, don't render chunks that are outside of the view.
-- **Optimization:** When in normal view, don't render chunks that are behind chunks that act as opaque walls.
+- **Optimization:** When in normal view, don't render chunks that are behind chunks that act as opaque walls. For example, what about considering that if a chunck face is entirely opaque blocks, then consider this chunk face to be opaque, and don't render the chunks that are entirely behind this opaque face from the player's camera.
 - **Optimization:** Reduce the shadow mapping time.
 - **Feature (visual):** Display some sort of star in the sun's direction.
 - **Feature (visual):** Keep the low-resolution shadow map that covers a big area, and add a smaller (thus higer-resolution) shadow map to get better shadows in a smaller area around the player (or rather around the camera).
