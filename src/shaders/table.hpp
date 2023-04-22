@@ -9,6 +9,7 @@
 #include "shaders/shadow/shadow.hpp"
 #include "shaders/line_ui/line_ui.hpp"
 #include "shaders/simple/simple.hpp"
+#include "shaders/simple_shadow/simple_shadow.hpp"
 #include <vector>
 
 namespace qwy2
@@ -29,6 +30,7 @@ public:
 		SHADOW,
 		LINE_UI,
 		SIMPLE,
+		SIMPLE_SHADOW,
 		SHADER_COUNT,
 	};
 
@@ -47,6 +49,7 @@ public:
 	ShaderProgramShadow& shadow();
 	ShaderProgramLineUi& line_ui();
 	ShaderProgramSimple& simple();
+	ShaderProgramSimpleShadow& simple_shadow();
 };
 
 } /* qwy2 */

@@ -20,7 +20,7 @@ EntityRendering::EntityRendering():
 	;
 }
 
-void EntityRendering::draw(glm::vec3 coords)
+void EntityRendering::draw(glm::vec3 coords, bool shadow)
 {
 	/* TODO: OPTIMIZE omg this is so unoptimized!
 	 * What about instanced rendering or something!? */
@@ -28,12 +28,12 @@ void EntityRendering::draw(glm::vec3 coords)
 	float const t = g_game->time * 10.0f;
 
 	glm::vec3 vert_coords[6] = {
-		coords + glm::vec3{ 0.0f,  0.0f, +1.0f} * 0.5f,
-		coords + glm::vec3{std::cos(t+TAU*0.0f/4.0f), std::sin(t+TAU*0.0f/4.0f),  0.0f} * 0.5f,
-		coords + glm::vec3{std::cos(t+TAU*1.0f/4.0f), std::sin(t+TAU*1.0f/4.0f),  0.0f} * 0.5f,
-		coords + glm::vec3{std::cos(t+TAU*2.0f/4.0f), std::sin(t+TAU*2.0f/4.0f),  0.0f} * 0.5f,
-		coords + glm::vec3{std::cos(t+TAU*3.0f/4.0f), std::sin(t+TAU*3.0f/4.0f),  0.0f} * 0.5f,
-		coords + glm::vec3{ 0.0f,  0.0f, -1.0f} * 0.5f,
+		coords + glm::vec3{0.0f, 0.0f, +1.0f} * 0.5f,
+		coords + glm::vec3{std::cos(t+TAU*0.0f/4.0f), std::sin(t+TAU*0.0f/4.0f), 0.0f} * 0.5f,
+		coords + glm::vec3{std::cos(t+TAU*1.0f/4.0f), std::sin(t+TAU*1.0f/4.0f), 0.0f} * 0.5f,
+		coords + glm::vec3{std::cos(t+TAU*2.0f/4.0f), std::sin(t+TAU*2.0f/4.0f), 0.0f} * 0.5f,
+		coords + glm::vec3{std::cos(t+TAU*3.0f/4.0f), std::sin(t+TAU*3.0f/4.0f), 0.0f} * 0.5f,
+		coords + glm::vec3{0.0f, 0.0f, -1.0f} * 0.5f,
 	};
 	glm::vec3 vert_colors[6] = {
 		glm::vec3{1.0f, 0.0f, 0.0f},
@@ -81,7 +81,14 @@ void EntityRendering::draw(glm::vec3 coords)
 
 	this->mesh.update_opengl_data();
 
-	g_game->shader_table.simple().draw(this->mesh);
+	if (shadow)
+	{
+		g_game->shader_table.simple_shadow().draw(this->mesh);
+	}
+	else
+	{
+		g_game->shader_table.simple().draw(this->mesh);
+	}
 }
 
 Entity::Entity(glm::vec3 coords):
@@ -486,7 +493,13 @@ void Entity::apply_motion(float delta_time)
 
 void Entity::draw() {
 	if (this->rendering.has_value()) {
-		this->rendering.value().draw(this->coords);
+		this->rendering.value().draw(this->coords, false);
+	}
+}
+
+void Entity::draw_shadow() {
+	if (this->rendering.has_value()) {
+		this->rendering.value().draw(this->coords, true);
 	}
 }
 

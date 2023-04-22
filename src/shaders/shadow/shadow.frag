@@ -14,4 +14,7 @@ void main()
 	{
 		discard;
 	}
+
+	/* We only checked for transparent `out_color`, but we then do nothing with it
+	 * as the only thing we care about is the Z-buffer. */
 }

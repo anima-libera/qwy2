@@ -29,7 +29,7 @@ public:
 
 public:
 	EntityRendering();
-	void draw(glm::vec3 coords);
+	void draw(glm::vec3 coords, bool shadow);
 };
 
 class Entity
@@ -46,6 +46,7 @@ public:
 	void apply_motion(float delta_time);
 
 	void draw();
+	void draw_shadow();
 };
 
 } /* qwy2 */

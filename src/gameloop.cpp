@@ -496,6 +496,17 @@ void Game::loop()
 					this->shader_table.shadow().draw(mesh);
 				}
 			}
+			for (auto const& [chunk_coords, entity_table] : this->chunk_grid->entity_table)
+			{
+				for (Entity* entity : entity_table.entities)
+				{
+					if (entity == nullptr)
+					{
+						continue;
+					}
+					entity->draw_shadow();
+				}
+			}
 		}
 		glCullFace(GL_FRONT);
 		
