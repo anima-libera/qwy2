@@ -13,7 +13,7 @@ contexts:
       captures:
         1: storage.type.qwy2
         4: constant.language.qwy2
-    - match: '[0-9]+'
+    - match: '[0-9]+(\.[0-9]+)'
       scope: constant.numeric.value.qwy2
     - match: '\"[^\"]*\"'
       scope: string.quoted.double.qwy2

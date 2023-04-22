@@ -57,7 +57,7 @@ public:
 	friend std::ostream& operator<<(std::ostream& out_stream, ControlEvent const& control_event);
 };
 
-using CommandObject = std::variant<std::string, int, ControlEvent, Command*>;
+using CommandObject = std::variant<std::string, int, float, ControlEvent, Command*>;
 
 class BuiltinCommandName
 {

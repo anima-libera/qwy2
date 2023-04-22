@@ -365,6 +365,24 @@ void register_builtin_command_names()
 				<< ", " << static_cast<int>(coords.z)
 				<< ")." << std::endl;
 		});
+
+	/* Spawns and shoots an entity from the player. */
+	register_one_builtin_command_name("shoot_entity_from_player"sv, 
+		[]([[maybe_unused]] std::vector<CommandObject> const& args){
+			float speed = ARG_GET(0, float);
+			assert(args.size() == 1);
+
+			glm::vec3 const coords = g_game->player.box.center;
+			Entity* entity = new Entity{
+				coords, EntityPhysics{glm::vec3{1.0f, 1.0f, 1.0f}}};
+			entity->physics.value().motion = g_game->player_camera.get_direction() * speed;
+			g_game->chunk_grid->add_entity(entity);
+			std::cout << "Spawn entity at "
+				<< "(" << static_cast<int>(coords.x)
+				<< ", " << static_cast<int>(coords.y)
+				<< ", " << static_cast<int>(coords.z)
+				<< ")." << std::endl;
+		});
 }
 
 Command::Command(BuiltinCommandName name):
@@ -466,7 +484,28 @@ Command* parse_command(std::string_view string_command, unsigned int* out_comman
 				value = value * 10 + string_command[i] - '0';
 				i++;
 			}
-			command->args.push_back(value);
+			if (not(i < string_command.length() && string_command[i] == '.'))
+			{
+				/* No decimal point, thus it is an integer. */
+				command->args.push_back(value);
+			}
+			else
+			{
+				/* Decimal point, thus it is a floating point number. */
+				int const integral_part = value;
+				i++; /* Skip the decimal point. */
+				float fractional_part = 0;
+				float fractional_part_power_of_ten = 0.1f;
+				while (i < string_command.length() && is_digit_char(string_command[i]))
+				{
+					fractional_part +=
+						static_cast<float>(string_command[i] - '0') * fractional_part_power_of_ten;
+					fractional_part_power_of_ten /= 10.0f;
+					i++;
+				}
+				float value = static_cast<float>(integral_part) + fractional_part;
+				command->args.push_back(value);
+			}
 		}
 		else if (i+2 < string_command.length() && string_command[i] == 'K' && string_command[i+2] == ':')
 		{

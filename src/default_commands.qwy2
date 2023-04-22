@@ -29,7 +29,7 @@ bind_control KD:f8     [toggle_see_from_sun]
 bind_control KD:f9     [toggle_capture_cursor]
 bind_control KD:f10    [toggle_see_chunk_borders]
 bind_control KD:n      [teleport_relative_player 0 0 30]
-bind_control KD:x      [spawn_entity_on_player]
+bind_control KD:x      [shoot_entity_from_player 2.0]
 
 # Note: Here are some of MY cringe controls (which I can't play without, but
 # also which you probably can't play with, which is why controls were made
