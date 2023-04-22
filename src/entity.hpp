@@ -3,6 +3,8 @@
 #define QWY2_HEADER_ENTITY_
 
 #include "coords.hpp"
+#include "mesh.hpp"
+#include "shaders/simple/simple.hpp"
 #include <glm/vec3.hpp>
 #include <optional>
 
@@ -20,17 +22,30 @@ public:
 	EntityPhysics(glm::vec3 box_dimensions);
 };
 
+class EntityRendering
+{
+public:
+	Mesh<VertexDataSimple> mesh;
+
+public:
+	EntityRendering();
+	void draw(glm::vec3 coords);
+};
+
 class Entity
 {
 public:
 	glm::vec3 coords;
 	std::optional<EntityPhysics> physics;
+	std::optional<EntityRendering> rendering;
 
 public:
 	Entity(glm::vec3 coords);
 	Entity(glm::vec3 coords, EntityPhysics physics);
 
 	void apply_motion(float delta_time);
+
+	void draw();
 };
 
 } /* qwy2 */

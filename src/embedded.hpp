@@ -26,6 +26,9 @@ EMBEDDED("shaders/line/line.frag", TEXT) char const g_shader_source_line_frag[];
 EMBEDDED("shaders/shadow/shadow.vert", TEXT) char const g_shader_source_shadow_vert[];
 EMBEDDED("shaders/shadow/shadow.frag", TEXT) char const g_shader_source_shadow_frag[];
 
+EMBEDDED("shaders/simple/simple.vert", TEXT) char const g_shader_source_simple_vert[];
+EMBEDDED("shaders/simple/simple.frag", TEXT) char const g_shader_source_simple_frag[];
+
 EMBEDDED("shaders/line_ui/line_ui.vert", TEXT) char const g_shader_source_line_ui_vert[];
 EMBEDDED("shaders/line_ui/line_ui.frag", TEXT) char const g_shader_source_line_ui_frag[];
 

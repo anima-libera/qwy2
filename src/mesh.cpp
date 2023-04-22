@@ -3,6 +3,7 @@
 #include "shaders/classic/classic.hpp"
 #include "shaders/line/line.hpp"
 #include "shaders/line_ui/line_ui.hpp"
+#include "shaders/simple/simple.hpp"
 #include <cassert>
 
 namespace qwy2
@@ -55,5 +56,6 @@ void Mesh<VertexDataType>::update_opengl_data()
 template class Mesh<VertexDataClassic>;
 template class Mesh<VertexDataLine>;
 template class Mesh<VertexDataLineUi>;
+template class Mesh<VertexDataSimple>;
 
 } /* qwy2 */

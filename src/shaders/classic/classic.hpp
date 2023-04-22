@@ -14,7 +14,7 @@ public:
 	glm::vec3 coords; /* Coords in the world, block level. */
 	glm::vec3 normal;
 
-	/* The atlas coords of the vertex are given alogside the atlas rectangle area that contains
+	/* The atlas coords of the vertex are given alongside the atlas rectangle area that contains
 	 * the texture, so that the fragment shader can clamp the effective atlas coords to the
 	 * rectangle and avoid bleeding on the rest of the atlas (due to floating point error). */
 	glm::vec2 atlas_coords;

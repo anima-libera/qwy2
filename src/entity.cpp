@@ -3,6 +3,7 @@
 #include "gameloop.hpp"
 #include <unordered_set>
 #include <cassert>
+#include <cmath>
 
 namespace qwy2
 {
@@ -13,6 +14,76 @@ EntityPhysics::EntityPhysics(glm::vec3 box_dimensions):
 	;
 }
 
+EntityRendering::EntityRendering():
+	mesh()
+{
+	;
+}
+
+void EntityRendering::draw(glm::vec3 coords)
+{
+	/* TODO: OPTIMIZE omg this is so unoptimized!
+	 * What about instanced rendering or something!? */
+
+	float const t = g_game->time * 10.0f;
+
+	glm::vec3 vert_coords[6] = {
+		coords + glm::vec3{ 0.0f,  0.0f, +1.0f} * 0.5f,
+		coords + glm::vec3{std::cos(t+TAU*0.0f/4.0f), std::sin(t+TAU*0.0f/4.0f),  0.0f} * 0.5f,
+		coords + glm::vec3{std::cos(t+TAU*1.0f/4.0f), std::sin(t+TAU*1.0f/4.0f),  0.0f} * 0.5f,
+		coords + glm::vec3{std::cos(t+TAU*2.0f/4.0f), std::sin(t+TAU*2.0f/4.0f),  0.0f} * 0.5f,
+		coords + glm::vec3{std::cos(t+TAU*3.0f/4.0f), std::sin(t+TAU*3.0f/4.0f),  0.0f} * 0.5f,
+		coords + glm::vec3{ 0.0f,  0.0f, -1.0f} * 0.5f,
+	};
+	glm::vec3 vert_colors[6] = {
+		glm::vec3{1.0f, 0.0f, 0.0f},
+		glm::vec3{0.0f, 1.0f, 0.0f},
+		glm::vec3{0.0f, 0.0f, 1.0f},
+		glm::vec3{1.0f, 1.0f, 0.0f},
+		glm::vec3{1.0f, 1.0f, 1.0f},
+		glm::vec3{1.0f, 0.0f, 1.0f}};
+
+	mesh.vertex_data.clear();
+
+	auto add_face = [&](int vi_0, int vi_1, int vi_2)
+	{
+		VertexDataSimple a{};
+		VertexDataSimple b{};
+		VertexDataSimple c{};
+		a.coords = vert_coords[vi_0];
+		a.color = vert_colors[vi_0];
+		b.coords = vert_coords[vi_1];
+		b.color = vert_colors[vi_1];
+		c.coords = vert_coords[vi_2];
+		c.color = vert_colors[vi_2];
+
+		glm::vec3 const normal = glm::normalize(
+			glm::cross(
+				b.coords - a.coords,
+				c.coords - a.coords));
+		a.normal = normal;
+		b.normal = normal;
+		c.normal = normal;
+
+		mesh.vertex_data.push_back(a);
+		mesh.vertex_data.push_back(b);
+		mesh.vertex_data.push_back(c);
+	};
+
+	add_face(0, 1, 2);
+	add_face(0, 2, 3);
+	add_face(0, 3, 4);
+	add_face(0, 4, 1);
+	add_face(1, 5, 2);
+	add_face(2, 5, 3);
+	add_face(3, 5, 4);
+	add_face(4, 5, 1);
+
+	this->mesh.update_opengl_data();
+
+	g_game->shader_table.simple().draw(this->mesh);
+}
+
 Entity::Entity(glm::vec3 coords):
 	coords(coords)
 {
@@ -20,7 +91,7 @@ Entity::Entity(glm::vec3 coords):
 }
 
 Entity::Entity(glm::vec3 coords, EntityPhysics physics):
-	coords(coords), physics(physics)
+	coords(coords), physics(physics), rendering(EntityRendering{})
 {
 	;
 }
@@ -410,6 +481,12 @@ void Entity::apply_motion(float delta_time)
 
 			continue_collisions:;
 		}
+	}
+}
+
+void Entity::draw() {
+	if (this->rendering.has_value()) {
+		this->rendering.value().draw(this->coords);
 	}
 }
 

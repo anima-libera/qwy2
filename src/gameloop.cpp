@@ -540,6 +540,7 @@ void Game::loop()
 						continue;
 					}
 
+					#if 0
 					AlignedBox box{entity->coords,
 						glm::vec3{0.1f, 0.1f, 0.1f}};
 					if (entity->physics.has_value())
@@ -549,6 +550,9 @@ void Game::loop()
 					this->line_rect_drawer.color = glm::vec3{1.0f, 1.0f, 0.0f};
 					this->line_rect_drawer.set_box(box);
 					this->shader_table.line().draw(this->line_rect_drawer.mesh);
+					#endif
+
+					entity->draw();
 				}
 			}
 		}

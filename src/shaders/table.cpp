@@ -14,6 +14,7 @@ ErrorCode ShaderTable::init()
 	this->table[count++, ShaderTable::LINE] = new ShaderProgramLine{};
 	this->table[count++, ShaderTable::SHADOW] = new ShaderProgramShadow{};
 	this->table[count++, ShaderTable::LINE_UI] = new ShaderProgramLineUi{};
+	this->table[count++, ShaderTable::SIMPLE] = new ShaderProgramSimple{};
 	assert(count == ShaderTable::SHADER_COUNT);
 
 	/* Compile all the shaders. */
@@ -55,6 +56,11 @@ ShaderProgramShadow& ShaderTable::shadow()
 ShaderProgramLineUi& ShaderTable::line_ui()
 {
 	return *dynamic_cast<ShaderProgramLineUi*>(this->table[ShaderTable::LINE_UI]);
+}
+
+ShaderProgramSimple& ShaderTable::simple()
+{
+	return *dynamic_cast<ShaderProgramSimple*>(this->table[ShaderTable::SIMPLE]);
 }
 
 } /* qwy2 */
