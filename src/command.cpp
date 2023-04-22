@@ -351,6 +351,20 @@ void register_builtin_command_names()
 				<< ") with the relative move "
 				<< "(" << x << ", " << y << ", " << z << ")." << std::endl;
 		});
+
+	/* Spawns an entity on the player. */
+	register_one_builtin_command_name("spawn_entity_on_player"sv, 
+		[]([[maybe_unused]] std::vector<CommandObject> const& args){
+			assert(args.empty());
+			glm::vec3 const coords = g_game->player.box.center;
+			g_game->chunk_grid->add_entity(new Entity{
+				coords, EntityPhysics{glm::vec3{1.0f, 1.0f, 1.0f}}});
+			std::cout << "Spawn entity at "
+				<< "(" << static_cast<int>(coords.x)
+				<< ", " << static_cast<int>(coords.y)
+				<< ", " << static_cast<int>(coords.z)
+				<< ")." << std::endl;
+		});
 }
 
 Command::Command(BuiltinCommandName name):
