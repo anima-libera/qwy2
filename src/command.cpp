@@ -394,6 +394,16 @@ void register_builtin_command_names()
 			g_game->player.is_falling = true;
 			std::cout << "Throw player at speed " << speed << "." << std::endl;
 		});
+
+	/* Toggles the display of entity hitboxes. */
+	register_one_builtin_command_name("toggle_entity_hitboxes"sv, 
+		[]([[maybe_unused]] std::vector<CommandObject> const& args){
+			assert(args.empty());
+			g_game->see_entity_hitboxes = not g_game->see_entity_hitboxes;
+			std::cout << (g_game->see_entity_hitboxes ? "Enable" : "Disable")
+				<< " seeing entity hitboxes." << std::endl;
+		});
+
 }
 
 Command::Command(BuiltinCommandName name):
