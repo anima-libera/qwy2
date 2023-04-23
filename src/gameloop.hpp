@@ -58,6 +58,7 @@ public:
 	bool see_player_hitboxe;
 	bool see_entity_hitboxes;
 	bool see_chunk_borders;
+	bool see_chunk_generation;
 	bool see_from_behind;
 	bool render_shadows;
 	bool loop_running;

@@ -92,6 +92,15 @@ ChunkRect containing_chunk_rect(BlockRect block_rect)
 		containing_chunk_coords(block_rect.coords_max)};
 }
 
+AlignedBox block_rect_box(BlockRect block_rect)
+{
+	glm::vec3 const coords_min =
+		static_cast<glm::vec3>(block_rect.coords_min) - glm::vec3{0.5f, 0.5f, 0.5f};
+	glm::vec3 const coords_max =
+		static_cast<glm::vec3>(block_rect.coords_max) + glm::vec3{0.5f, 0.5f, 0.5f};
+	return AlignedBox{(coords_min + coords_max) / 2.0f, coords_max - coords_min};
+}
+
 inline static unsigned int chunk_volume()
 {
 	return g_game->chunk_side * g_game->chunk_side * g_game->chunk_side;

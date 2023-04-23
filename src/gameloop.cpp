@@ -315,6 +315,7 @@ void Game::init(Config const& config)
 	this->see_through_walls = false;
 	this->see_player_hitboxe = false;
 	this->see_chunk_borders = false;
+	this->see_chunk_generation = false;
 	this->see_from_behind = false;
 	this->render_shadows = true;
 	this->auto_close = config.get<bool>("close"sv);
@@ -613,8 +614,10 @@ void Game::loop()
 		}
 
 		/* Render chunk borders if enabled. */
-		if (this->see_chunk_borders)
+		if (this->see_chunk_borders || this->see_chunk_generation)
 		{
+			TIME_BLOCK(glop_time_chunk_box_render);
+
 			if (this->see_from_sun)
 			{
 				glViewport(0, 0, window_height, window_height);
@@ -625,9 +628,8 @@ void Game::loop()
 			}
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+			if (this->see_chunk_borders)
 			{
-				TIME_BLOCK(glop_time_chunk_box_render);
-
 				this->line_rect_drawer.color = glm::vec3{0.0f, 0.4f, 0.8f};
 				for (auto const& [chunk_coords, chunk_ptg_field] : this->chunk_grid->ptg_field)
 				{
@@ -662,6 +664,62 @@ void Game::loop()
 					}
 				}
 				#endif
+			}
+
+			if (this->see_chunk_generation)
+			{
+				for (std::optional<qwy2::ChunkGeneratingData> const& chunk_generarion_opt :
+					this->chunk_generation_manager.generating_data_vector)
+				{
+					if (not chunk_generarion_opt.has_value())
+					{
+						continue;
+					}
+
+					switch (chunk_generarion_opt.value().step)
+					{
+						case ChunkGeneratingStep::MESH:
+							this->line_rect_drawer.color = glm::vec3{1.0f, 1.0f, 1.0f};
+						break;
+						default:
+							this->line_rect_drawer.color = glm::vec3{0.0f, 0.0f, 0.0f};
+						break;
+					}
+
+					BlockRect const rect =
+						chunk_block_rect(chunk_generarion_opt.value().chunk_coords);
+					glm::vec3 const coords_min =
+						static_cast<glm::vec3>(rect.coords_min) - glm::vec3{0.5f, 0.5f, 0.5f};
+					glm::vec3 const coords_max =
+						static_cast<glm::vec3>(rect.coords_max) + glm::vec3{0.5f, 0.5f, 0.5f};
+					this->line_rect_drawer.set_box(AlignedBox{
+						(coords_min + coords_max) / 2.0f, coords_max - coords_min});
+					
+					this->shader_table.line().draw(this->line_rect_drawer.mesh);
+				}
+
+				for (auto const& [chunk_coords, chunk_ptg_field] : this->chunk_grid->ptg_field)
+				{
+					if (this->chunk_grid->has_complete_mesh(chunk_coords))
+					{
+						continue;
+					}
+
+					this->line_rect_drawer.color = glm::vec3{1.0f, 0.0f, 0.0f};
+					if (this->chunk_grid->has_ptt_field(chunk_coords))
+					{
+						this->line_rect_drawer.color = glm::vec3{0.0f, 1.0f, 0.0f};
+					}
+					if (this->chunk_grid->has_b_field(chunk_coords))
+					{
+						this->line_rect_drawer.color = glm::vec3{1.0f, 1.0f, 1.0f};
+					}
+
+					AlignedBox box = block_rect_box(chunk_block_rect(chunk_coords));
+					box.dimensions -= glm::vec3{1.0f, 1.0f, 1.0f};
+					this->line_rect_drawer.set_box(box);
+					this->shader_table.line().draw(this->line_rect_drawer.mesh);
+				}
 			}
 		}
 

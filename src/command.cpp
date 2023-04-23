@@ -251,6 +251,15 @@ void register_builtin_command_names()
 				<< " seeing chunk borders." << std::endl;
 		});
 
+	/* Displays rects on chunks in the process of generation. */
+	register_one_builtin_command_name("toggle_see_chunk_generation"sv, 
+		[]([[maybe_unused]] std::vector<CommandObject> const& args){
+			assert(args.empty());
+			g_game->see_chunk_generation = not g_game->see_chunk_generation;
+			std::cout << (g_game->see_chunk_generation ? "Enable" : "Disable")
+				<< " seeing chunk generation." << std::endl;
+		});
+
 	/* Displays the world from a point a bit behind the player, in a 3rd person way. */
 	register_one_builtin_command_name("toggle_see_from_behind"sv, 
 		[]([[maybe_unused]] std::vector<CommandObject> const& args){

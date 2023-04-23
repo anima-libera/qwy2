@@ -43,6 +43,9 @@ ChunkCoords containing_chunk_coords(glm::vec3 coords);
 /* Returns the chunk rect of all the chunks that intersect with the given block rect. */
 ChunkRect containing_chunk_rect(BlockRect block_rect);
 
+/* Returns the box that contains exactly the blocks in the given block rect. */
+AlignedBox block_rect_box(BlockRect block_rect);
+
 /* Grid of values, one value per block, for one chunk.
  * As this is mostly a pointer to the data, passing it by value does not copy the data. */
 template<typename FieldValueType>
