@@ -313,7 +313,7 @@ void Game::init(Config const& config)
 	/* Set the defualt value of some settings. */
 	this->see_from_sun = false;
 	this->see_through_walls = false;
-	this->see_boxes = false;
+	this->see_player_hitboxe = false;
 	this->see_chunk_borders = false;
 	this->see_from_behind = false;
 	this->render_shadows = true;
@@ -590,7 +590,7 @@ void Game::loop()
 		}
 
 		/* Render boxes (currently only the player hitbox) is enabled. */
-		if (this->see_boxes)
+		if (this->see_player_hitboxe)
 		{	
 			if (this->see_from_sun)
 			{

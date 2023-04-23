@@ -225,12 +225,21 @@ void register_builtin_command_names()
 		});
 
 	/* Displays the hitboxes of stuff like the player. */
-	register_one_builtin_command_name("toggle_see_boxes"sv, 
+	register_one_builtin_command_name("toggle_player_hitbox"sv, 
 		[]([[maybe_unused]] std::vector<CommandObject> const& args){
 			assert(args.empty());
-			g_game->see_boxes = not g_game->see_boxes;
-			std::cout << (g_game->see_boxes ? "Enable" : "Disable")
-				<< " seeing boxes." << std::endl;
+			g_game->see_player_hitboxe = not g_game->see_player_hitboxe;
+			std::cout << (g_game->see_player_hitboxe ? "Enable" : "Disable")
+				<< " seeing player hitbox." << std::endl;
+		});
+
+	/* Toggles the display of entity hitboxes. */
+	register_one_builtin_command_name("toggle_entity_hitboxes"sv, 
+		[]([[maybe_unused]] std::vector<CommandObject> const& args){
+			assert(args.empty());
+			g_game->see_entity_hitboxes = not g_game->see_entity_hitboxes;
+			std::cout << (g_game->see_entity_hitboxes ? "Enable" : "Disable")
+				<< " seeing entity hitboxes." << std::endl;
 		});
 
 	/* Displays the chunk borders (more like the chunk edges actually). */
@@ -394,16 +403,6 @@ void register_builtin_command_names()
 			g_game->player.is_falling = true;
 			std::cout << "Throw player at speed " << speed << "." << std::endl;
 		});
-
-	/* Toggles the display of entity hitboxes. */
-	register_one_builtin_command_name("toggle_entity_hitboxes"sv, 
-		[]([[maybe_unused]] std::vector<CommandObject> const& args){
-			assert(args.empty());
-			g_game->see_entity_hitboxes = not g_game->see_entity_hitboxes;
-			std::cout << (g_game->see_entity_hitboxes ? "Enable" : "Disable")
-				<< " seeing entity hitboxes." << std::endl;
-		});
-
 }
 
 Command::Command(BuiltinCommandName name):

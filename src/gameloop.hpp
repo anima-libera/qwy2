@@ -55,7 +55,7 @@ public:
 	float previous_time;
 	bool see_from_sun;
 	bool see_through_walls;
-	bool see_boxes;
+	bool see_player_hitboxe;
 	bool see_entity_hitboxes;
 	bool see_chunk_borders;
 	bool see_from_behind;
