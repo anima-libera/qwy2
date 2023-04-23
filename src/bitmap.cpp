@@ -27,14 +27,14 @@ public:
 
 	/* BITMAPINFOHEADER members. */
 	std::uint32_t dbi_header_size; /* Size of the BITMAPINFOHEADER header only. */
-	std::int32_t image_width;
-	std::int32_t image_height;
+	std::int32_t  image_width;
+	std::int32_t  image_height;
 	std::uint16_t planes; /* Must be 1. */
 	std::uint16_t bits_per_pixel;
 	std::uint32_t compression; /* 0 means no compression, 3 means BI_BITFIELDS. */
 	std::uint32_t image_size;
-	std::int32_t x_pixel_per_meter;
-	std::int32_t y_pixel_per_meter;
+	std::int32_t  x_pixel_per_meter;
+	std::int32_t  y_pixel_per_meter;
 	std::uint32_t colors_in_color_table; /* Can be 0. */
 	std::uint32_t important_color_count; /* Can be 0. */
 };
@@ -75,8 +75,8 @@ void emit_bitmap(
 	header.bits_per_pixel = sizeof(PixelData) * 8;
 	header.compression = 3; /* BI_BITFIELDS */
 		/* Note:
-		* BI_BITFIELDS is used here instead of BI_ALPHABITFIELDS due ot a lack
-		* of support for the latter option. */
+		 * BI_BITFIELDS is used here instead of BI_ALPHABITFIELDS due ot a lack
+		 * of support for the latter option. */
 	header.image_size = image_size;
 	header.x_pixel_per_meter = 5000; /* Is it good ? It seems to be ok... */
 	header.y_pixel_per_meter = 5000; /* Is it good ? It seems to be ok... */

@@ -3,6 +3,8 @@
 #define QWY2_HEADER_UTILS_
 
 #include <cassert>
+#include <iosfwd>
+#include <glm/vec3.hpp>
 
 namespace qwy2
 {
@@ -28,6 +30,8 @@ inline int cool_mod(int a, int b)
 		return (b - ((-a) % b)) % b;
 	}
 }
+
+std::ostream& operator<<(std::ostream& out_stream, glm::vec3 const& vec3);
 
 } /* qwy2 */
 

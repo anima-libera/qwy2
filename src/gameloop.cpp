@@ -9,6 +9,7 @@
 #include "bitmap.hpp"
 #include "embedded.hpp"
 #include "opengl.hpp"
+#include "utils.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
@@ -143,13 +144,13 @@ void Game::init(Config const& config)
 	this->nature = new Nature{config.get<int>("seed"sv)};
 	this->nature->world_generator.plain_terrain_generator =
 		plain_terrain_generator_from_name(config.get<std::string_view>("terrain_generator"sv));
-	this->nature->world_generator.terrain_param_a = config.get<float>("terrain_param_a"sv);
-	this->nature->world_generator.terrain_param_b = config.get<float>("terrain_param_b"sv);
-	this->nature->world_generator.terrain_param_c = config.get<float>("terrain_param_c"sv);
-	this->nature->world_generator.noise_size = config.get<float>("noise_size"sv);
-	this->nature->world_generator.density = config.get<float>("density"sv);
+	this->nature->world_generator.terrain_param_a =    config.get<float>("terrain_param_a"sv);
+	this->nature->world_generator.terrain_param_b =    config.get<float>("terrain_param_b"sv);
+	this->nature->world_generator.terrain_param_c =    config.get<float>("terrain_param_c"sv);
+	this->nature->world_generator.noise_size =         config.get<float>("noise_size"sv);
+	this->nature->world_generator.density =            config.get<float>("density"sv);
 	this->nature->world_generator.structures_enabled = config.get<bool>("structures"sv);
-	this->nature->world_generator.stone_terrain = config.get<bool>("stone_terrain"sv);
+	this->nature->world_generator.stone_terrain =      config.get<bool>("stone_terrain"sv);
 	/* Block type id 0 is air. */
 	this->nature->nature_generator.generate_block_type(*this->nature);
 	/* Block type id 1 is dirt covered with grass. */
@@ -345,21 +346,21 @@ void Game::loop()
 		unsigned int frame = 0;
 		GlopColumnId glop_frame = this->glop.add_column("Frame");
 		/* Some counts of chunk components. */
-		GlopColumnId glop_chunk_ptg_count = this->glop.add_column("PTG count");
-		GlopColumnId glop_chunk_ptt_count = this->glop.add_column("PTT count");
-		GlopColumnId glop_chunk_b_count = this->glop.add_column("B count");
+		GlopColumnId glop_chunk_ptg_count =  this->glop.add_column("PTG count");
+		GlopColumnId glop_chunk_ptt_count =  this->glop.add_column("PTT count");
+		GlopColumnId glop_chunk_b_count =    this->glop.add_column("B count");
 		GlopColumnId glop_chunk_mesh_count = this->glop.add_column("Chunk mesh count");
 		/* Timers of different sections of the game loop. */
-		GlopColumnId glop_time_all = this->glop.add_column("Timer: All");
-		GlopColumnId glop_time_event_handling = this->glop.add_column("Timer: Event handling");
-		GlopColumnId glop_time_entity_behavior = this->glop.add_column("Timer: Entity behavior");
-		GlopColumnId glop_time_chunk_manager = this->glop.add_column("Timer: Chunk manager");
-		GlopColumnId glop_time_chunk_mesh_sync = this->glop.add_column("Timer: Chunk mesh sync");
-		GlopColumnId glop_time_sun_shadows = this->glop.add_column("Timer: Sun shadows");
+		GlopColumnId glop_time_all =               this->glop.add_column("Timer: All");
+		GlopColumnId glop_time_event_handling =    this->glop.add_column("Timer: Event handling");
+		GlopColumnId glop_time_entity_behavior =   this->glop.add_column("Timer: Entity behavior");
+		GlopColumnId glop_time_chunk_manager =     this->glop.add_column("Timer: Chunk manager");
+		GlopColumnId glop_time_chunk_mesh_sync =   this->glop.add_column("Timer: Chunk mesh sync");
+		GlopColumnId glop_time_sun_shadows =       this->glop.add_column("Timer: Sun shadows");
 		GlopColumnId glop_time_chunk_mesh_render = this->glop.add_column("Timer: Chunk mesh render");
-		GlopColumnId glop_time_chunk_box_render = this->glop.add_column("Timer: Chunk box render");
-		GlopColumnId glop_time_entity_render = this->glop.add_column("Timer: Entity render");
-		GlopColumnId glop_time_sdl_swap_window = this->glop.add_column("Timer: SDL_GL_SwapWindow");
+		GlopColumnId glop_time_chunk_box_render =  this->glop.add_column("Timer: Chunk box render");
+		GlopColumnId glop_time_entity_render =     this->glop.add_column("Timer: Entity render");
+		GlopColumnId glop_time_sdl_swap_window =   this->glop.add_column("Timer: SDL_GL_SwapWindow");
 		this->glop.open_output_stream();
 		#define TIME_BLOCK(column_id_) GlopTimer timer_{this->glop, column_id_}
 	#else
@@ -584,7 +585,7 @@ void Game::loop()
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 			AlignedBox const box{this->pointed_face_opt->internal_coords,
-				glm::vec3{1.0f, 1.0f, 1.0f} * 1.001f};
+				glm::vec3{1.0f, 1.0f, 1.0f} * 1.003f};
 			this->line_rect_drawer.color = glm::vec3{1.0f, 1.0f, 1.0f};
 			this->line_rect_drawer.set_box(box);
 			this->shader_table.line().draw(this->line_rect_drawer.mesh);
@@ -633,37 +634,10 @@ void Game::loop()
 				this->line_rect_drawer.color = glm::vec3{0.0f, 0.4f, 0.8f};
 				for (auto const& [chunk_coords, chunk_ptg_field] : this->chunk_grid->ptg_field)
 				{
-					BlockRect const rect = chunk_block_rect(chunk_coords);
-					glm::vec3 const coords_min =
-						static_cast<glm::vec3>(rect.coords_min) - glm::vec3{0.5f, 0.5f, 0.5f};
-					glm::vec3 const coords_max =
-						static_cast<glm::vec3>(rect.coords_max) + glm::vec3{0.5f, 0.5f, 0.5f};
-					this->line_rect_drawer.set_box(AlignedBox{
-						(coords_min + coords_max) / 2.0f, coords_max - coords_min});
+					AlignedBox const box = block_rect_box(chunk_block_rect(chunk_coords));
+					this->line_rect_drawer.set_box(box);
 					this->shader_table.line().draw(this->line_rect_drawer.mesh);
 				}
-
-				#if 0
-				this->line_rect_drawer.color = glm::vec3{1.0f, 0.0f, 0.0f};
-				for (std::optional<GeneratingChunkWrapper> const& wrapper_opt :
-					this->generating_chunk_table)
-				{
-					if (wrapper_opt.has_value())
-					{
-						BlockRect const chunk_rect = chunk_grid->chunk_rect(
-							wrapper_opt.value().chunk_coords);
-						glm::vec3 const coords_min =
-							static_cast<glm::vec3>(chunk_rect.coords_min)
-								- glm::vec3{0.5f, 0.5f, 0.5f};
-						glm::vec3 const coords_max =
-							static_cast<glm::vec3>(chunk_rect.coords_max)
-								+ glm::vec3{0.5f, 0.5f, 0.5f};
-						this->line_rect_drawer.set_box(AlignedBox{
-							(coords_min + coords_max) / 2.0f, coords_max - coords_min});
-						this->shader_table.line().draw(this->line_rect_drawer.mesh);
-					}
-				}
-				#endif
 			}
 
 			if (this->see_chunk_generation)
@@ -686,15 +660,9 @@ void Game::loop()
 						break;
 					}
 
-					BlockRect const rect =
-						chunk_block_rect(chunk_generarion_opt.value().chunk_coords);
-					glm::vec3 const coords_min =
-						static_cast<glm::vec3>(rect.coords_min) - glm::vec3{0.5f, 0.5f, 0.5f};
-					glm::vec3 const coords_max =
-						static_cast<glm::vec3>(rect.coords_max) + glm::vec3{0.5f, 0.5f, 0.5f};
-					this->line_rect_drawer.set_box(AlignedBox{
-						(coords_min + coords_max) / 2.0f, coords_max - coords_min});
-					
+					ChunkCoords const chunk_coords = chunk_generarion_opt.value().chunk_coords;
+					AlignedBox const box = block_rect_box(chunk_block_rect(chunk_coords));
+					this->line_rect_drawer.set_box(box);
 					this->shader_table.line().draw(this->line_rect_drawer.mesh);
 				}
 
@@ -745,18 +713,12 @@ void Game::loop()
 				clock_time_after_iteration - clock_time_before_iteration).count();
 
 		#ifdef GLOP_ENABLED
-			this->glop.set_column_value(glop_time_all,
-				duration_iteration);
-			this->glop.set_column_value(glop_frame,
-				frame++);
-			this->glop.set_column_value(glop_chunk_ptg_count,
-				this->chunk_grid->ptg_field.size());
-			this->glop.set_column_value(glop_chunk_ptt_count,
-				this->chunk_grid->ptt_field.size());
-			this->glop.set_column_value(glop_chunk_b_count,
-				this->chunk_grid->b_field.size());
-			this->glop.set_column_value(glop_chunk_mesh_count,
-				this->chunk_grid->mesh.size());
+			this->glop.set_column_value(glop_time_all,         duration_iteration);
+			this->glop.set_column_value(glop_frame,            frame++);
+			this->glop.set_column_value(glop_chunk_ptg_count,  this->chunk_grid->ptg_field.size());
+			this->glop.set_column_value(glop_chunk_ptt_count,  this->chunk_grid->ptt_field.size());
+			this->glop.set_column_value(glop_chunk_b_count,    this->chunk_grid->b_field.size());
+			this->glop.set_column_value(glop_chunk_mesh_count, this->chunk_grid->mesh.size());
 			this->glop.emit_row();
 		#endif
 
@@ -808,11 +770,7 @@ void Game::loop()
 					{
 						new_content
 							<< player_position_prefix << ": "
-							<< "("
-								<< this->player.box.center.x << ", "
-								<< this->player.box.center.y << ", "
-								<< this->player.box.center.z << ")"
-							<< "\n";
+							<< this->player.box.center << "\n";
 						player_position_stored = true;
 					}
 					else
@@ -826,11 +784,7 @@ void Game::loop()
 			{
 				new_content
 					<< player_position_prefix << ": "
-					<< "("
-						<< this->player.box.center.x << ", "
-						<< this->player.box.center.y << ", "
-						<< this->player.box.center.z << ")"
-					<< "\n";
+					<< this->player.box.center << "\n";
 			}
 			std::ofstream new_file{some_data_save_file, std::ios::trunc};
 			new_file << new_content.str();

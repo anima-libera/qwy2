@@ -13,8 +13,8 @@ namespace qwy2
 class PerspectiveProjection
 {
 private:
-	float fovy; /* Camera angle ? (If so, which one ?) */
-	float aspect_ratio; /* Ratio width / height. */
+	float fovy; /* Field Of View (Y-axis), in radians. */
+	float aspect_ratio; /* Width / height. */
 
 public:
 	PerspectiveProjection();

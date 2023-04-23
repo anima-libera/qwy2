@@ -12,7 +12,7 @@ int main(int argc, char const* const* argv)
 	#else
 		#define BUILD_STRING "debug build"
 	#endif
-	std::cout << "Qwy2 - Version: Indev 0.0.0 - " << BUILD_STRING << std::endl;
+	std::cout << "Qwy2 - Version: Indev 0.0.? - " << BUILD_STRING << std::endl;
 
 	Config config{};
 	if (config.parse_command_line(argc, argv) == ErrorCode::ERROR)
@@ -20,6 +20,7 @@ int main(int argc, char const* const* argv)
 		return EXIT_FAILURE;
 	}
 
+	/* All the cool stuff happens in there ^^. */
 	g_game = new Game{};
 	g_game->init(config);
 	g_game->loop();

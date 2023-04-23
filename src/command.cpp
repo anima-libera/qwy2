@@ -343,31 +343,22 @@ void register_builtin_command_names()
 			int z = ARG_GET(2, int);
 			assert(args.size() == 3);
 
-			g_game->player.box.center.x = static_cast<float>(x);
-			g_game->player.box.center.y = static_cast<float>(y);
-			g_game->player.box.center.z = static_cast<float>(z);
-			std::cout << "Teleport player at "
-				<< "(" << x << ", " << y << ", " << z << ")." << std::endl;
+			g_game->player.box.center = glm::vec3{x, y, z};
+			std::cout << "Teleport player at " << g_game->player.box.center << "." << std::endl;
 		});
 
 	/* Teleports the (center of the) player to the point at the given displacement along the 3 axis
 	 * +x (arg 0), +y (arg 1) and +z (arg 2). */
 	register_one_builtin_command_name("teleport_relative_player"sv, 
 		[]([[maybe_unused]] std::vector<CommandObject> const& args){
-			int x = ARG_GET(0, int);
-			int y = ARG_GET(1, int);
-			int z = ARG_GET(2, int);
+			int dx = ARG_GET(0, int);
+			int dy = ARG_GET(1, int);
+			int dz = ARG_GET(2, int);
 			assert(args.size() == 3);
 
-			g_game->player.box.center.x += static_cast<float>(x);
-			g_game->player.box.center.y += static_cast<float>(y);
-			g_game->player.box.center.z += static_cast<float>(z);
-			std::cout << "Teleport player at "
-				<< "(" << static_cast<int>(g_game->player.box.center.x)
-				<< ", " << static_cast<int>(g_game->player.box.center.y)
-				<< ", " << static_cast<int>(g_game->player.box.center.z)
-				<< ") with the relative move "
-				<< "(" << x << ", " << y << ", " << z << ")." << std::endl;
+			g_game->player.box.center += glm::vec3{dx, dy, dz};
+			std::cout << "Teleport player at " << g_game->player.box.center
+				<< " with the relative move " << glm::vec3{dx, dy, dz} << "." << std::endl;
 		});
 
 	/* Spawns an entity on the player. */
@@ -377,11 +368,7 @@ void register_builtin_command_names()
 			glm::vec3 const coords = g_game->player.box.center;
 			g_game->chunk_grid->add_entity(new Entity{
 				coords, EntityPhysics{glm::vec3{1.0f, 1.0f, 1.0f}}});
-			std::cout << "Spawn entity at "
-				<< "(" << static_cast<int>(coords.x)
-				<< ", " << static_cast<int>(coords.y)
-				<< ", " << static_cast<int>(coords.z)
-				<< ")." << std::endl;
+			std::cout << "Spawn entity at " << coords << "." << std::endl;
 		});
 
 	/* Spawns and shoots an entity from the player. */
@@ -395,11 +382,7 @@ void register_builtin_command_names()
 				coords, EntityPhysics{glm::vec3{1.0f, 1.0f, 1.0f}}};
 			entity->physics.value().motion = g_game->player_camera.get_direction() * speed;
 			g_game->chunk_grid->add_entity(entity);
-			std::cout << "Spawn entity at "
-				<< "(" << static_cast<int>(coords.x)
-				<< ", " << static_cast<int>(coords.y)
-				<< ", " << static_cast<int>(coords.z)
-				<< ")." << std::endl;
+			std::cout << "Spawn (and throw) entity at " << coords << "." << std::endl;
 		});
 
 	/* Throws the player in the direction it is looking towards. */
