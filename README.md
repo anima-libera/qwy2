@@ -112,7 +112,7 @@ I know I know. Don't get me wrong: C++20 seems better than C++17. But the langua
 
 ### Why OpenGL? Why not Vulkan?!
 
-I know I know. Don't get me wrong: Vulkan seems awesome and will probably slowly but surely replace OpenGL in the years to come (it seems this process is already on its way). But right now I don't know Vulkan. When this changes, Vulkan support will probably be added to Qwy2. it could be neat to have a support for both.
+I know I know. Don't get me wrong: Vulkan seems awesome and will probably slowly but surely replace OpenGL in the years to come (it seems this process is already on its way). But right now I don't know Vulkan. When this changes, Vulkan support will probably be added to Qwy2. It could be neat to have a support for both.
 
 ### Why the SDL2? Why not something else?!
 
@@ -134,7 +134,7 @@ I know I know. Don't get me wrong: 4 spaces are the most widely used convention 
 
 ### What to expect from this project?
 
-I don't even know. On the one hand, I have abandoned many projects in the past, on the other hand, "making Minecraft" was pretty much what had me started programming 10 years ago. Now that I have the power to do it, I would be a shame to not do it.
+I don't even know. On the one hand, I have abandoned many projects in the past, on the other hand, "making Minecraft" was pretty much what had me started programming 10 years ago. Now that I have the power to do it, it would be a shame to not do it.
 
 ### Reporting a bug or an issue, suggesting a feature, etc.?
 
