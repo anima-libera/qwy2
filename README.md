@@ -182,3 +182,4 @@ Here are some GitHub repos of Minecraft-likes, (not looked at the code in detail
 - [Freeminer](https://github.com/freeminer/freeminer) (C++, [Irrlicht](https://irrlicht.sourceforge.io/?page_id=45), medium?)
 - [ClassiCube](https://github.com/UnknownShadow200/ClassiCube) (C, OpenGL 1 and 2 and Direct3D 9 and 11)
 - [Minecraft-Clone](https://github.com/Aidanhouk/Minecraft-Clone) (C++, Modern OpenGL)
+- [CaveCube](https://github.com/PQCraft/CaveCube) (C, Modern OpenGL and OpenGL ES)
