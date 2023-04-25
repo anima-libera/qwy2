@@ -37,6 +37,8 @@ SIMPLE_PLAIN_TERRAIN_GENERATOR_SUBCLASS(PlainTerrainGeneratorFunky1);
 SIMPLE_PLAIN_TERRAIN_GENERATOR_SUBCLASS(PlainTerrainGeneratorFunky2);
 SIMPLE_PLAIN_TERRAIN_GENERATOR_SUBCLASS(PlainTerrainGeneratorOctaves1);
 SIMPLE_PLAIN_TERRAIN_GENERATOR_SUBCLASS(PlainTerrainGeneratorOctaves2);
+SIMPLE_PLAIN_TERRAIN_GENERATOR_SUBCLASS(PlainTerrainGeneratorLameBiomes1);
+SIMPLE_PLAIN_TERRAIN_GENERATOR_SUBCLASS(PlainTerrainGeneratorLameBiomes2);
 
 PlainTerrainGenerator* plain_terrain_generator_from_name(std::string_view name);
 
