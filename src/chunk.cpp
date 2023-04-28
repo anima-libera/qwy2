@@ -253,7 +253,11 @@ ChunkPttField generate_chunk_ptt_field(
 	ChunkPttField ptt_field{chunk_coords};
 	for (BlockCoords coords : chunk_block_rect(chunk_coords))
 	{
-		if (chunk_neighborhood_ptg_field[coords] == 0)
+		if (chunk_neighborhood_ptg_field[coords] >= 2)
+		{
+			ptt_field[coords] = 3 + chunk_neighborhood_ptg_field[coords];
+		}
+		else if (chunk_neighborhood_ptg_field[coords] == 0)
 		{
 			ptt_field[coords] = 0;
 		}

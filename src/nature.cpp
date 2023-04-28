@@ -340,6 +340,16 @@ void paint_white(NoiseGenerator& noise_generator, PixelRect& pixel_rect)
 	}
 }
 
+void paint_colored(PixelData color, PixelRect& pixel_rect)
+{
+	for (int y = 0; y < static_cast<int>(pixel_rect.h); y++)
+	for (int x = 0; x < static_cast<int>(pixel_rect.w); x++)
+	{
+		PixelData& pixel = pixel_rect.pixel(x, y);;
+		pixel = color;
+	}
+}
+
 } /* Anonymous namespace. */
 
 BlockTypeId NatureGenerator::generate_block_type(Nature& nature)
@@ -368,11 +378,23 @@ BlockTypeId NatureGenerator::generate_block_type(Nature& nature)
 		paint_rock(this->noise_generator, pixel_rect_vertical);
 		paint_rock(this->noise_generator, pixel_rect_bottom);
 	}
-	else
+	else if (block_type_index == 4)
 	{
 		paint_white(this->noise_generator, pixel_rect_top);
 		paint_white(this->noise_generator, pixel_rect_vertical);
 		paint_white(this->noise_generator, pixel_rect_bottom);
+	}
+	else
+	{
+		PixelData color{
+			255.0f * this->noise_generator.base_noise(static_cast<int>(block_type_index * 17 + 41)),
+			255.0f * this->noise_generator.base_noise(static_cast<int>(block_type_index * 17 + 42)),
+			255.0f * this->noise_generator.base_noise(static_cast<int>(block_type_index * 17 + 43)),
+			255,
+		};
+		paint_colored(color, pixel_rect_top);
+		paint_colored(color, pixel_rect_vertical);
+		paint_colored(color, pixel_rect_bottom);
 	}
 
 	nature.atlas.update_opengl_data();

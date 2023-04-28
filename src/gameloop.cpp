@@ -165,6 +165,12 @@ void Game::init(Config const& config)
 	/* Block type id 4 is a white test block. */
 	this->nature->world_generator.test_block_type =
 		this->nature->nature_generator.generate_block_type(*this->nature);
+
+	/* Block type id 5-10 are some other random test block. */
+	for (int i = 0; i < 21; i++)
+	{
+		this->nature->nature_generator.generate_block_type(*this->nature);
+	}
 	
 	/* Emit the texture atlas if requested. */
 	if (config.get<bool>("emit_bitmap"sv)) {
