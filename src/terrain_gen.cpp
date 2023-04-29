@@ -494,6 +494,189 @@ ChunkPtgField PlainTerrainGeneratorLameBiomes3::generate_chunk_ptg_field(
 	return ptg_field;
 }
 
+ChunkPtgField PlainTerrainGeneratorLameBiomes4::generate_chunk_ptg_field(
+	ChunkCoords chunk_coords, Nature const& nature)
+{
+	/* TODO: Make a real function out of this. */
+	auto octaved_noise = [&](BlockCoords coords, int channel)
+	{
+		float const noise_size = nature.world_generator.noise_size * 5.0f;
+		constexpr unsigned int octave_number = 4;
+		float value_sum = 0.0f, coef_sum = 0.0f;
+		for (int i = 0; i < octave_number; i++)
+		{
+			float value = nature.world_generator.noise_generator.base_noise(
+				#define H(axis_) \
+					static_cast<float>(coords.axis_) / \
+						(noise_size / static_cast<float>(1 << i))
+					H(x), H(y), H(z),
+				#undef H
+				2 + i + 17 * channel);
+			float coef = 1.0f / static_cast<float>(1 << i);
+			value_sum += value * coef;
+			coef_sum += coef;
+		}
+		float const value = value_sum / coef_sum;
+		return value;
+	};
+
+	ChunkPtgField ptg_field{chunk_coords};
+	for (BlockCoords coords : chunk_block_rect(chunk_coords))
+	{
+		glm::vec3 d;
+		for (int i = 0; i < 3; i++)
+		{
+			d[i] = octaved_noise(coords, i) * 2.0f - 1.0f;
+		}
+		glm::vec3 c = coords;
+		d *= 100.0f * nature.world_generator.terrain_param_a;
+		c += d;
+		int const h = 70.0f * nature.world_generator.terrain_param_b;
+		auto iize = [](int a, int b)
+		{
+			return (a - cool_mod(a, b)) / b;
+		};
+		glm::ivec3 ci{
+			iize(c.x, h),
+			iize(c.y, h),
+			iize(c.z, 200)};
+		/* Trying to get some ci blocks to map to neighbors to make same "biome" block zones. */
+		glm::ivec3 initial_ci{ci};
+		int asking_neighbor_count = 0;
+		while (asking_neighbor_count <= 30)
+		{
+			asking_neighbor_count++;
+			/* Try to limit neighborhood to horizontal plane neighbors for simplicity here. */
+			glm::ivec3 dci[9] = {
+				{-1, -1, 0}, {-1, 0, 0}, {-1, 1, 0},
+				{0, -1, 0}, {0, 0, 0}, {0, 1, 0},
+				{1, -1, 0}, {1, 0, 0}, {1, 1, 0}};
+			float max_value = -1.0f;
+			glm::ivec3 max_dci{0, 0, 0};
+			for (int i = 0; i < 9; i++)
+			{
+				float value = nature.world_generator.noise_generator.base_noise(
+					ci.x + dci[i].x, ci.y + dci[i].y, ci.z + dci[i].z, 13);
+				if (max_value < value)
+				{
+					max_value = value;
+					max_dci = dci[i];
+				}
+			}
+			if (max_dci == glm::ivec3{0, 0, 0})
+			{
+				break;
+			}
+			ci += max_dci;
+		}
+		/* Zones of blocks are mapped to a "ci" block, and "ci" blocks are mapped to other
+		 * "ci" blocks so that the shape of the final mapping does not look too much like a grid.
+		 * Each "ci" block at the end of the mapping chain represents a biome type,
+		 * which is represented as altitude for now. */
+		float const value = nature.world_generator.noise_generator.base_noise(
+			ci.x, ci.y, ci.z, 69);
+		float const kind_float = nature.world_generator.noise_generator.base_noise(
+			ci.x, ci.y, ci.z, 420);
+		bool const full = nature.world_generator.noise_generator.base_noise(
+			ci.x, ci.y, ci.z, 1234) > 0.7f;
+		int const kind = 2 + static_cast<int>(kind_float * 20.0f);
+		ptg_field[coords] = (full || coords.z <= -value * 100.0f) ? kind : 0;
+	}
+	return ptg_field;
+}
+
+ChunkPtgField PlainTerrainGeneratorLameBiomes5::generate_chunk_ptg_field(
+	ChunkCoords chunk_coords, Nature const& nature)
+{
+	/* TODO: Make a real function out of this. */
+	auto octaved_noise = [&](BlockCoords coords, int channel)
+	{
+		float const noise_size = nature.world_generator.noise_size * 5.0f;
+		constexpr unsigned int octave_number = 4;
+		float value_sum = 0.0f, coef_sum = 0.0f;
+		for (int i = 0; i < octave_number; i++)
+		{
+			float value = nature.world_generator.noise_generator.base_noise(
+				#define H(axis_) \
+					static_cast<float>(coords.axis_) / \
+						(noise_size / static_cast<float>(1 << i))
+					H(x), H(y), H(z),
+				#undef H
+				2 + i + 17 * channel);
+			float coef = 1.0f / static_cast<float>(1 << i);
+			value_sum += value * coef;
+			coef_sum += coef;
+		}
+		float const value = value_sum / coef_sum;
+		return value;
+	};
+
+	ChunkPtgField ptg_field{chunk_coords};
+	for (BlockCoords coords : chunk_block_rect(chunk_coords))
+	{
+		glm::vec3 d;
+		for (int i = 0; i < 3; i++)
+		{
+			d[i] = octaved_noise(coords, i) * 2.0f - 1.0f;
+		}
+		glm::vec3 c = coords;
+		d *= 100.0f * nature.world_generator.terrain_param_a;
+		c += d;
+		int const h = 120.0f * nature.world_generator.terrain_param_b;
+		auto iize = [](int a, int b)
+		{
+			return (a - cool_mod(a, b)) / b;
+		};
+		glm::ivec3 ci{
+			iize(c.x, h),
+			iize(c.y, h),
+			iize(c.z, h)};
+		/* Trying to get some ci blocks to map to neighbors to make same "biome" block zones. */
+		glm::ivec3 initial_ci{ci};
+		int asking_neighbor_count = 0;
+		while (asking_neighbor_count <= 30)
+		{
+			asking_neighbor_count++;
+			/* Try to limit neighborhood to horizontal plane neighbors for simplicity here. */
+			glm::ivec3 dci[9] = {
+				{-1, -1, 0}, {-1, 0, 0}, {-1, 1, 0},
+				{0, -1, 0}, {0, 0, 0}, {0, 1, 0},
+				{1, -1, 0}, {1, 0, 0}, {1, 1, 0}};
+			float max_value = -1.0f;
+			glm::ivec3 max_dci{0, 0, 0};
+			for (int i = 0; i < 9; i++)
+			{
+				float value = nature.world_generator.noise_generator.base_noise(
+					ci.x + dci[i].x, ci.y + dci[i].y, ci.z + dci[i].z, 13);
+				if (max_value < value)
+				{
+					max_value = value;
+					max_dci = dci[i];
+				}
+			}
+			if (max_dci == glm::ivec3{0, 0, 0})
+			{
+				break;
+			}
+			ci += max_dci;
+		}
+		/* Zones of blocks are mapped to a "ci" block, and "ci" blocks are mapped to other
+		 * "ci" blocks so that the shape of the final mapping does not look too much like a grid.
+		 * Each "ci" block at the end of the mapping chain represents a biome type,
+		 * which is represented as altitude for now. */
+		float const value = nature.world_generator.noise_generator.base_noise(
+			ci.x, ci.y, ci.z, 69);
+		float const kind_float = nature.world_generator.noise_generator.base_noise(
+			ci.x, ci.y, ci.z, 420);
+		bool const full = nature.world_generator.noise_generator.base_noise(
+			ci.x, ci.y, ci.z, 1234) > 0.7f;
+		int const kind = 2 + static_cast<int>(kind_float * 20.0f);
+		float const altitude = static_cast<float>(ci.z) + static_cast<float>(h) * value;
+		ptg_field[coords] = (full || coords.z <= altitude) ? kind : 0;
+	}
+	return ptg_field;
+}
+
 PlainTerrainGenerator* plain_terrain_generator_from_name(std::string_view name)
 {
 	using namespace std::literals::string_view_literals;
@@ -514,6 +697,8 @@ PlainTerrainGenerator* plain_terrain_generator_from_name(std::string_view name)
 	if (name == "lame_biomes_1"sv)     return new PlainTerrainGeneratorLameBiomes1{};
 	if (name == "lame_biomes_2"sv)     return new PlainTerrainGeneratorLameBiomes2{};
 	if (name == "lame_biomes_3"sv)     return new PlainTerrainGeneratorLameBiomes3{};
+	if (name == "lame_biomes_4"sv)     return new PlainTerrainGeneratorLameBiomes4{};
+	if (name == "lame_biomes_5"sv)     return new PlainTerrainGeneratorLameBiomes5{};
 	assert(false /* Unknown plain terrain generator name. */);
 	std::exit(EXIT_FAILURE);
 }
