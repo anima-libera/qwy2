@@ -289,6 +289,124 @@ ChunkPtgField PlainTerrainGeneratorOctaves2::generate_chunk_ptg_field(
 	return ptg_field;
 }
 
+ChunkPtgField PlainTerrainGeneratorNoiseTest1::generate_chunk_ptg_field(
+	ChunkCoords chunk_coords, Nature const& nature)
+{
+	/* TODO: Make a real function out of this. */
+	auto octaved_noise = [&](BlockCoords coords, int channel)
+	{
+		float const noise_size = nature.world_generator.noise_size * 5.0f;
+		constexpr unsigned int octave_number = 4;
+		float value_sum = 0.0f, coef_sum = 0.0f;
+		for (int i = 0; i < octave_number; i++)
+		{
+			float value = nature.world_generator.noise_generator.base_noise(
+				#define H(axis_) \
+					static_cast<float>(coords.axis_) / \
+						(noise_size / static_cast<float>(1 << i))
+					H(x), H(y), H(z),
+				#undef H
+				2 + i + 17 * channel);
+			float coef = 1.0f / static_cast<float>(1 << i);
+			value_sum += value * coef;
+			coef_sum += coef;
+		}
+		float const value = value_sum / coef_sum;
+		return value;
+	};
+
+	ChunkPtgField ptg_field{chunk_coords};
+	for (BlockCoords coords : chunk_block_rect(chunk_coords))
+	{
+		float const value = octaved_noise(coords, 1);
+		ptg_field[coords] = (0.48f <= value && value <= 0.52f) ? 1 : 0;
+	}
+	return ptg_field;
+}
+
+ChunkPtgField PlainTerrainGeneratorNoiseTest2::generate_chunk_ptg_field(
+	ChunkCoords chunk_coords, Nature const& nature)
+{
+	/* TODO: Make a real function out of this. */
+	auto octaved_noise = [&](BlockCoords coords, int channel)
+	{
+		float const noise_size = nature.world_generator.noise_size * 5.0f;
+		constexpr unsigned int octave_number = 4;
+		float value_sum = 0.0f, coef_sum = 0.0f;
+		for (int i = 0; i < octave_number; i++)
+		{
+			float value = nature.world_generator.noise_generator.base_noise(
+				#define H(axis_) \
+					static_cast<float>(coords.axis_) / \
+						(noise_size / static_cast<float>(1 << i))
+					H(x), H(y), H(z),
+				#undef H
+				2 + i + 17 * channel);
+			float coef = 1.0f / static_cast<float>(1 << i);
+			value_sum += value * coef;
+			coef_sum += coef;
+		}
+		float const value = value_sum / coef_sum;
+		return value;
+	};
+
+	ChunkPtgField ptg_field{chunk_coords};
+	for (BlockCoords coords : chunk_block_rect(chunk_coords))
+	{
+		float const value_a = octaved_noise(coords, 1);
+		float const value_b = octaved_noise(coords, 2);
+		float const inf = 0.5f - 0.02f * nature.world_generator.terrain_param_a;
+		float const sup = 0.5f + 0.02f * nature.world_generator.terrain_param_a;
+		ptg_field[coords] =
+			(inf <= value_a && value_a <= sup) &&
+			(inf <= value_b && value_b <= sup) ?
+				1 : 0;
+	}
+	return ptg_field;
+}
+
+ChunkPtgField PlainTerrainGeneratorNoiseTest3::generate_chunk_ptg_field(
+	ChunkCoords chunk_coords, Nature const& nature)
+{
+	/* TODO: Make a real function out of this. */
+	auto octaved_noise = [&](BlockCoords coords, int channel, float noise_size_factor)
+	{
+		float const noise_size = nature.world_generator.noise_size * 5.0f * noise_size_factor;
+		constexpr unsigned int octave_number = 4;
+		float value_sum = 0.0f, coef_sum = 0.0f;
+		for (int i = 0; i < octave_number; i++)
+		{
+			float value = nature.world_generator.noise_generator.base_noise(
+				#define H(axis_) \
+					static_cast<float>(coords.axis_) / \
+						(noise_size / static_cast<float>(1 << i))
+					H(x), H(y), H(z),
+				#undef H
+				2 + i + 17 * channel);
+			float coef = 1.0f / static_cast<float>(1 << i);
+			value_sum += value * coef;
+			coef_sum += coef;
+		}
+		float const value = value_sum / coef_sum;
+		return value;
+	};
+
+	ChunkPtgField ptg_field{chunk_coords};
+	for (BlockCoords coords : chunk_block_rect(chunk_coords))
+	{
+		float const value_a = octaved_noise(coords, 1, 1.0f);
+		float const value_b = octaved_noise(coords, 2, 1.0f);
+		float const value_c = octaved_noise(coords, 3, 10.0f) < 0.5f ? 0.0f : 0.02f;
+		float const inf = 0.5f - 0.5f * value_c;
+		float const sup = 0.5f + 0.5f * value_c;
+		ptg_field[coords] =
+			(inf <= value_a && value_a <= sup) &&
+			(inf <= value_b && value_b <= sup) ?
+				1 : 0;
+	}
+	return ptg_field;
+}
+
 ChunkPtgField PlainTerrainGeneratorLameBiomes1::generate_chunk_ptg_field(
 	ChunkCoords chunk_coords, Nature const& nature)
 {
@@ -634,7 +752,7 @@ ChunkPtgField PlainTerrainGeneratorLameBiomes5::generate_chunk_ptg_field(
 		/* Trying to get some ci blocks to map to neighbors to make same "biome" block zones. */
 		glm::ivec3 initial_ci{ci};
 		int asking_neighbor_count = 0;
-		while (asking_neighbor_count <= 30)
+		while (asking_neighbor_count <= 10)
 		{
 			asking_neighbor_count++;
 			/* Try to limit neighborhood to horizontal plane neighbors for simplicity here. */
@@ -694,6 +812,9 @@ PlainTerrainGenerator* plain_terrain_generator_from_name(std::string_view name)
 	if (name == "funky_2"sv)           return new PlainTerrainGeneratorFunky2{};
 	if (name == "octaves_1"sv)         return new PlainTerrainGeneratorOctaves1{};
 	if (name == "octaves_2"sv)         return new PlainTerrainGeneratorOctaves2{};
+	if (name == "noise_test_1"sv)      return new PlainTerrainGeneratorNoiseTest1{};
+	if (name == "noise_test_2"sv)      return new PlainTerrainGeneratorNoiseTest2{};
+	if (name == "noise_test_3"sv)      return new PlainTerrainGeneratorNoiseTest3{};
 	if (name == "lame_biomes_1"sv)     return new PlainTerrainGeneratorLameBiomes1{};
 	if (name == "lame_biomes_2"sv)     return new PlainTerrainGeneratorLameBiomes2{};
 	if (name == "lame_biomes_3"sv)     return new PlainTerrainGeneratorLameBiomes3{};
