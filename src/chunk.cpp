@@ -308,7 +308,8 @@ ChunkBField generate_chunk_b_field(
 		{
 			float const coords_noise = nature.world_generator.noise_generator.base_noise(
 				coords.x, coords.y, coords.z);
-			float const structure_probability = 0.0001f;
+			//float const structure_probability = 0.0001f;
+			float const structure_probability = 0.0004f;
 			if (coords_noise < structure_probability)
 			{
 				BlockCoords head_start = coords;

@@ -74,8 +74,8 @@ void MoveUpwards::perform(StructureGenerationContext& context) const
 	context.head = new_head;
 }
 
-PlaceBlock::PlaceBlock(BlockTypeId block_type_id):
-	block_type_id(block_type_id)
+PlaceBlock::PlaceBlock(BlockTypeId block_type_id, bool only_in_air):
+	block_type_id(block_type_id), only_in_air(only_in_air)
 {
 	;
 }
@@ -85,7 +85,11 @@ void PlaceBlock::perform(StructureGenerationContext& context) const
 	if (context.bound_rect.contains(context.head) &&
 		chunk_block_rect(context.target_b_field.chunk_coords).contains(context.head))
 	{
-		context.target_b_field[context.head].type_id = this->block_type_id;
+		if ((this->only_in_air && context.target_b_field[context.head].is_air()) ||
+			(not this->only_in_air))
+		{
+			context.target_b_field[context.head].type_id = this->block_type_id;
+		}
 	}
 }
 

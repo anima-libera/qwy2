@@ -59,7 +59,8 @@ class PlaceBlock: public StructureGenerationStep
 {
 public:
 	BlockTypeId block_type_id;
-	PlaceBlock(BlockTypeId block_type_id);
+	bool only_in_air;
+	PlaceBlock(BlockTypeId block_type_id, bool only_in_air);
 	virtual void perform(StructureGenerationContext& context) const override final;
 };
 

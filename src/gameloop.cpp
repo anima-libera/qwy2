@@ -177,7 +177,7 @@ void Game::init(Config const& config)
 		StructureGenerationProgram prog{};
 		prog.steps.push_back(new structure_generation_step::SearchGround{});
 			StructureGenerationProgram body{};
-			body.steps.push_back(new structure_generation_step::PlaceBlock{4});
+			body.steps.push_back(new structure_generation_step::PlaceBlock{4, false});
 			body.steps.push_back(new structure_generation_step::MoveAtRandom{});
 		prog.steps.push_back(new structure_generation_step::Repeat{5, 100, body});
 		StructureType structure_type{prog};
@@ -191,15 +191,15 @@ void Game::init(Config const& config)
 		StructureGenerationProgram prog{};
 		prog.steps.push_back(new structure_generation_step::SearchGround{});
 			StructureGenerationProgram body_a{};
-			body_a.steps.push_back(new structure_generation_step::PlaceBlock{5});
+			body_a.steps.push_back(new structure_generation_step::PlaceBlock{5, false});
 			body_a.steps.push_back(new structure_generation_step::MoveUpwards{});
-		prog.steps.push_back(new structure_generation_step::Repeat{3, 6, body_a});
+		prog.steps.push_back(new structure_generation_step::Repeat{4, 7, body_a});
 			StructureGenerationProgram body_b{};
 				StructureGenerationProgram body_c{};
-				body_c.steps.push_back(new structure_generation_step::PlaceBlock{6});
+				body_c.steps.push_back(new structure_generation_step::PlaceBlock{6, true});
 				body_c.steps.push_back(new structure_generation_step::MoveAtRandom{});
 			body_b.steps.push_back(new structure_generation_step::Repeat{4, 5, body_c});
-		prog.steps.push_back(new structure_generation_step::RepeatFromSamePosition{10, 15, body_b});
+		prog.steps.push_back(new structure_generation_step::RepeatFromSamePosition{50, 100, body_b});
 		StructureType structure_type{prog};
 		this->nature->world_generator.structure_type_test_tree =
 			this->nature->structure_type_table.size();
