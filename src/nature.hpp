@@ -4,6 +4,7 @@
 
 #include "opengl.hpp"
 #include "noise.hpp"
+#include "structure.hpp"
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <vector>
@@ -105,6 +106,7 @@ public:
 	BlockTypeId primary_block_type;
 	BlockTypeId secondary_block_type;
 	BlockTypeId test_block_type;
+	StructureTypeId structure_type_test;
 	#if 0
 	bool flat;
 	bool hills;
@@ -150,6 +152,7 @@ class Nature
 public:
 	Atlas atlas;
 	std::vector<BlockType> block_type_table;
+	std::vector<StructureType> structure_type_table;
 	WorldGenerator world_generator;
 	NatureGenerator nature_generator;
 

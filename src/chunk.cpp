@@ -313,7 +313,8 @@ ChunkBField generate_chunk_b_field(
 			{
 				BlockCoords head_start = coords;
 				BlockRect bound_rect{head_start, structure_bound_rect_max_radius - 3};
-				StructureInstance structure{head_start, bound_rect};
+				StructureTypeId structure_type_id = nature.world_generator.structure_type_test;
+				StructureInstance structure{structure_type_id, head_start, bound_rect};
 				structure.generate(b_field, chunk_coords, chunk_neighborhood_ptt_field, nature);
 			}
 		}

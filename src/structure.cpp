@@ -5,35 +5,107 @@
 namespace qwy2
 {
 
-StructureInstance::StructureInstance(BlockCoords head_start, BlockRect bound_rect):
-	head_start(head_start), bound_rect(bound_rect)
+void StructureGenerationProgram::perform(StructureGenerationContext& context) const
+{
+	for (StructureGenerationStep* step : this->steps)
+	{
+		if (context.is_done)
+		{
+			return;
+		}
+		step->perform(context);
+		context.step_number++;
+	}
+}
+
+namespace structure_generation_step
+{
+
+void SearchGround::perform(StructureGenerationContext& context) const
+{
+	while (true)
+	{
+		if (context.bound_rect.contains(context.head) &&
+			context.bound_rect.contains(context.head - BlockCoords{0, 0, 1}) &&
+			context.chunk_neighborhood_ptt_field[context.head] == 0 &&
+			context.chunk_neighborhood_ptt_field[context.head - BlockCoords{0, 0, 1}] != 0)
+		{
+			/* We are just one block above ground. */
+			break;
+		}
+		else if ((not context.bound_rect.contains(context.head)) ||
+			(not context.bound_rect.contains(context.head - BlockCoords{0, 0, 1})))
+		{
+			/* We can't go down anymore. */
+			context.is_done = true;
+			return;
+		}
+		else
+		{
+			/* We can go down and we have not found the ground yet. */
+			context.head = context.head - BlockCoords{0, 0, 1};
+		}
+	}
+}
+
+void MoveAtRandom::perform(StructureGenerationContext& context) const
+{
+	int moving_random = static_cast<int>(6.0f *
+		context.nature.world_generator.noise_generator.base_noise(
+			context.head.x, context.head.y, context.head.z, context.step_number));
+	BlockCoords new_head = context.head;
+	new_head[moving_random / 2] += moving_random % 2 == 0 ? -1 : 1;
+	if (not context.bound_rect.contains(new_head))
+	{
+		/* Uh what to do here? We can't move in the randomly chosen direction. */
+		return;
+	}
+	context.head = new_head;
+}
+
+PlaceBlock::PlaceBlock(BlockTypeId block_type_id):
+	block_type_id(block_type_id)
 {
 	;
 }
 
-namespace
+void PlaceBlock::perform(StructureGenerationContext& context) const
 {
-
-void set_block_if_in_chunk(ChunkBField& target_b_field, BlockCoords coords, BlockTypeId type)
-{
-	if (chunk_block_rect(target_b_field.chunk_coords).contains(coords))
+	if (context.bound_rect.contains(context.head) &&
+		chunk_block_rect(context.target_b_field.chunk_coords).contains(context.head))
 	{
-		target_b_field[coords].type_id = type;
+		context.target_b_field[context.head].type_id = this->block_type_id;
 	}
 }
 
-void move_head_at_random(BlockCoords& writing_head, Nature const& nature, int iteration_number)
+Repeat::Repeat(int inf, int sup, StructureGenerationProgram body):
+	inf(inf), sup(sup), body(body)
 {
-	int moving_random = static_cast<int>(6.0f *
-		nature.world_generator.noise_generator.base_noise(
-			writing_head.x, writing_head.y, writing_head.z, iteration_number));
-	bool move_negativeward = moving_random % 2;
-	moving_random /= 2;
-	int move_axis_index = moving_random;
-	writing_head[move_axis_index] += move_negativeward ? -1 : 1;
+	;
 }
 
-} /* Anonymous namespace. */
+void Repeat::perform(StructureGenerationContext& context) const
+{
+	int number_of_iterations = this->inf + static_cast<int>(static_cast<float>(this->sup - this->inf) *
+		context.nature.world_generator.noise_generator.base_noise(
+			context.head.x, context.head.y, context.head.z, context.step_number));
+	for (int i = 0; i < number_of_iterations; i++)
+	{
+		if (context.is_done)
+		{
+			return;
+		}
+		this->body.perform(context);
+	}
+}
+
+} /* structure_generation_step */
+
+StructureInstance::StructureInstance(StructureTypeId type_id, BlockCoords head_start, BlockRect bound_rect):
+	type_id(type_id), head_start(head_start), bound_rect(bound_rect)
+{
+	;
+}
 
 void StructureInstance::generate(
 	ChunkBField& target_b_field,
@@ -41,25 +113,15 @@ void StructureInstance::generate(
 	ChunkNeighborhood<ChunkPttField> const& chunk_neighborhood_ptt_field,
 	Nature const& nature)
 {
-	BlockCoords writing_head = this->head_start;
-	while (true)
-	{
-		BlockCoords below_writing_head = writing_head - BlockCoords{0, 0, 1};
-		if (chunk_neighborhood_ptt_field[below_writing_head] != 0)
-		{
-			break;
-		}
-		writing_head = below_writing_head;
-		if (not this->bound_rect.contains(writing_head))
-		{
-			return;
-		}
-	}
-	for (int i = 0; i < 40; i++)
-	{
-		set_block_if_in_chunk(target_b_field, writing_head, 4);
-		move_head_at_random(writing_head, nature, i);
-	}
+	StructureGenerationContext context{
+		false,
+		0,
+		this->head_start,
+		this->bound_rect,
+		nature,
+		chunk_neighborhood_ptt_field,
+		target_b_field};
+	nature.structure_type_table[this->type_id].generation_program.perform(context);
 }
 
 } /* qwy2 */

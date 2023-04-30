@@ -171,6 +171,17 @@ void Game::init(Config const& config)
 	{
 		this->nature->nature_generator.generate_block_type(*this->nature);
 	}
+
+	/* Test structure. */
+	StructureGenerationProgram generation_program{};
+	generation_program.steps.push_back(new structure_generation_step::SearchGround{});
+		StructureGenerationProgram body{};
+		body.steps.push_back(new structure_generation_step::PlaceBlock{4});
+		body.steps.push_back(new structure_generation_step::MoveAtRandom{});
+	generation_program.steps.push_back(new structure_generation_step::Repeat{5, 100, body});
+	StructureType structure_type_test{generation_program};
+	this->nature->world_generator.structure_type_test = this->nature->structure_type_table.size();
+	this->nature->structure_type_table.push_back(structure_type_test);
 	
 	/* Emit the texture atlas if requested. */
 	if (config.get<bool>("emit_bitmap"sv)) {
