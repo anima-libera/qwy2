@@ -107,6 +107,7 @@ public:
 	BlockTypeId secondary_block_type;
 	BlockTypeId test_block_type;
 	StructureTypeId structure_type_test;
+	StructureTypeId structure_type_test_tree;
 	#if 0
 	bool flat;
 	bool hills;

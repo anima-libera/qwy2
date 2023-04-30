@@ -173,15 +173,38 @@ void Game::init(Config const& config)
 	}
 
 	/* Test structure. */
-	StructureGenerationProgram generation_program{};
-	generation_program.steps.push_back(new structure_generation_step::SearchGround{});
-		StructureGenerationProgram body{};
-		body.steps.push_back(new structure_generation_step::PlaceBlock{4});
-		body.steps.push_back(new structure_generation_step::MoveAtRandom{});
-	generation_program.steps.push_back(new structure_generation_step::Repeat{5, 100, body});
-	StructureType structure_type_test{generation_program};
-	this->nature->world_generator.structure_type_test = this->nature->structure_type_table.size();
-	this->nature->structure_type_table.push_back(structure_type_test);
+	{
+		StructureGenerationProgram prog{};
+		prog.steps.push_back(new structure_generation_step::SearchGround{});
+			StructureGenerationProgram body{};
+			body.steps.push_back(new structure_generation_step::PlaceBlock{4});
+			body.steps.push_back(new structure_generation_step::MoveAtRandom{});
+		prog.steps.push_back(new structure_generation_step::Repeat{5, 100, body});
+		StructureType structure_type{prog};
+		this->nature->world_generator.structure_type_test =
+			this->nature->structure_type_table.size();
+		this->nature->structure_type_table.push_back(structure_type);
+	}
+
+	/* Test tree structure. */
+	{
+		StructureGenerationProgram prog{};
+		prog.steps.push_back(new structure_generation_step::SearchGround{});
+			StructureGenerationProgram body_a{};
+			body_a.steps.push_back(new structure_generation_step::PlaceBlock{5});
+			body_a.steps.push_back(new structure_generation_step::MoveUpwards{});
+		prog.steps.push_back(new structure_generation_step::Repeat{3, 6, body_a});
+			StructureGenerationProgram body_b{};
+				StructureGenerationProgram body_c{};
+				body_c.steps.push_back(new structure_generation_step::PlaceBlock{6});
+				body_c.steps.push_back(new structure_generation_step::MoveAtRandom{});
+			body_b.steps.push_back(new structure_generation_step::Repeat{4, 5, body_c});
+		prog.steps.push_back(new structure_generation_step::RepeatFromSamePosition{10, 15, body_b});
+		StructureType structure_type{prog};
+		this->nature->world_generator.structure_type_test_tree =
+			this->nature->structure_type_table.size();
+		this->nature->structure_type_table.push_back(structure_type);
+	}
 	
 	/* Emit the texture atlas if requested. */
 	if (config.get<bool>("emit_bitmap"sv)) {

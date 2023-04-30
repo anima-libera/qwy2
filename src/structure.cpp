@@ -63,6 +63,17 @@ void MoveAtRandom::perform(StructureGenerationContext& context) const
 	context.head = new_head;
 }
 
+void MoveUpwards::perform(StructureGenerationContext& context) const
+{
+	BlockCoords new_head = context.head + BlockCoords{0, 0, 1};
+	if (not context.bound_rect.contains(new_head))
+	{
+		/* Uh what to do here? We can't move in the randomly chosen direction. */
+		return;
+	}
+	context.head = new_head;
+}
+
 PlaceBlock::PlaceBlock(BlockTypeId block_type_id):
 	block_type_id(block_type_id)
 {
@@ -95,6 +106,29 @@ void Repeat::perform(StructureGenerationContext& context) const
 		{
 			return;
 		}
+		this->body.perform(context);
+	}
+}
+
+RepeatFromSamePosition::RepeatFromSamePosition(int inf, int sup, StructureGenerationProgram body):
+	inf(inf), sup(sup), body(body)
+{
+	;
+}
+
+void RepeatFromSamePosition::perform(StructureGenerationContext& context) const
+{
+	int number_of_iterations = this->inf + static_cast<int>(static_cast<float>(this->sup - this->inf) *
+		context.nature.world_generator.noise_generator.base_noise(
+			context.head.x, context.head.y, context.head.z, context.step_number));
+	BlockCoords position = context.head;
+	for (int i = 0; i < number_of_iterations; i++)
+	{
+		if (context.is_done)
+		{
+			return;
+		}
+		context.head = position;
 		this->body.perform(context);
 	}
 }

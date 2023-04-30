@@ -49,6 +49,12 @@ public:
 	virtual void perform(StructureGenerationContext& context) const override final;
 };
 
+class MoveUpwards: public StructureGenerationStep
+{
+public:
+	virtual void perform(StructureGenerationContext& context) const override final;
+};
+
 class PlaceBlock: public StructureGenerationStep
 {
 public:
@@ -63,6 +69,15 @@ public:
 	int inf, sup;
 	StructureGenerationProgram body;
 	Repeat(int inf, int sup, StructureGenerationProgram body);
+	virtual void perform(StructureGenerationContext& context) const override final;
+};
+
+class RepeatFromSamePosition: public StructureGenerationStep
+{
+public:
+	int inf, sup;
+	StructureGenerationProgram body;
+	RepeatFromSamePosition(int inf, int sup, StructureGenerationProgram body);
 	virtual void perform(StructureGenerationContext& context) const override final;
 };
 
