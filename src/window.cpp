@@ -15,7 +15,7 @@ static GLuint s_vao_id;
 
 static constexpr char const* window_name = "Qwy2";
 
-ErrorCode init_window_graphics()
+ErrorCode init_window_graphics(bool fullscreen)
 {
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO) != 0)
 	{
@@ -25,8 +25,9 @@ ErrorCode init_window_graphics()
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
 	g_window = SDL_CreateWindow(window_name,
-		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1600, 800,
-		SDL_WINDOW_OPENGL);
+		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+		fullscreen ? 0 : 1600, fullscreen ? 0 : 800,
+		SDL_WINDOW_OPENGL | (fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0));
 	if (g_window == nullptr)
 	{
 		error_sdl2_fail("SDL_CreateWindow");

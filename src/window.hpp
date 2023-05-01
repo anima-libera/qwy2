@@ -27,7 +27,7 @@ extern SDL_GLContext g_opengl_context;
  * This function should be called once at the beginning of execution, and
  * a unique matching call to cleanup_window_graphics should be done at the end of
  * execution. */
-ErrorCode init_window_graphics();
+ErrorCode init_window_graphics(bool fullscreen);
 
 /* Cleans up and destroys what is initialized and created by init_window_graphics. */
 void cleanup_window_graphics();

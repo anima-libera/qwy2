@@ -125,7 +125,8 @@ void Game::init(Config const& config)
 	}
 
 	/* Initialize graphics. */
-	if (init_window_graphics() == ErrorCode::ERROR)
+	bool fullscreen = config.get<bool>("fullscreen"sv);
+	if (init_window_graphics(fullscreen) == ErrorCode::ERROR)
 	{
 		std::exit(EXIT_FAILURE);
 	}
