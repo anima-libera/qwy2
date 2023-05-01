@@ -20,6 +20,9 @@ Config::Config()
 	 * Setting it to false can be more confortable when launching the game in an IDE debugger. */
 	this->parameter_table.insert({"cursor_capture"sv, true});
 
+	/* Is the window initially in fullscreen mode? */
+	this->parameter_table.insert({"fullscreen"sv, false});
+
 	/* Radius (in blocks) of the spherical zone around the player that gets to be loaded. */
 	this->parameter_table.insert({"loaded_radius"sv, 160.0f});
 	this->corrector_table.insert({"loaded_radius"sv, [](ParameterType& variant_value){
