@@ -340,6 +340,22 @@ void paint_white(NoiseGenerator& noise_generator, PixelRect& pixel_rect)
 	}
 }
 
+float cap(float x, float inf, float sup)
+{
+	if (x < inf)
+	{
+		return inf;
+	}
+	else if (sup < x)
+	{
+		return sup;
+	}
+	else
+	{
+		return x;
+	}
+}
+
 void paint_colored(NoiseGenerator& noise_generator, PixelData color, PixelRect& pixel_rect)
 {
 	for (int y = 0; y < static_cast<int>(pixel_rect.h); y++)
@@ -348,10 +364,95 @@ void paint_colored(NoiseGenerator& noise_generator, PixelData color, PixelRect& 
 		PixelData& pixel = pixel_rect.pixel(x, y);
 		pixel = color;
 
-		float const grey_value = noise_generator.base_noise(x, y, 0);
-		pixel.r += (noise_generator.base_noise(x, y, 0) - 0.5f) * 30.0f;
-		pixel.g += (noise_generator.base_noise(x, y, 1) - 0.5f) * 30.0f;
-		pixel.b += (noise_generator.base_noise(x, y, 2) - 0.5f) * 30.0f;
+		pixel.r = cap(pixel.r + (noise_generator.base_noise(x, y, 0) - 0.5f) * 30.0f, 0.0f, 255.0f);
+		pixel.g = cap(pixel.g + (noise_generator.base_noise(x, y, 1) - 0.5f) * 30.0f, 0.0f, 255.0f);
+		pixel.b = cap(pixel.b + (noise_generator.base_noise(x, y, 2) - 0.5f) * 30.0f, 0.0f, 255.0f);
+		pixel.a = 255;
+	}
+}
+
+float interpolate_ratio_smoothstep(float x)
+{
+	return 3.0f * x * x - 2.0f * x * x * x;
+}
+float interpolate(float x, float inf, float sup)
+{
+	float const ratio = interpolate_ratio_smoothstep(x);
+	return inf * (1.0f - ratio) + sup * ratio;
+}
+
+/* TODO: Make a more proper function out of this. */
+float octaved_noise(NoiseGenerator& noise_generator, float noise_size, float x, float y, float z, float w)
+{
+	constexpr unsigned int octave_number = 4;
+	float value_sum = 0.0f, coef_sum = 0.0f;
+	for (int i = 0; i < octave_number; i++)
+	{
+		float value = noise_generator.base_noise(
+			#define H(param_) (param_) / (noise_size / static_cast<float>(1 << i))
+				H(x), H(y), H(z), H(w)
+			#undef H
+			);
+		float coef = 1.0f / static_cast<float>(1 << i);
+		value_sum += value * coef;
+		coef_sum += coef;
+	}
+	float const value = value_sum / coef_sum;
+	return value;
+};
+
+void paint_two_colored(NoiseGenerator& noise_generator, PixelData color_a, PixelData color_b, int block_type_index, PixelRect& pixel_rect)
+{
+	for (int y = 0; y < static_cast<int>(pixel_rect.h); y++)
+	for (int x = 0; x < static_cast<int>(pixel_rect.w); x++)
+	{
+		PixelData& pixel = pixel_rect.pixel(x, y);
+		pixel = color_a;
+
+		float fx = x;
+		float fy = y;
+		float ax = std::cos(fx * TAU / static_cast<float>(pixel_rect.w));
+		float ay = std::sin(fx * TAU / static_cast<float>(pixel_rect.w));
+		float bx = std::cos(fy * TAU / static_cast<float>(pixel_rect.w));
+		float by = std::sin(fy * TAU / static_cast<float>(pixel_rect.w));
+		bx += static_cast<float>(block_type_index) * 40.0f;
+		float aness = octaved_noise(noise_generator, 1.0f, ax, ay, bx, by);
+		//float aness = octaved_noise(noise_generator, 0.5f, ax, ay, bx, by);
+		//float aness = noise_generator.base_noise(ax, ay, bx, by);
+		//float aness = noise_generator.base_noise(ax*0.7f, ay*0.7f, bx*0.7f, by*0.7f);
+		#if 0
+		pixel.r = (std::cos(fx * TAU / static_cast<float>(pixel_rect.w)) * 0.5f + 0.5f) * 255.0f;
+		pixel.g = (std::cos(fx * TAU / static_cast<float>(pixel_rect.w)) * 0.5f + 0.5f) * 255.0f;
+		pixel.b = (std::cos(fx * TAU / static_cast<float>(pixel_rect.w)) * 0.5f + 0.5f) * 255.0f;
+		#elif 0
+		pixel = aness < 0.5f ? color_b : color_a;
+		#elif 0
+		pixel.r = aness * 255.0f;
+		pixel.g = aness * 255.0f;
+		pixel.b = aness * 255.0f;
+		#elif 0
+		pixel.r = (bx * 0.5f + 0.5f) * 255.0f;
+		pixel.g = (bx * 0.5f + 0.5f) * 255.0f;
+		pixel.b = (bx * 0.5f + 0.5f) * 255.0f;
+		#elif 0
+		pixel.r = (std::fabs(aness - 0.5f) < 0.1f) * 255.0f;
+		pixel.g = (std::fabs(aness - 0.5f) < 0.1f) * 255.0f;
+		pixel.b = (std::fabs(aness - 0.5f) < 0.1f) * 255.0f;
+		#elif 0
+		pixel.r = (std::fabs(aness - 0.5f) * 2.0f) * 255.0f;
+		pixel.g = (std::fabs(aness - 0.5f) * 2.0f) * 255.0f;
+		pixel.b = (std::fabs(aness - 0.5f) * 2.0f) * 255.0f;
+		#else
+		pixel.r = interpolate(aness,
+			static_cast<float>(color_a.r),
+			static_cast<float>(color_b.r));
+		pixel.g = interpolate(aness,
+			static_cast<float>(color_a.g),
+			static_cast<float>(color_b.g));
+		pixel.b = interpolate(aness,
+			static_cast<float>(color_a.b),
+			static_cast<float>(color_b.b));
+		#endif
 		pixel.a = 255;
 	}
 }
@@ -362,9 +463,11 @@ BlockTypeId NatureGenerator::generate_block_type(Nature& nature)
 {
 	unsigned int block_type_index = nature.block_type_table.size();
 
-	PixelRect pixel_rect_top = nature.atlas.allocate_rect(16, 16);
-	PixelRect pixel_rect_vertical = nature.atlas.allocate_rect(16, 16);
-	PixelRect pixel_rect_bottom = nature.atlas.allocate_rect(16, 16);
+	int side = 16;
+
+	PixelRect pixel_rect_top = nature.atlas.allocate_rect(side, side);
+	PixelRect pixel_rect_vertical = nature.atlas.allocate_rect(side, side);
+	PixelRect pixel_rect_bottom = nature.atlas.allocate_rect(side, side);
 
 	if (block_type_index == 1)
 	{
@@ -392,15 +495,33 @@ BlockTypeId NatureGenerator::generate_block_type(Nature& nature)
 	}
 	else
 	{
-		PixelData color{
-			255.0f * this->noise_generator.base_noise(static_cast<int>(block_type_index * 17 + 41)),
-			255.0f * this->noise_generator.base_noise(static_cast<int>(block_type_index * 17 + 42)),
-			255.0f * this->noise_generator.base_noise(static_cast<int>(block_type_index * 17 + 43)),
-			255,
-		};
-		paint_colored(this->noise_generator, color, pixel_rect_top);
-		paint_colored(this->noise_generator, color, pixel_rect_vertical);
-		paint_colored(this->noise_generator, color, pixel_rect_bottom);
+		if (this->noise_generator.base_noise(static_cast<int>(block_type_index + 12)) < 0.6f)
+		{
+			PixelData color{
+				255.0f * this->noise_generator.base_noise(static_cast<int>(block_type_index * 17 + 44)),
+				255.0f * this->noise_generator.base_noise(static_cast<int>(block_type_index * 17 + 45)),
+				255.0f * this->noise_generator.base_noise(static_cast<int>(block_type_index * 17 + 46)),
+				255};
+			paint_colored(this->noise_generator, color, pixel_rect_top);
+			paint_colored(this->noise_generator, color, pixel_rect_vertical);
+			paint_colored(this->noise_generator, color, pixel_rect_bottom);
+		}
+		else
+		{
+			PixelData color_a{
+				255.0f * this->noise_generator.base_noise(static_cast<int>(block_type_index * 17 + 41)),
+				255.0f * this->noise_generator.base_noise(static_cast<int>(block_type_index * 17 + 42)),
+				255.0f * this->noise_generator.base_noise(static_cast<int>(block_type_index * 17 + 43)),
+				255};
+			PixelData color_b{
+				255.0f * this->noise_generator.base_noise(static_cast<int>(block_type_index * 17 + 44)),
+				255.0f * this->noise_generator.base_noise(static_cast<int>(block_type_index * 17 + 45)),
+				255.0f * this->noise_generator.base_noise(static_cast<int>(block_type_index * 17 + 46)),
+				255};
+			paint_two_colored(this->noise_generator, color_a, color_b, block_type_index, pixel_rect_top);
+			paint_two_colored(this->noise_generator, color_a, color_b, block_type_index, pixel_rect_vertical);
+			paint_two_colored(this->noise_generator, color_a, color_b, block_type_index, pixel_rect_bottom);
+		}
 	}
 
 	nature.atlas.update_opengl_data();
