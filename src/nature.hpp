@@ -108,19 +108,6 @@ public:
 	BlockTypeId test_block_type;
 	StructureTypeId structure_type_test;
 	StructureTypeId structure_type_test_tree;
-	#if 0
-	bool flat;
-	bool hills;
-	bool homogenous;
-	bool plane;
-	bool planes;
-	bool vertical_pillar;
-	bool vertical_hole;
-	bool horizontal_pillar;
-	bool horizontal_hole;
-	bool terrain_test_1;
-	bool terrain_test_2;
-	#endif
 	PlainTerrainGenerator* plain_terrain_generator;
 	float noise_size;
 	float density;
@@ -132,9 +119,6 @@ public:
 
 public:
 	WorldGenerator(NoiseGenerator::SeedType seed);
-	#if 0
-	void generate_chunk_content(Nature const& nature, IsolatedChunk& chunk) const;
-	#endif
 };
 
 class NatureGenerator

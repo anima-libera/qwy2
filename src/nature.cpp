@@ -192,51 +192,6 @@ float generator_value(NoiseGenerator const& noise_generator, BlockCoords coords)
 
 } /* Anonymous namespace. */
 
-#if 0
-void WorldGenerator::generate_chunk_content([[maybe_unused]] Nature const& nature,
-	IsolatedChunk& chunk) const
-{
-	chunk.is_all_air = true;
-	for (BlockCoords const& walker : chunk.rect)
-	{
-		Block& block = chunk.block_grid[chunk.rect.to_index(walker)];
-		block.type_index = this->primary_block_type;
-
-		float value = generator_value(this->noise_generator, walker);
-		if (value < 0.0f)
-		{
-			block.is_air = false;
-			chunk.is_all_air = false;
-
-			BlockCoords neighbour_above;
-			neighbour_above = walker;
-			neighbour_above.z++;
-			float value_above = generator_value(this->noise_generator, neighbour_above);
-			neighbour_above = walker;
-			neighbour_above.z +=
-				10.0f * this->noise_generator_2.base_noise(
-					static_cast<float>(walker.x) / 10.0f,
-					static_cast<float>(walker.y) / 10.0f,
-					static_cast<float>(walker.z) / 10.0f);
-			float value_very_above = generator_value(this->noise_generator, neighbour_above);
-
-			if (value_very_above < 0.0f)
-			{
-				block.type_index = this->secondary_block_type;
-			}
-			else if (value_above >= 0.0f)
-			{
-				block.type_index = this->surface_block_type;
-			}
-			else
-			{
-				block.type_index = this->primary_block_type;
-			}
-		}
-	}
-}
-#endif
-
 
 NatureGenerator::NatureGenerator(NoiseGenerator::SeedType seed):
 	noise_generator{seed}
@@ -416,43 +371,16 @@ void paint_two_colored(NoiseGenerator& noise_generator, PixelData color_a, Pixel
 		float bx = std::cos(fy * TAU / static_cast<float>(pixel_rect.w));
 		float by = std::sin(fy * TAU / static_cast<float>(pixel_rect.w));
 		bx += static_cast<float>(block_type_index) * 40.0f;
-		float aness = octaved_noise(noise_generator, 1.0f, ax, ay, bx, by);
-		//float aness = octaved_noise(noise_generator, 0.5f, ax, ay, bx, by);
-		//float aness = noise_generator.base_noise(ax, ay, bx, by);
-		//float aness = noise_generator.base_noise(ax*0.7f, ay*0.7f, bx*0.7f, by*0.7f);
-		#if 0
-		pixel.r = (std::cos(fx * TAU / static_cast<float>(pixel_rect.w)) * 0.5f + 0.5f) * 255.0f;
-		pixel.g = (std::cos(fx * TAU / static_cast<float>(pixel_rect.w)) * 0.5f + 0.5f) * 255.0f;
-		pixel.b = (std::cos(fx * TAU / static_cast<float>(pixel_rect.w)) * 0.5f + 0.5f) * 255.0f;
-		#elif 0
-		pixel = aness < 0.5f ? color_b : color_a;
-		#elif 0
-		pixel.r = aness * 255.0f;
-		pixel.g = aness * 255.0f;
-		pixel.b = aness * 255.0f;
-		#elif 0
-		pixel.r = (bx * 0.5f + 0.5f) * 255.0f;
-		pixel.g = (bx * 0.5f + 0.5f) * 255.0f;
-		pixel.b = (bx * 0.5f + 0.5f) * 255.0f;
-		#elif 0
-		pixel.r = (std::fabs(aness - 0.5f) < 0.1f) * 255.0f;
-		pixel.g = (std::fabs(aness - 0.5f) < 0.1f) * 255.0f;
-		pixel.b = (std::fabs(aness - 0.5f) < 0.1f) * 255.0f;
-		#elif 0
-		pixel.r = (std::fabs(aness - 0.5f) * 2.0f) * 255.0f;
-		pixel.g = (std::fabs(aness - 0.5f) * 2.0f) * 255.0f;
-		pixel.b = (std::fabs(aness - 0.5f) * 2.0f) * 255.0f;
-		#else
-		pixel.r = interpolate(aness,
-			static_cast<float>(color_a.r),
-			static_cast<float>(color_b.r));
-		pixel.g = interpolate(aness,
-			static_cast<float>(color_a.g),
-			static_cast<float>(color_b.g));
-		pixel.b = interpolate(aness,
-			static_cast<float>(color_a.b),
-			static_cast<float>(color_b.b));
-		#endif
+		float more_a_than_b = octaved_noise(noise_generator, 1.0f, ax, ay, bx, by);
+		//float more_a_than_b = octaved_noise(noise_generator, 0.5f, ax, ay, bx, by);
+		//float more_a_than_b = noise_generator.base_noise(ax, ay, bx, by);
+		//float more_a_than_b = noise_generator.base_noise(ax*0.7f, ay*0.7f, bx*0.7f, by*0.7f);
+		pixel.r = interpolate(more_a_than_b,
+			static_cast<float>(color_a.r), static_cast<float>(color_b.r));
+		pixel.g = interpolate(more_a_than_b,
+			static_cast<float>(color_a.g), static_cast<float>(color_b.g));
+		pixel.b = interpolate(more_a_than_b,
+			static_cast<float>(color_a.b), static_cast<float>(color_b.b));
 		pixel.a = 255;
 	}
 }
