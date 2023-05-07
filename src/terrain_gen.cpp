@@ -500,6 +500,71 @@ ChunkPtgField PlainTerrainGeneratorCaves1::generate_chunk_ptg_field(
 	return ptg_field;
 }
 
+ChunkPtgField PlainTerrainGeneratorBimodalHills::generate_chunk_ptg_field(
+	ChunkCoords chunk_coords, Nature const& nature)
+{
+	/* TODO: Make a real function out of this. */
+	auto octaved_noise = [&](BlockCoords coords, int channel)
+	{
+		float const noise_size = nature.world_generator.noise_size * 5.0f;
+		constexpr unsigned int octave_number = 4;
+		float value_sum = 0.0f, coef_sum = 0.0f;
+		for (int i = 0; i < octave_number; i++)
+		{
+			float value = nature.world_generator.noise_generator.base_noise(
+				#define H(axis_) \
+					static_cast<float>(coords.axis_) / \
+						(noise_size / static_cast<float>(1 << i))
+					H(x), H(y), H(z),
+				#undef H
+				2 + i + 17 * channel);
+			float coef = 1.0f / static_cast<float>(1 << i);
+			value_sum += value * coef;
+			coef_sum += coef;
+		}
+		float const value = value_sum / coef_sum;
+		return value;
+	};
+
+	auto interpolate_ratio_trig = [](float x)
+	{
+		return (std::cos((1.0f - x) * TAU / 2) + 1.0f) / 2.0f;
+	};
+	auto interpolate = [&](float x, float inf, float sup)
+	{
+		if (x < 0.0f)
+		{
+			return inf;
+		}
+		else if (1.0f < x)
+		{
+			return sup;
+		}
+		else
+		{
+			float const ratio = interpolate_ratio_trig(x);
+			return inf * (1.0f - ratio) + sup * ratio;
+		}
+	};
+
+	ChunkPtgField ptg_field{chunk_coords};
+	for (BlockCoords coords : chunk_block_rect(chunk_coords))
+	{
+		BlockCoords coords_xy = coords;
+		coords_xy.z = 0;
+		float const value = octaved_noise(coords_xy, 1);
+		float const value_inf = 0.4f;
+		float const value_sup = 0.6f;
+		float const altitude_inf = -15.0f;
+		float const altitude_sup = 0.0f;
+		float altitude = interpolate((value - value_inf) / (value_sup - value_inf),
+			altitude_inf, altitude_sup);
+		altitude -= octaved_noise(coords_xy, 2) * 6.0f;
+		ptg_field[coords] = coords.z > altitude ? 0 : 1;
+	}
+	return ptg_field;
+}
+
 ChunkPtgField PlainTerrainGeneratorLameBiomes1::generate_chunk_ptg_field(
 	ChunkCoords chunk_coords, Nature const& nature)
 {
@@ -1114,6 +1179,7 @@ PlainTerrainGenerator* plain_terrain_generator_from_name(std::string_view name)
 	if (name == "noise_test_3"sv)      return new PlainTerrainGeneratorNoiseTest3{};
 	if (name == "noise_test_4"sv)      return new PlainTerrainGeneratorNoiseTest4{};
 	if (name == "caves_1"sv)           return new PlainTerrainGeneratorCaves1{};
+	if (name == "bimodal_hills"sv)     return new PlainTerrainGeneratorBimodalHills{};
 	if (name == "lame_biomes_1"sv)     return new PlainTerrainGeneratorLameBiomes1{};
 	if (name == "lame_biomes_2"sv)     return new PlainTerrainGeneratorLameBiomes2{};
 	if (name == "lame_biomes_3"sv)     return new PlainTerrainGeneratorLameBiomes3{};
