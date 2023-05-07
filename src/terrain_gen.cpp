@@ -452,6 +452,54 @@ ChunkPtgField PlainTerrainGeneratorNoiseTest4::generate_chunk_ptg_field(
 	return ptg_field;
 }
 
+ChunkPtgField PlainTerrainGeneratorCaves1::generate_chunk_ptg_field(
+	ChunkCoords chunk_coords, Nature const& nature)
+{
+	/* TODO: Make a real function out of this. */
+	auto octaved_noise = [&](BlockCoords coords, int channel)
+	{
+		float const noise_size = nature.world_generator.noise_size * 5.0f;
+		constexpr unsigned int octave_number = 4;
+		float value_sum = 0.0f, coef_sum = 0.0f;
+		for (int i = 0; i < octave_number; i++)
+		{
+			float value = nature.world_generator.noise_generator.base_noise(
+				#define H(axis_) \
+					static_cast<float>(coords.axis_) / \
+						(noise_size / static_cast<float>(1 << i))
+					H(x), H(y), H(z),
+				#undef H
+				2 + i + 17 * channel);
+			float coef = 1.0f / static_cast<float>(1 << i);
+			value_sum += value * coef;
+			coef_sum += coef;
+		}
+		float const value = value_sum / coef_sum;
+		return value;
+	};
+
+	ChunkPtgField ptg_field{chunk_coords};
+	for (BlockCoords coords : chunk_block_rect(chunk_coords))
+	{
+		if (coords.z > 0)
+		{
+			ptg_field[coords] = 0;
+		}
+		else
+		{
+			float const value_a = octaved_noise(coords, 1);
+			float const value_b = octaved_noise(coords, 2);
+			float const inf = 0.5f - 0.04f * nature.world_generator.terrain_param_a;
+			float const sup = 0.5f + 0.04f * nature.world_generator.terrain_param_a;
+			ptg_field[coords] =
+				(inf <= value_a && value_a <= sup) &&
+				(inf <= value_b && value_b <= sup) ?
+					0 : 1;
+		}
+	}
+	return ptg_field;
+}
+
 ChunkPtgField PlainTerrainGeneratorLameBiomes1::generate_chunk_ptg_field(
 	ChunkCoords chunk_coords, Nature const& nature)
 {
@@ -1065,6 +1113,7 @@ PlainTerrainGenerator* plain_terrain_generator_from_name(std::string_view name)
 	if (name == "noise_test_2"sv)      return new PlainTerrainGeneratorNoiseTest2{};
 	if (name == "noise_test_3"sv)      return new PlainTerrainGeneratorNoiseTest3{};
 	if (name == "noise_test_4"sv)      return new PlainTerrainGeneratorNoiseTest4{};
+	if (name == "caves_1"sv)           return new PlainTerrainGeneratorCaves1{};
 	if (name == "lame_biomes_1"sv)     return new PlainTerrainGeneratorLameBiomes1{};
 	if (name == "lame_biomes_2"sv)     return new PlainTerrainGeneratorLameBiomes2{};
 	if (name == "lame_biomes_3"sv)     return new PlainTerrainGeneratorLameBiomes3{};
