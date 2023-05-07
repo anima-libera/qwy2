@@ -50,6 +50,7 @@ SIMPLE_PLAIN_TERRAIN_GENERATOR_SUBCLASS(PlainTerrainGeneratorLameBiomes4);
 SIMPLE_PLAIN_TERRAIN_GENERATOR_SUBCLASS(PlainTerrainGeneratorLameBiomes5);
 SIMPLE_PLAIN_TERRAIN_GENERATOR_SUBCLASS(PlainTerrainGeneratorLameBiomes6);
 SIMPLE_PLAIN_TERRAIN_GENERATOR_SUBCLASS(PlainTerrainGeneratorLameBiomes7);
+SIMPLE_PLAIN_TERRAIN_GENERATOR_SUBCLASS(PlainTerrainGeneratorLameBiomes8);
 
 PlainTerrainGenerator* plain_terrain_generator_from_name(std::string_view name);
 

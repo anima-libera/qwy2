@@ -1157,6 +1157,151 @@ ChunkPtgField PlainTerrainGeneratorLameBiomes7::generate_chunk_ptg_field(
 	return ptg_field;
 }
 
+ChunkPtgField PlainTerrainGeneratorLameBiomes8::generate_chunk_ptg_field(
+	ChunkCoords chunk_coords, Nature const& nature)
+{
+	/* TODO: Make a real function out of this. */
+	auto octaved_noise = [&](BlockCoords coords, int channel)
+	{
+		float const noise_size = nature.world_generator.noise_size * 5.0f;
+		constexpr unsigned int octave_number = 4;
+		float value_sum = 0.0f, coef_sum = 0.0f;
+		for (int i = 0; i < octave_number; i++)
+		{
+			float value = nature.world_generator.noise_generator.base_noise(
+				#define H(axis_) \
+					static_cast<float>(coords.axis_) / \
+						(noise_size / static_cast<float>(1 << i))
+					H(x), H(y), H(z),
+				#undef H
+				2 + i + 17 * channel);
+			float coef = 1.0f / static_cast<float>(1 << i);
+			value_sum += value * coef;
+			coef_sum += coef;
+		}
+		float const value = value_sum / coef_sum;
+		return value;
+	};
+
+	auto interpolate_ratio_trig = [](float x)
+	{
+		return (std::cos((1.0f - x) * TAU / 2) + 1.0f) / 2.0f;
+	};
+	auto interpolate = [&](float x, float inf, float sup)
+	{
+		if (x < 0.0f)
+		{
+			return inf;
+		}
+		else if (1.0f < x)
+		{
+			return sup;
+		}
+		else
+		{
+			float const ratio = interpolate_ratio_trig(x);
+			return inf * (1.0f - ratio) + sup * ratio;
+		}
+	};
+
+	ChunkPtgField ptg_field{chunk_coords};
+	for (BlockCoords coords : chunk_block_rect(chunk_coords))
+	{
+		glm::vec3 d;
+		for (int i = 0; i < 3; i++)
+		{
+			d[i] = octaved_noise(coords, i) * 2.0f - 1.0f;
+		}
+		glm::vec3 c = coords;
+		d *= 100.0f * nature.world_generator.terrain_param_a;
+		c += d;
+		int const h = 180.0f * nature.world_generator.terrain_param_b;
+		auto iize = [](int a, int b)
+		{
+			return (a - cool_mod(a, b)) / b;
+		};
+		glm::ivec3 ci{
+			iize(c.x, h),
+			iize(c.y, h),
+			iize(c.z, h)};
+		/* Trying to get some ci blocks to map to neighbors to make same "biome" block zones. */
+		glm::ivec3 initial_ci{ci};
+		int asking_neighbor_count = 0;
+		while (asking_neighbor_count <= 10)
+		{
+			asking_neighbor_count++;
+			/* Try to limit neighborhood to horizontal plane neighbors for simplicity here. */
+			glm::ivec3 dci[9] = {
+				{-1, -1, 0}, {-1, 0, 0}, {-1, 1, 0},
+				{0, -1, 0}, {0, 0, 0}, {0, 1, 0},
+				{1, -1, 0}, {1, 0, 0}, {1, 1, 0}};
+			float max_value = -1.0f;
+			glm::ivec3 max_dci{0, 0, 0};
+			for (int i = 0; i < 9; i++)
+			{
+				float value = nature.world_generator.noise_generator.base_noise(
+					ci.x + dci[i].x, ci.y + dci[i].y, ci.z + dci[i].z, 13);
+				if (max_value < value)
+				{
+					max_value = value;
+					max_dci = dci[i];
+				}
+			}
+			if (max_dci == glm::ivec3{0, 0, 0})
+			{
+				break;
+			}
+			ci += max_dci;
+		}
+		/* Zones of blocks are mapped to a "ci" block, and "ci" blocks are mapped to other
+		 * "ci" blocks so that the shape of the final mapping does not look too much like a grid.
+		 * Each "ci" block at the end of the mapping chain represents a biome type,
+		 * which is represented as altitude for now. */
+		float const value = nature.world_generator.noise_generator.base_noise(
+			ci.x, ci.y, ci.z, 69);
+		float const kind_float = nature.world_generator.noise_generator.base_noise(
+			ci.x, ci.y, ci.z, 420);
+		bool const full = nature.world_generator.noise_generator.base_noise(
+			ci.x, ci.y, ci.z, 1234) > 0.85f;
+		bool const empty = (not full) && nature.world_generator.noise_generator.base_noise(
+			ci.x, ci.y, ci.z, 1234) > 0.40f;
+		int const kind = 2 + static_cast<int>(kind_float * 20.0f);
+		float const altitude_base = (static_cast<float>(ci.z) + value) * static_cast<float>(h);
+		float const altitude_diff = nature.world_generator.noise_generator.base_noise(
+			ci.x, ci.y, ci.z, 68) * 20.0f;
+		float const value_alt_diff = nature.world_generator.noise_generator.base_noise(
+			ci.x, ci.y, ci.z, 67) * 0.85f;
+		bool const web = nature.world_generator.noise_generator.base_noise(
+			ci.x, ci.y, ci.z, 1234) < 0.1f;
+		if (web)
+		{
+			float const value_a = octaved_noise(coords, 1);
+			float const value_b = octaved_noise(coords, 2);
+			float const inf = 0.5f - 0.02f * 1.0f;
+			float const sup = 0.5f + 0.02f * 1.0f;
+			ptg_field[coords] =
+				(inf <= value_a && value_a <= sup) &&
+				(inf <= value_b && value_b <= sup) ?
+					kind : 0;
+		}
+		else
+		{
+			BlockCoords coords_xy = coords;
+			coords_xy.z = 0;
+			float const value_alt = octaved_noise(coords_xy, ci.z);
+			float const value_inf = 0.5f - value_alt_diff / 2.0f;
+			float const value_sup = 0.5f + value_alt_diff / 2.0f;
+			float const altitude_inf = altitude_base - altitude_diff / 2.0f;
+			float const altitude_sup = altitude_base + altitude_diff / 2.0f;
+			float altitude = interpolate((value_alt - value_inf) / (value_sup - value_inf),
+				altitude_inf, altitude_sup);
+			altitude -= octaved_noise(coords_xy, ci.z * 11) * 6.0f;
+			ptg_field[coords] = empty ? 0 : (full || coords.z <= altitude) ? kind : 0;
+		}
+	}
+	return ptg_field;
+}
+
 PlainTerrainGenerator* plain_terrain_generator_from_name(std::string_view name)
 {
 	using namespace std::literals::string_view_literals;
@@ -1187,6 +1332,7 @@ PlainTerrainGenerator* plain_terrain_generator_from_name(std::string_view name)
 	if (name == "lame_biomes_5"sv)     return new PlainTerrainGeneratorLameBiomes5{};
 	if (name == "lame_biomes_6"sv)     return new PlainTerrainGeneratorLameBiomes6{};
 	if (name == "lame_biomes_7"sv)     return new PlainTerrainGeneratorLameBiomes7{};
+	if (name == "lame_biomes_8"sv)     return new PlainTerrainGeneratorLameBiomes8{};
 	assert(false /* Unknown plain terrain generator name. */);
 	std::exit(EXIT_FAILURE);
 }
