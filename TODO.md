@@ -17,30 +17,32 @@
 - **Optimization:** Unload PTG and PTT fields that are no longer required for any chunk generation.
 - **Feature:** Save/load configuration info such as chunk side, the terrain generator and its parameters, etc.
 - **Feature:** Save/load more stuff like the camera angle.
-- **Feature:** Add simple entities that are displayed, have directional shadows, move around, collide with blocks, are saved, do not randomly dispawn.
+- **Feature:** Add simple entities that are displayed (done), have directional shadows (done), move around, collide with blocks (done), are saved, do not randomly dispawn.
 - **Optimization:** Compress chunk data saved to the disk.
 - **Feature:** Display 2D text (with some pixely font inspired by Minecraft's or PICO-8's?), and add modes to display all kinds of info in corners (such as number of chunks at each generating step, player coords, pointed block coords, player chunk coords, FPS count, etc.).
 - **Feature:** Allow typing commands at run-time.
 - **Feature (quality of life):** Auto-complete commands being typed.
-- **Feature:** Add tree-like structures.
+- **Feature (quality of life):** Display info on commands being typed, like a description of the command and its parameters.
+- **Feature:** Add menu interface to change some settings at runtime.
 - **Feature:** Add procedurally generated *types* of structures.
-- **Feature:** Add biomes to some terrain generators. Biomes should only be terrain-generation-related (meaning that the game should behave as if biome information was lost once the terrain is generated).
-- **Feature:** Add procedurally generated *types* of biomes.
-- **Feature:** Add procedurally generated *types* of blocks.
+- **Feature:** Add biomes to some terrain generators. Biomes should only be terrain-generation-related (meaning that the game should behave as if biome information was lost once the terrain is generated). (WIP)
+- **Feature:** Add procedurally generated *types* of biomes. (WIP)
+- **Feature:** Add procedurally generated *types* of blocks. (WIP)
 - **Feature:** Add some kind of "survival" game mode.
 - **Fix:** Rewrite the player collision with blocks code entirely. It is currently so ugly it can be considered a bug.
-- **Optimization?:** Generate the chunk meshes sooner (without the whole neighborhood) and update the edges of the meshes as neighbors are generated.
-- **Optimisation:** Allow chunks to have multiple meshes so that chunks with too much faces could internally have regions with separate meshes to require less remeshing work when a block is changed.
-- **Debugging feature:** Allow for chunks to have their PTG fields be given meshes to display as soon as these fields are generated.
+- **Optimization?:** Generate the chunk meshes sooner (without the whole neighborhood) and update the edges of the meshes as neighbors are generated. Not doing that kind-of wastes the whole outer layer of chunks with a fully generated B-field that are not displayed.
+- **Optimisation:** Allow fast remeshing by only change the mesh of individual blocks instead of the whole chunk. That can be done by storing a table alongside the mesh that indicate for every block where in the array of vertices it starts and how many vertices it spans, this would allow to keep track of verices associated with any block when we remove them, add them or modify them. The mesh should also have a set of areas in its array of verices that are available for interstion.
+- **Debugging feature?:** Allow for chunks to have their PTG fields be given meshes to display as soon as these fields are generated.
 - **Optimization:** When in normal view, don't render chunks with empty meshes.
 - **Optimization:** When in normal view, don't render chunks that are completely covered.
-- **Optimization:** When in normal view, don't render chunks that are outside of the view.
+- **Optimization:** When in normal view, don't render chunks that are outside of the viewing frustum.
 - **Optimization:** When in normal view, don't render chunks that are behind chunks that act as opaque walls. For example, what about considering that if a chunck face is entirely opaque blocks, then consider this chunk face to be opaque, and don't render the chunks that are entirely behind this opaque face from the player's camera.
-- **Optimization:** Reduce the shadow mapping time.
+- **Optimization:** Reduce the shadow mapping time. For example, only render on the shadow map the chunks that can cast a shadow on something that is in the viewing frustum, i.e. only render the chunks that overlap with a shape that can be described as the viewing frustrum and its shadow cast towards the sun (because anything outside of that shape can only cast shadows onto stuff that is outside of the viewing frustrum). And also don't render chunks which emptty meshes, completely covered, and other easy optimizations like that.
 - **Feature (visual):** Display some sort of star in the sun's direction.
-- **Feature (visual):** Keep the low-resolution shadow map that covers a big area, and add a smaller (thus higer-resolution) shadow map to get better shadows in a smaller area around the player (or rather around the camera).
 - **Feature (visual):** God rays.
-- **Feature:** Block face texture generator that can be tested without launching the whole game to allow easier tweaking and debugging of this specific feature.
+- **Feature (visual):** Some non trivial sky-ish procedurally generated features (we can have normal-ish skies, and more wild skies for weird events or more other-worldly dimensions).
+- **Feature (visual):** Make the fog go transparent (so that the terrain blends with the sky) instead of some plain color (that works fine with a plain color sky but that won't do when the sky gets more intresting).
+- **Feature (visual)?:** Keep the low-resolution shadow map that covers a big area, and add a smaller (thus higer-resolution) shadow map to get better shadows in a smaller area around the player (or rather around the camera).
 
 ### Ideas for some far future (don't think too much about it for now)
 
